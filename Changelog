@@ -1,0 +1,157 @@
+Please  do  not write behind the end of line tag so that it is  possible
+to   send  a   Changelog   file  to  a  line  printer  directly.  Thanks.
+
+For your entries please follow EXACTLY this style:
+
+_yyyy/mm/dd_[Your Name]
+_
+___*_filename:
+_____-_description
+_
+___*_filename2, filename3:
+_____-_description
+_
+_
+_
+
+                                                     -*-*- END OF LINE -*-*-
+
+  2012/03/07  Nepomuk Otte
+
+   * This is CARE after a complete rewrite of the structure
+     This became necessary to allow the simulation of hundreds of 
+	 telescopes. At the same time a number of new features had been includes
+
+  2011/07/11  Nepomuk Otte
+
+   * config/CARE_VERITAS_AfterUpgrade.cfg config/CARE_VERITAS_NewArray.cfg
+     -  Updated QE curves in both configuration. Old Array has the QE curve 
+	    agreed in the Montreal meeting. The upgrade QE curve has a peak QE of
+		32%, which is what we see in latest measurements
+
+  2011/03/15  Nepomuk Otte
+
+   * config/CARE_VERITAS_BeforeT1Move.cfg
+     -  Added configuration file for VERITAS before the relocation of T1. This
+	    one has a 20% lower gain than before the move of T1 and 24 samples in
+		the readout instead of 20
+
+  2011/02/07  Nepomuk Otte
+
+   * config/UpgradeHighGainPulseShape.txt config/CARE_VERITAS_AfterUpgrade.cfg
+     -  Added configuration file for VERITAS after upgrade. Includes proper QE curve
+	    afterpulsing and single pe pulse shape as well as sigma of single pe
+		pulse height distribution. Trigger is not fixed (patches and
+		configuration)
+
+   2011/01/21  Nepomuk Otte
+
+   * FADC.cpp
+     - removed a hard exit of the code if, when writing the FADC trace, the
+	 analog trace is too short. The analog values are set to zero in the FADC
+	 if that is the case. Needs to be cleaned up. Depends on how often that
+		 happens.
+
+   2010/11/12  Nepomuk Otte
+
+   * TraceGenerator.cpp,TriggerTelescopeNextNeighbor.cpp
+     - modfications in the AddPEToTrace and GetLowGainTrace routines to speed
+       Care up by a factor 2. Some multipications could be transfered out of a
+       loop and some memory management could be done better
+     - modifications in the LoadEvent routine that brought a 10% speed up of
+       CARE
+
+  2010/11/10  Nepomuk Otte
+
+   * CameraAndReadout.cpp
+     - small modification to make it work with gcc 4.4.4
+
+  2010/06/24  Nepomuk Otte
+
+   * CameraAndReadout.cpp
+     - the vbf writer know gets the number of FADC samples from the CARE config file
+
+   * ReadConfig.cpp .h
+     - added function to read the number of FADC samples from the config file 
+       and getter function to hand that number over   
+
+   * CARE.cfg
+     - changed the start of the first VBF event to 2009
+
+  2010/06/11  Nepomuk Otte
+
+   * CameraAndReadout.cpp
+     - ups, my bad. I commited a version of this file earlier where I uncommented
+       the line which executed the fadc.
+     - events in which the number of photons in each telescope is below a certain number (10 hardcoded)
+       are automatically skipped and considered not triggered
+
+  2010/06/11  Nepomuk Otte
+
+   * CameraAndReadout.cpp
+     - fixed bug which cause the array trigger bit to always 
+       be true in the vbf file
+
+     - fixed bug that caused a crash of CARE at the very end if no VBF file
+       is written
+
+  2010/06/07  Nepomuk Otte
+
+   * TriggerTelescopeNextNeighbor.cpp
+     - corrected the time used in the calculation of the Rate in the RFB feedback. Subtracted the delay internal to the constant fraction
+       This is ony a minor change and should have no effect on the outcome of the simulations
+
+     - Fixed bug that added to much RFB feedback to the trace if more than one pixel is summed. Does not affect VERITAS simulations. 
+
+  2010/06/01  Nepomuk Otte
+
+   * CameraAndReadout.cpp
+     - put in the correct pixel coordinates that are written into the VBF file 
+       (I hope they are correct)
+
+   2010/06/01  Nepomuk Otte
+
+   * CameraAndReadout.cpp
+     - implemented Heikes changes to get the Zenith and Azimuth values in the VBF file right
+       thanks for the heavy lifting -> pays for one beer in Cork :)
+
+   2010/06/01  Nepomuk Otte
+   
+   * CameraAndReadout.cpp
+     - fixed bug that wrote Zenith angle instead of Elevation into VBFwrite->setAzimElevTelDeg(....) 
+       (credit goes to Heike for finding this)
+
+   * FADC.cpp
+     - put bDebug condition around output generated if Channel goes in Low gain
+
+   2010/05/28  Nepomuk Otte
+
+   * FADC,TraceGenerator,CameraAndReadout,ArrayTrigger,TriggerTelescopeNextNeighbor,[h,cpp]
+     - Completed setting the debug flags to all couts
+
+   * TraceGenerator.[h,cpp]
+     - fixed a bug that did not set the flag properly if Cherenkov photons are in a telescope
+     - added the propagation delay to the average photon arrival times if Cherenkov photons are in the trace
+
+   * FADC.[h,cpp]
+      
+   * config directory did not make it into the CVS the last time. Fixed that now (Thanks Heike)  	
+
+   2010/05/27  Nepomuk Otte
+
+   * FADC,TraceGenerator,CameraAndReadout,ArrayTrigger,TriggerTelescopeNextNeighbor,[h,cpp]
+     - Added a debug bool for each class to turn debug informations off and on from the main file
+
+   * CameraAndReadout.[h,cpp]
+     - help() updated (Thanks Heike)
+     - got rid of 'Note: File "vector" already loaded' message (Thanks Heike)
+
+   * Makefile
+     - removed printvbf
+
+   * created directory "config" for the pulse shapes and simulation config files
+ 
+   2010/05/25  Nepomuk Otte
+
+   * *.[h,cpp]
+     - First upload of CARE into the cvs. From now on all changes will be documented in this file 
