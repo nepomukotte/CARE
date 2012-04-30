@@ -105,6 +105,7 @@ void help()
      cout << "\t <basename output files> \t the base name for the vbf and root output files" << endl;
      cout << "\t <pe input file> \t the input pe file" << endl;
      cout << "\t <VBF run number> \t the runnumber written into the vbf file" << endl;
+     cout << "\t <Pedestal flag> \t if 1 the pedestal events will be written into the output file" << endl;
      cout << endl;
 
     exit( 0 );
@@ -131,10 +132,13 @@ int main( int argc, char **argv )
    else
      lVBFRunNum = 99999;
    
-   Int_t iDebugLevel=0;
-    if(argc == 7)
-      iDebugLevel  = atoi( argv[6] );
+   Int_t iPedestalWriteFlag = 0;
+   if(argc >=7)
+	  iPedestalWriteFlag = (int)(atoi( argv[6] ) );
 
+   Int_t iDebugLevel=0;
+    if(argc == 8)
+      iDebugLevel  = atoi( argv[7] );
 
    gROOT->ProcessLine("#include <vector>");
    gStyle->SetPalette(1);
@@ -630,7 +634,7 @@ int main( int argc, char **argv )
 
 	   // set pedestal parameters for data writeVBF object
 	   bool makePedsFlag = false;
-	   if( readConfig->GetNumberOfPedestalEvents()>0)
+	   if( iPedestalWriteFlag == 1)
 	     makePedsFlag = true;
 	   int pedTimeInterval = 1; //sec
 	   std::string pedFileName("");
@@ -657,7 +661,10 @@ int main( int argc, char **argv )
      
        cout<<"Doing the pedestals"<<endl;
        //Running the pedestal events
-       for(Int_t p = 0 ;p<  readConfig->GetNumberOfPedestalEvents();p++)
+	   Int_t NumPedestalsToSimulate = readConfig->GetNumberOfPedestalEvents() 
+	                                   + readConfig->GetNumberOfPedestalEventsToStabilize();
+       
+	   for(Int_t p = 0 ;p<  NumPedestalsToSimulate;p++)
 	 {
 	   if(p%100==0)
 	     cout<<"Done "<<p<<" pedestal events"<<endl;
@@ -680,7 +687,9 @@ int main( int argc, char **argv )
 	   }
 
 	   //save to VBF file if we want to do that
-	   if(readConfig->GetVBFwriteBit())
+	   if(readConfig->GetVBFwriteBit() 
+		         && p>=readConfig->GetNumberOfPedestalEventsToStabilize() 
+				 && iPedestalWriteFlag==1)
 	     {
 	       VBFwrite->setPedestalEvent();  // tell the writer this is peds packet
 	       for (UInt_t tel1=0;tel1<uNumTelescopes;tel1++) {

@@ -689,7 +689,7 @@ void TriggerTelescopeNextNeighbor::RunBiasCurve(UInt_t Trials,Float_t LowerBound
 	}
 
       //Output the state of the art every 1000 events
-      if(i%1000 == 0 && i > 0 )
+      if(i%10 == 0 && i > 0 )
 	{
 	  cout<<"Events :"<<i<<"  simulated time "<<i*fTraceLength*1e-9<<" s"<<endl;
 	  cout<<"Dynamic Value of the RFB: "<<fDiscRFBDynamic<<" mV. The rate of zero crossings in MHz: "<< lZeroCrossings /(i* (fTraceLength-fDiscDelay)*1e-3*iNumSumPixGroups)<<endl;

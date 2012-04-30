@@ -16,6 +16,20 @@ _
 
                                                      -*-*- END OF LINE -*-*-
 
+  2012/04/30  Nepomuk Otte
+
+   * ReadConfig.h,.cpp CameraAndReadout
+     - added option NUMBERPEDESTALEVENTSTOSTABILZE 
+	This specifies the number of pedestal events that will be simulated
+	to stabilize the discriminator
+     - added another argument to CameraAndReadout. If the last argument is a 1
+	then the pedestal events given with NUMBERPEDESTALEVENTS 
+	will be simulated and written to file
+
+   * TriggerTelescopeNextNeighbor.cpp
+     - Change the frequency by which information about the discrimanator are output from
+	1000 to 10
+
   2012/03/07  Nepomuk Otte
 
    * This is CARE after a complete rewrite of the structure

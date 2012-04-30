@@ -738,12 +738,21 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
 	 cout<<"The simulated events will have a datum of: "<<sDayOfSimulatedEvents<<endl;
       }
 
-     //The day to which the datums of the simulated events are set
-     if( iline.find( "NUMBERPEDESTALEVENTS " ) < iline.size() )
+     //The number of pedestal events to simulate and write to disk
+	 if( iline.find( "NUMBERPEDESTALEVENTS " ) < iline.size() )
        {
 	 i_stream >> i_char; i_stream >> i_char; 
 	 i_stream >>  iNumberPedestalEvents ;
 	 cout<<"The number of pedestal events that will be simulated: "<<iNumberPedestalEvents<<endl;
+	 cout<<"Note that this requires that you also set the write pedestal flag when calling CARE"<<endl;
+      }
+
+     //The number of pedestal events to simulate in order to stabilize the discriminator
+     if( iline.find( "NUMBERPEDESTALEVENTSTOSTABILZE " ) < iline.size() )
+       {
+	 i_stream >> i_char; i_stream >> i_char; 
+	 i_stream >>  iNumberPedestalEventsToStabilize ;
+	 cout<<"The number of pedestal events that will be simulated to stabilize the discriminator: "<<iNumberPedestalEventsToStabilize<<endl;
       }
 
      //The day to which the datums of the simulated events are set

@@ -93,6 +93,7 @@ class ReadConfig
   Int_t   GetAtmosphericModel(){ return iAtmosphericModel; };
   TString GetDayOfSimulatedEvents(){return sDayOfSimulatedEvents; };
   Int_t   GetNumberOfPedestalEvents(){return iNumberPedestalEvents; };
+  Int_t   GetNumberOfPedestalEventsToStabilize(){return iNumberPedestalEventsToStabilize; };
   Bool_t  GetVBFwriteBit(){return bWriteVFB; };          
 
 
@@ -193,7 +194,9 @@ class ReadConfig
 
   //Looping over events
   Bool_t  bLoopOverEvents;
-  Int_t   iNumberPedestalEvents;       //The number of pedestal events that will be simulated
+  Int_t   iNumberPedestalEvents;              //The number of pedestal events that will be simulated
+  Int_t   iNumberPedestalEventsToStabilize;   //The number of pedestal events that will be simulated
+                                              //to stabilize the discriminator
 
   //Cherenkovphoton throughput
   vector<Float_t> fWinstonConeEfficiency;                 //The efficiency of the Winstoncone
