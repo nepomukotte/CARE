@@ -667,11 +667,15 @@ int main( int argc, char **argv )
 	   for(Int_t p = 0 ;p<  NumPedestalsToSimulate;p++)
 	 {
 	   if(p%100==0)
-	     cout<<"Done "<<p<<" pedestal events"<<endl;
+	     cout<<endl<<"Done "<<p<<" pedestal events"<<endl;
+
 	   for (UInt_t tel=0;tel<uNumTelescopes;tel++){
 		 
 	     //generate traces with trace generator
          Int_t telType = telData[tel]->GetTelescopeType();
+
+	   if(p%100==0)
+	     cout<<"RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
 
          telData[tel]->ResetTraces();
          traceGenerator[telType]->SetTelData(telData[tel]);
