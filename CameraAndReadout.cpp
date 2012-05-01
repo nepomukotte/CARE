@@ -666,6 +666,10 @@ int main( int argc, char **argv )
        
 	   for(Int_t p = 0 ;p<  NumPedestalsToSimulate;p++)
 	 {
+
+	   if( p>readConfig->GetNumberOfPedestalEventsToStabilize() && iPedestalWriteFlag==0)
+              break;
+
 	   if(p%100==0)
 	     cout<<endl<<"Done "<<p<<" pedestal events"<<endl;
 
