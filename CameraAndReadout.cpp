@@ -36,7 +36,7 @@ enum SimulationPackageCodes   {KNOWNNOT,LEEDS,GRISU,KASCADE,CORSIKA,UCLA};
 using namespace std;
 
 
-static const Bool_t DEBUG_TRACE = kTRUE;
+static const Bool_t DEBUG_TRACE = kFALSE;
 static const Bool_t DEBUG_FADC = kFALSE;
 static const Bool_t DEBUG_TELTRIGGER = kFALSE;
 static const Bool_t DEBUG_ARRAYTRIGGER = kFALSE;
