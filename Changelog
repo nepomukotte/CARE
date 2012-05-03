@@ -16,6 +16,16 @@ _
 
                                                      -*-*- END OF LINE -*-*-
 
+  2012/05/03  Nepomuk Otte
+
+   * FADC.cpp
+     - modified the digitizing function. If the simulated trace is not long
+     enough. It is being wrapped around and the readout starts from the
+     beginning of the trace. This should only happen for noise anyways.
+   * TraceGenerator.cpp
+     - added a warning to the tracegenerator if the simulated trace is to
+     short and does not hold all the Cherenkov photons
+
   2012/04/30  Nepomuk Otte
 
    * ReadConfig.h,.cpp CameraAndReadout

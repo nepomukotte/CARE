@@ -115,9 +115,9 @@ void FADC::DigitizePixel( Int_t PixelID )
 			   cout<<endl<<"Pixel: "<<PixelID<<", samples in trace  "<<iFADCSamples*fFADCSamplingWidth/fTraceSamplingTime
 			        <<", time of first sample  "<<fTimeStartFirstSample<<", average photon arrival time "<<telData->fAveragePhotonArrivalTime<<endl;
 			   cout<<"E: "<<fenergy<<" Tel "<<ftelid<<" Zenith "<<fzenith<<" Az  "<<fazimuth<<endl<<endl;
-
-              break;
-	       }
+                          iPositionInAnalogTrace = iPositionInAnalogTrace  % (Int_t)telData->fTraceInPixel[PixelID].size();
+	       
+               }
 
 	     if( -1 * telData->fTraceInPixel[PixelID][iPositionInAnalogTrace] > LowGainthresholdInPE ) 
 	       {   
@@ -158,7 +158,9 @@ void FADC::DigitizePixel( Int_t PixelID )
 	   if(iPositionInAnalogTrace >= (Int_t)telData->fTraceInPixel[PixelID].size())
 		  {
 			  cout<<"something is wrong, this should never happen. The Analog trace is not long enough!!!!!"<<endl;
-			  exit(1);
+			  cout<<"I am going back to the very beginning of the trace and record from there"<<cout;
+                          cout<<"Lets hope that there are no Cherenkv photons"<<endl;
+                          iPositionInAnalogTrace = iPositionInAnalogTrace  % (Int_t)telData->fTraceInPixel[PixelID].size();
 		  }
 	 
 	   Float_t fDigitizedValue =  -1 * trace[iPositionInAnalogTrace] * fConversionFactor + fPedestal;
