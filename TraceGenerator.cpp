@@ -131,7 +131,7 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
       || fMaxPhotonArrivalTime - telData->fAveragePhotonArrivalTime > telData->iNumSamplesPerTrace*fSamplingTime*0.5 )
     {
       cout<<endl<<"Ups the trace is not long enough to host all Cherenkov Photons"<<endl;
-      cout<<"We have "<<iNumSamplesPerTrace*fSamplingTime<<" ns, but we need "<<fMaxPhotonArrivalTime-fMinPhotonArrivalTime<<endl; 
+      cout<<"We have "<<telData->iNumSamplesPerTrace*fSamplingTime<<" ns, but we need "<<fMaxPhotonArrivalTime-fMinPhotonArrivalTime<<endl; 
     }
 
   //Load Cherenkov photons into the traces of each summed group
