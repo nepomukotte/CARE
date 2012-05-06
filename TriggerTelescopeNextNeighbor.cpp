@@ -44,7 +44,8 @@ TriggerTelescopeNextNeighbor::TriggerTelescopeNextNeighbor(ReadConfig *readConfi
   iMultiplicity = -1;
   fSamplingTime = -1;
   fSamplingTimeAveragePulse = -1; //sampling time of the average PE pulse
-  fTraceLength = 15; //Length of simulated trace in ns
+  fTraceLength = 100; //Length of simulated trace in ns
+  fStartSamplingBeforeAverageTime = 30;
 
   lZeroCrossings = 0;               //holds the number of zerocrossings for one event counted over all pixels in the camera
   lNumEvents = 0;   
@@ -103,8 +104,8 @@ TH1F TriggerTelescopeNextNeighbor::GetTraceHistogramThreshold(int GroupID, bool 
   TString title;
   title.Form("Trace in pixel %i",GroupID);
   TH1F hTrace ("hTrace",title,
-	       telData->iNumSamplesPerTrace+1,telData->fAveragePhotonArrivalTime-fTraceLength*0.5-fSamplingTime*0.5,
-	       telData->fAveragePhotonArrivalTime+fTraceLength*0.5+fSamplingTime*0.5);
+	       telData->iNumSamplesPerTrace+1,telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime-fSamplingTime*0.5,
+	       telData->fAveragePhotonArrivalTime+fTraceLength-fStartSamplingBeforeAverageTime+fSamplingTime*0.5);
   hTrace.GetXaxis()->SetTitle("Time [ns]");
   hTrace.GetYaxis()->SetTitle("Amplitude [mV]");
 	     
@@ -125,8 +126,8 @@ TH1F TriggerTelescopeNextNeighbor::GetTraceHistogramCFD(int GroupID){
   TString title;
   title.Form("Trace in pixel %i",GroupID);
   TH1F hTraceCFD("hTraceCFD",title,
-		    telData->iNumSamplesPerTrace+1,telData->fAveragePhotonArrivalTime-fTraceLength*0.5-fSamplingTime*0.5,
-					      telData->fAveragePhotonArrivalTime+fTraceLength*0.5+fSamplingTime*0.5);
+		    telData->iNumSamplesPerTrace+1,telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime-fSamplingTime*0.5,
+					      telData->fAveragePhotonArrivalTime+fTraceLength-fStartSamplingBeforeAverageTime+fSamplingTime*0.5);
   hTraceCFD.GetXaxis()->SetTitle("Time [ns]");
   hTraceCFD.GetYaxis()->SetTitle("Amplitude [mV]");
 	     
@@ -159,8 +160,8 @@ void TriggerTelescopeNextNeighbor::ShowTrace(int GroupID, bool NSBOnly){
 	hTrace.Draw();
 	hTraceCFD.Draw("same");
     
-    TLine lDisc(telData->fAveragePhotonArrivalTime-fTraceLength*0.5-fSamplingTime*0.5,fDiscThreshold,
-	         telData->fAveragePhotonArrivalTime+fTraceLength*0.5+fSamplingTime*0.5, fDiscThreshold);
+    TLine lDisc(telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime-fSamplingTime*0.5,fDiscThreshold,
+	         telData->fAveragePhotonArrivalTime+fTraceLength-fStartSamplingBeforeAverageTime+fSamplingTime*0.5, fDiscThreshold);
 	lDisc.Draw();
 
 	TTimer timer("gSystem->ProcessEvents();", 50, kFALSE);
@@ -523,7 +524,7 @@ Bool_t TriggerTelescopeNextNeighbor::RunDiscriminator(Int_t GroupID)
 	  //In case both discriminators are firing we have a trigger
 	   if( bCFDOut && fsignal<=fDiscThreshold &&  telData->bTriggeredGroups[GroupID] == kFALSE ) 
              {
-	      telData->fDiscriminatorTime[GroupID] = i*fSamplingTime-fTraceLength*0.5;
+	      telData->fDiscriminatorTime[GroupID] = i*fSamplingTime-fStartSamplingBeforeAverageTime;
 	      telData->bTriggeredGroups[GroupID] = kTRUE;
 
 	    }
@@ -815,6 +816,10 @@ void   TriggerTelescopeNextNeighbor::SetParametersFromConfigFile(ReadConfig *rea
    //Trace length in ns
    fTraceLength = readConfig->GetTraceLength(iTelType);
    cout<<"The analog trace is "<<fTraceLength<<" ns long"<<endl;
+
+   //Offset from average photon arrival time
+   fStartSamplingBeforeAverageTime = readConfig->GetStartSamplingTimeOffsetFromAveragePhotonTime(iTelType);
+   cout<<"The analog trace starts to be sampled "<<fStartSamplingBeforeAverageTime<<" ns before the average photon arrival time"<<endl; 
 
    //Width of one sample  of the trace
    fSamplingTime = readConfig->GetSamplingTime(iTelType);

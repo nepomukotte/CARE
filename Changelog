@@ -16,6 +16,18 @@ _
 
                                                      -*-*- END OF LINE -*-*-
 
+  2012/05/06  Nepomuk Otte
+
+   * ReadConfig[.cpp,.h],FADC[.cpp,.h],TraceGenerator[.cpp,.h],CameraAndReadout.cpp,FADC[.cpp,.h],TelescopeTriggerNextNeighbor[.cpp,.h]
+     - modified filling traces. The average photon arrival time is not anymore in the center of the trace.
+       Now it is determined by the variable STARTSAMPLINGBEFOREAVERAGEPHOTONARRIVALTIME
+     - It is now counted in the TraceGenerator for how many events the trace is either two short or too long
+       The exact number is output at the end of CARE
+     - The same is done in the FADC
+     - During runtime a corresponding note is also output to stdout when that happens
+     - In the case this happens the FADC DigitizePixel function loops either to the beginning or to the end of the analog trace
+       and takes the analog trace from there. This should be fine unless there is a significant number of Cherenkov photons there.
+
   2012/05/03  Nepomuk Otte
 
    * FADC.cpp

@@ -35,6 +35,8 @@ class TraceGenerator {
 
   void     SetTelData(TelescopeData *telData);
 
+  void     PrintHowOftenTheTraceWasTooShort();
+
  protected:
 
 
@@ -50,7 +52,7 @@ class TraceGenerator {
   void     SetGaussianPulse(Float_t fwhm);
   void     SetSigmaofSinglePEPulseHeightDistribution(Float_t sigma);
   void     SetSinglePESamlingWidth(Float_t width);
-  void     SetTraceSampleWidthAndLength(Float_t t,Float_t length=100);
+  void     SetTraceSampleWidthAndLength(Float_t t,Float_t length=100,Float_t=30);
  
   
             //Sets the NSB rate per pixel, units kHz  
@@ -85,11 +87,14 @@ class TraceGenerator {
   GOrderedGridSearch *gridsearch;
 
   Int_t  iTelType; 
-  
+ 
+  Int_t NumTraceIsTooShortLowEnd;
+  Int_t NumTraceIsTooShortHighEnd;
+
+ 
   //PMT signal related variables
   Float_t  fSigmaSinglePEPulseHeightDistribution;  //sigma of the single PE pulse height distribution
   
-  //attention, this variable is the same for all objects of this class
   vector<Float_t> fAverageSinglePEPulse;           //Holds the average digitized single PE pulse
                                                    //Max amplitude is normalized to one 20 nsec pulses are simulated
   Float_t fAreaToPeakConversion;                   //the conversion factor from area to peak value for a single pe pulse.
@@ -115,6 +120,7 @@ class TraceGenerator {
   Float_t         fSamplingTime;                           //The sampling rate or resolution of the simulated trace
   Float_t         fSamplingTimeAveragePulse;               //The sampling time of the average PE pulse shape
   Float_t         fTraceLength;                            //the length of the simulated trace per group
+  Float_t         fStartSamplingBeforeAverageTime;         //The offset from the average photon arrival time, when the trace gets sampled
 
   //Afterpulsing
   Float_t fAPconstant;                             // values for afterpulsing from rate vs. threshold curve

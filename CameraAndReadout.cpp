@@ -678,7 +678,7 @@ int main( int argc, char **argv )
 	     //generate traces with trace generator
          Int_t telType = telData[tel]->GetTelescopeType();
 
-	   if(p%100==0)
+	   if(p%100==0 || p == readConfig->GetNumberOfPedestalEventsToStabilize())
 	     cout<<"RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
 
          telData[tel]->ResetTraces();
@@ -1081,7 +1081,13 @@ int main( int argc, char **argv )
 	 }
        
      }// Done looping over the events
-   
+
+   cout<<endl;
+      for(UInt_t t = 0 ; t<uNumTelescopeTypes; t++)
+     {
+       traceGenerator[t]->PrintHowOftenTheTraceWasTooShort();
+       fadc[t]->PrintHowOftenTheTraceWasTooShort();
+     } 
    cout<<"Close output file"<<endl;
 
    fOut->Close();

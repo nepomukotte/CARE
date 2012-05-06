@@ -125,6 +125,7 @@ class TriggerTelescopeNextNeighbor {
   vector<Float_t> *fTracesInSumGroupsConstantFraction;         //Stores the signal traces for each sumgroup
   vector<Float_t> *fTracesInSumGroupsNSBOnly;  //holds the NSB traces for each sumgroup
   Float_t fTraceLength;                   //the length of the simulated trace per group
+  Float_t fStartSamplingBeforeAverageTime; //the offset from the average photon arrival time when the trace starts to be sampled
   Float_t fSamplingTime;                //The sampling rate or resolution of the simulated trace
   Float_t fSamplingTimeAveragePulse;    //The sampling time of the average PE pulse shape
 
