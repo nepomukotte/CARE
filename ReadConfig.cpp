@@ -144,6 +144,7 @@ void ReadConfig::resetTelTypeVectors()
                                        //Fit function exp(a+b*x), where a=constant b=slope
   fSamplingTime.assign( iNumberOfTelescopeTypes, 0 );       //The sampling rate or resolution of the simulated trace
   fTraceLength.assign( iNumberOfTelescopeTypes, 0 );        //the length of the simulated trace per group
+  fStartSamplingBeforeAverageTime.assign( iNumberOfTelescopeTypes, 0 );    //Start sampling before the average photon arrival time
   //Cherenkovphoton throughput
 
 
@@ -322,6 +323,15 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
        
      
 
+
+     //The Start of sampling the Trace before the average photon arrival time
+     if( iline.find( "STARTSAMPLINGBEFOREAVERAGEPHOTONARRIVALTIME " ) < iline.size() )
+      {
+	i_stream >> i_char; i_stream >> i_char; 
+    i_stream >> i_telType;
+	i_stream >> fStartSamplingBeforeAverageTime[i_telType];
+	cout<<"Telescope type "<<i_telType<<" The sampling of the trace start ns "<<fStartSamplingBeforeAverageTime[i_telType]<<" before the average photon arrival time"<<endl;
+      }
 
      //Length of the trace
      if( iline.find( "TRACELENGTH " ) < iline.size() )

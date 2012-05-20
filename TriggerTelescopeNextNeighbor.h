@@ -80,7 +80,7 @@ class TriggerTelescopeNextNeighbor {
   Int_t iNumSumPixGroups;              //Holds the number of SumPixGroups
   vector< vector<int> > iSumGroupNeighbors;          //will hold the neighbors of each sumgroup;
   vector< vector<int> > iSumGroupMembers;            //will hold the members of each sumgroup;
-
+  vector< vector<int> > iPixelTriggeredInPatch;
   //Conversion factors
   Float_t fFADCSamplingWidth;          //the sampling time of the FADC in ns
   Float_t fFADCconversion;             //the mv to DC conversion factor of the FADC
@@ -125,6 +125,7 @@ class TriggerTelescopeNextNeighbor {
   vector<Float_t> *fTracesInSumGroupsConstantFraction;         //Stores the signal traces for each sumgroup
   vector<Float_t> *fTracesInSumGroupsNSBOnly;  //holds the NSB traces for each sumgroup
   Float_t fTraceLength;                   //the length of the simulated trace per group
+  Float_t fStartSamplingBeforeAverageTime; //the offset from the average photon arrival time when the trace starts to be sampled
   Float_t fSamplingTime;                //The sampling rate or resolution of the simulated trace
   Float_t fSamplingTimeAveragePulse;    //The sampling time of the average PE pulse shape
 

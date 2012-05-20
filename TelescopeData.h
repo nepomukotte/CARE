@@ -88,6 +88,7 @@ class TelescopeData {
   vector<Int_t>   iQDCInPixel;
 
   //Trigger related numbers
+  Float_t         fDiscriminatorThreshold;              
   Float_t         fTriggerTime;    
   vector<Bool_t> bTriggeredGroups;                      //holds the information whether a group has triggered or not;
   vector<Float_t> fDiscriminatorTime;                   //holds the time when the group has triggered;

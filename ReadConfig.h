@@ -24,6 +24,7 @@ class ReadConfig
   ReadConfig(TRandom3 *random);
   ~ReadConfig() {};
   Bool_t  ReadConfigFile( string iFile );
+  Float_t GetStartSamplingTimeOffsetFromAveragePhotonTime(UInt_t telType){ return fStartSamplingBeforeAverageTime[telType]; };
   Float_t GetTraceLength(UInt_t telType){ return fTraceLength[telType]; };
   Float_t GetSamplingTime(UInt_t telType){ return fSamplingTime[telType]; };
 
@@ -176,6 +177,7 @@ class ReadConfig
                                        //Fit function exp(a+b*x), where a=constant b=slope
   vector<Float_t>         fSamplingTime;       //The sampling rate or resolution of the simulated trace
   vector<Float_t>         fTraceLength;        //the length of the simulated trace per group
+  vector<Float_t>         fStartSamplingBeforeAverageTime;   //start of sampling the trace before the average photon arrival time
 
 
   //Array trigger configuration

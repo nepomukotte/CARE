@@ -31,6 +31,9 @@ FADC::FADC( ReadConfig *readConfig, TraceGenerator *traceGenerator, int telType,
 
   iTelType = telType;
 
+  iNumTimesOutOfAnalogueTraceUpperEnd = 0;
+  iNumTimesOutOfAnalogueTraceLowerEnd = 0;
+
   //Read the config file
   SetParametersFromConfigFile( readConfig );
   
@@ -105,18 +108,16 @@ void FADC::DigitizePixel( Int_t PixelID )
     for(int i =0;i<iFADCSamples*fFADCSamplingWidth/fTraceSamplingTime;i++)
       {
   	     Int_t  iPositionInAnalogTrace = (Int_t)
-	     (( fTimeStartFirstSample +  i * fTraceSamplingTime - (telData->fAveragePhotonArrivalTime - fTraceLength*0.5) ) 
+	     (( fTimeStartFirstSample +  i * fTraceSamplingTime - (telData->fAveragePhotonArrivalTime - fStartSamplingBeforeAverageTime) ) 
 	        / fTraceSamplingTime);
 
-	     if(iPositionInAnalogTrace==(Int_t)(telData->fTraceInPixel[PixelID].size()) )
-	       {
-	           cout<<endl<<"OutOfBound "<<PixelID<<" Out of bounds for analog trace "<<iPositionInAnalogTrace<<"  "<<telData->fTraceInPixel[PixelID].size()<<"  "<<i<<endl;
-	           cout<<"Simulate a longer analog trace at least a length of "<<fTimeStartFirstSample + iFADCSamples*fFADCSamplingWidth  -(telData->fAveragePhotonArrivalTime-fTraceLength*0.5) <<endl;
-			   cout<<endl<<"Pixel: "<<PixelID<<", samples in trace  "<<iFADCSamples*fFADCSamplingWidth/fTraceSamplingTime
-			        <<", time of first sample  "<<fTimeStartFirstSample<<", average photon arrival time "<<telData->fAveragePhotonArrivalTime<<endl;
-			   cout<<"E: "<<fenergy<<" Tel "<<ftelid<<" Zenith "<<fzenith<<" Az  "<<fazimuth<<endl<<endl;
-                          iPositionInAnalogTrace = iPositionInAnalogTrace  % (Int_t)telData->fTraceInPixel[PixelID].size();
-	       
+	     if(iPositionInAnalogTrace>=(Int_t)(telData->fTraceInPixel[PixelID].size()) )
+               {                         
+                   iPositionInAnalogTrace = iPositionInAnalogTrace  % (Int_t)telData->fTraceInPixel[PixelID].size();
+               }
+             else if(iPositionInAnalogTrace<0)
+               {
+                  iPositionInAnalogTrace = abs((Int_t)telData->fTraceInPixel[PixelID].size()-iPositionInAnalogTrace) % (Int_t)telData->fTraceInPixel[PixelID].size() ;                  
                }
 
 	     if( -1 * telData->fTraceInPixel[PixelID][iPositionInAnalogTrace] > LowGainthresholdInPE ) 
@@ -147,21 +148,42 @@ void FADC::DigitizePixel( Int_t PixelID )
 
     //Write the FADC trace
     Float_t fConversionFactor = fGain * fDCtoPEconversion  ;
+    bool outofbound = false;
     for(int i =0;i<iFADCSamples;i++)
       {
 	
 	    Int_t  iPositionInAnalogTrace = (Int_t)
-	      ( ( fTimeStartFirstSample +  i * fFADCSamplingWidth -(telData->fAveragePhotonArrivalTime-fTraceLength*0.5) ) 
+	      ( ( fTimeStartFirstSample +  i * fFADCSamplingWidth -(telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime) ) 
 	      / fTraceSamplingTime);
 
         //Float_t fAnalogValue = iPositionInAnalogTrace >= (Int_t)telData->fTraceInPixel[PixelID].size() ? 0 : trace[iPositionInAnalogTrace];   
 	   if(iPositionInAnalogTrace >= (Int_t)telData->fTraceInPixel[PixelID].size())
 		  {
-			  cout<<"something is wrong, this should never happen. The Analog trace is not long enough!!!!!"<<endl;
-			  cout<<"I am going back to the very beginning of the trace and record from there"<<cout;
-                          cout<<"Lets hope that there are no Cherenkv photons"<<endl;
+                       if(! outofbound && PixelID==1)
+                          {
+                            iNumTimesOutOfAnalogueTraceUpperEnd++;
+                            outofbound = true;
+	                    cout<<"Simulate a longer analog trace at least a length of "<<fTimeStartFirstSample + iFADCSamples*fFADCSamplingWidth  -(telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime) <<endl;
+			   cout<<endl<<"Pixel: "<<PixelID<<", samples in trace  "<<iFADCSamples*fFADCSamplingWidth/fTraceSamplingTime
+			        <<", time of first sample  "<<fTimeStartFirstSample<<", average photon arrival time "<<telData->fAveragePhotonArrivalTime<<endl;
+			    cout<<"E: "<<fenergy<<" Tel "<<ftelid<<" Zenith "<<fzenith<<" Az  "<<fazimuth<<endl<<endl;
+			    cout<<"I am going back to the very beginning of the trace and record from there"<<endl;
+                            cout<<"Lets hope that there are no Cherenkov photons"<<endl;
+                          }
                           iPositionInAnalogTrace = iPositionInAnalogTrace  % (Int_t)telData->fTraceInPixel[PixelID].size();
 		  }
+             else if(iPositionInAnalogTrace<0)
+               {
+                  if( !outofbound && PixelID==1 )
+                     {
+                       iNumTimesOutOfAnalogueTraceLowerEnd++;
+                       outofbound = true;
+                       cout<<endl<<"The readout start before sample 0. Wanted position in analog trace is "<<iPositionInAnalogTrace<<endl;
+                       cout<<"I go to the end of the trace and load the part of the trace there, hopefully there is only noise"<<endl;
+		       cout<<"E: "<<fenergy<<" Tel "<<ftelid<<" Zenith "<<fzenith<<" Az  "<<fazimuth<<endl<<endl;
+                     }
+                  iPositionInAnalogTrace = abs((Int_t)telData->fTraceInPixel[PixelID].size()-iPositionInAnalogTrace) % (Int_t)telData->fTraceInPixel[PixelID].size() ;                  
+               }
 	 
 	   Float_t fDigitizedValue =  -1 * trace[iPositionInAnalogTrace] * fConversionFactor + fPedestal;
 
@@ -233,6 +255,15 @@ void FADC::ShowTraceOfPixel(Int_t PixNum){
 
 }
 
+//----------------------------------------------------------------------------------------
+//  Prints how often the trace was too short
+void   FADC::PrintHowOftenTheTraceWasTooShort(){
+
+  cout<<"The trace was too short at the high end: "<<iNumTimesOutOfAnalogueTraceUpperEnd<<" times for the FADC"<<endl;
+  cout<<"The trace was too short at the lower end: "<<iNumTimesOutOfAnalogueTraceLowerEnd<<" times for the FADC"<<endl;
+
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Reads in  the config file and sets all variables
@@ -241,6 +272,7 @@ void  FADC::SetParametersFromConfigFile( ReadConfig *readConfig ){
    cout <<endl<< "FADC::SetParametersFromConfigFile " << endl;
 
    fTraceLength=-1;
+   fStartSamplingBeforeAverageTime=-1;
    fTraceSamplingTime=-1;
    fFADCSamplingWidth=-1;
    iFADCSamples=-1;
@@ -253,6 +285,9 @@ void  FADC::SetParametersFromConfigFile( ReadConfig *readConfig ){
 
    //Length of the trace
    fTraceLength = readConfig->GetTraceLength(iTelType);
+
+   //Offset from average photon arrival time
+    fStartSamplingBeforeAverageTime = readConfig->GetStartSamplingTimeOffsetFromAveragePhotonTime(iTelType);
 
    //Width of one sample  of the trace
    fTraceSamplingTime = readConfig->GetSamplingTime(iTelType);
@@ -284,6 +319,7 @@ void  FADC::SetParametersFromConfigFile( ReadConfig *readConfig ){
     cout<<endl<<"FADC settings"<<endl;
     cout<<"-------------"<<endl;
 	cout<<"Trace length in ns set to "<<fTraceLength<<endl;
+        cout<<"The analog trace starts to be sampled "<<fStartSamplingBeforeAverageTime<<" ns before the average photon arrival time"<<endl;
 	cout<<"Width of one sample in ns of the Trace set to "<<fTraceSamplingTime<<endl;
 	cout<<"The sampling time of the FADC in ns is: "<<fFADCSamplingWidth<<endl;
 	cout<<"The number of FADC samples is: "<<iFADCSamples<<endl;

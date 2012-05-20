@@ -39,13 +39,16 @@ TraceGenerator::TraceGenerator( ReadConfig *readConfig , int telType, TRandom3 *
   bCrosstalk = kFALSE;                    //Use crosstalk between pixel
   fCrosstalk = 0.0;                    //Crosstalk value
 
+  NumTraceIsTooShortLowEnd=0;
+  NumTraceIsTooShortHighEnd=0;
   
   fSamplingTime = -1;
   fSamplingTimeAveragePulse = -1; //sampling time of the average PE pulse
   fNSBRatePerPixel = -1; 
   fStopTimeAveragePulse = 35; //time in ns 
   fStartTimeAveragePulse = 5; //time in ns 
-  fTraceLength = 15; //Length of simulated trace in ns
+  fTraceLength = 100; //Length of simulated trace in ns
+  fStartSamplingBeforeAverageTime=30;
   iNumSamplesAverageSinglePEPulse=-1; 
   bAfterPulsing = kFALSE;
   fFWHMofSinglePEPulse = -1;
@@ -127,12 +130,17 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
   if(bDebug)
   cout<<"Min, Average, Max photon arrival time "<<fMinPhotonArrivalTime<<"  "<<telData->fAveragePhotonArrivalTime<<"  "<<fMaxPhotonArrivalTime<<endl;
 
-   if(telData->fAveragePhotonArrivalTime-fMinPhotonArrivalTime > telData->iNumSamplesPerTrace*fSamplingTime*0.5
-      || fMaxPhotonArrivalTime - telData->fAveragePhotonArrivalTime > telData->iNumSamplesPerTrace*fSamplingTime*0.5 )
-    {
-      cout<<endl<<"Ups the trace is not long enough to host all Cherenkov Photons"<<endl;
-      cout<<"We have "<<iNumSamplesPerTrace*fSamplingTime<<" ns, but we need "<<fMaxPhotonArrivalTime-fMinPhotonArrivalTime<<endl; 
+   if(telData->fAveragePhotonArrivalTime-fMinPhotonArrivalTime > fStartSamplingBeforeAverageTime)
+      NumTraceIsTooShortLowEnd++;
+   if(fMaxPhotonArrivalTime - telData->fAveragePhotonArrivalTime > telData->iNumSamplesPerTrace*fSamplingTime-fStartSamplingBeforeAverageTime )
+     NumTraceIsTooShortHighEnd++;
+
+    /*{
+      cout<<endl<<"Ups the trace is not long enough to save all Cherenkov Photons"<<endl;
+      cout<<telData->fAveragePhotonArrivalTime-fMinPhotonArrivalTime<<"  "<<fMaxPhotonArrivalTime - telData->fAveragePhotonArrivalTime <<endl;
+      cout<<"We have "<<telData->iNumSamplesPerTrace*fSamplingTime<<" ns, but we need "<<fMaxPhotonArrivalTime-fMinPhotonArrivalTime<<endl; 
     }
+*/
 
   //Load Cherenkov photons into the traces of each summed group
   for(UInt_t p=0; p<v_f_time->size(); p++)
@@ -143,7 +151,7 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
 
 
       if(bDebug)
-        cout<<"Photon "<<p<<" position: "<<fx<<"  "<<fy<<endl;
+        cout<<endl<<"Photon "<<p<<" position: "<<fx<<"  "<<fy<<endl;
 
       //add smearing of photon position in focal plane
       if(telData->bBlurPSF==kTRUE)
@@ -176,9 +184,10 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
            //QE includes the winston cone and the cherenkov scaling factor, see function that
            //writes qe[]
            Float_t eff = qe[lambda]*telData->fRelQEwWC[pixID]/dEfficiencyFactor;
-		   //cout<<"eff: "<<eff<<" lambda "<<lambda<<"  qe[lambda] "<<qe[lambda]<<" telData->fRelQEwWC[pixID] "<<telData->fRelQEwWC[pixID]<<endl;
-           if(rand->Uniform()<eff);
-	          AddPEToTrace(pixID, v_f_time->at(p)-telData->fAveragePhotonArrivalTime+fTraceLength*0.5);
+           if(bDebug)
+ 	   cout<<"eff: "<<eff<<" lambda "<<lambda<<"  qe[lambda] "<<qe[lambda]<<" telData->fRelQEwWC[pixID] "<<telData->fRelQEwWC[pixID]<<" efficiency factor: "<<dEfficiencyFactor<<endl;
+           if(rand->Uniform()<eff)
+	          AddPEToTrace(pixID, v_f_time->at(p)-(telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime)); //Start filling fStartSamplingBeforeAverageTime ns before the average time
 	    }
     }
 
@@ -877,7 +886,7 @@ void   TraceGenerator::SetLowGainSinglePEShapeFromFile(TString sfilename)
 //----------------------------------------------------------------------------------------
 //
 //and the sampling stepwidth
-void TraceGenerator::SetTraceSampleWidthAndLength(Float_t t,Float_t length)
+void TraceGenerator::SetTraceSampleWidthAndLength(Float_t t,Float_t length,Float_t offset)
 {
 
   if(t<fSamplingTimeAveragePulse)
@@ -892,10 +901,17 @@ void TraceGenerator::SetTraceSampleWidthAndLength(Float_t t,Float_t length)
       exit(0);
     }
 
+  if(length<offset)
+    {
+      cout<<"You want to simulate a trace that is less than "<<offset<<"ns long. This is less then the time the trace gots sampled before the average photon arrival time. I suggest you do at least 100ns. Right now you want to simulated "<<length<<" ns"<<endl;
+      exit(0);
+    }
+
  fSamplingTime = t;
 
  fTraceLength=length;
 
+ fStartSamplingBeforeAverageTime=offset;
 
 };
 
@@ -990,6 +1006,14 @@ void TraceGenerator::SetSigmaofSinglePEPulseHeightDistribution(Float_t sigma)
 
 }
 
+//----------------------------------------------------------------------------------------
+//  Prints how often the trace was too short
+void   TraceGenerator::PrintHowOftenTheTraceWasTooShort(){
+
+  cout<<"The trace was too short on the low end: "<<NumTraceIsTooShortLowEnd<<" times"<<endl;
+  cout<<"The trace was too short on the high end: "<<NumTraceIsTooShortHighEnd<<" times"<<endl;
+
+}
 
 
 
@@ -1009,7 +1033,7 @@ void   TraceGenerator::SetParametersFromConfigFile(ReadConfig *readConfig){
   SetSigmaofSinglePEPulseHeightDistribution(readConfig->GetSigmaofSinglePEPulseHeightDistribution(iTelType));
  
 
-  SetTraceSampleWidthAndLength(readConfig->GetSamplingTime(iTelType),readConfig->GetTraceLength(iTelType));
+  SetTraceSampleWidthAndLength(readConfig->GetSamplingTime(iTelType),readConfig->GetTraceLength(iTelType),readConfig->GetStartSamplingTimeOffsetFromAveragePhotonTime(iTelType));
                                             
 
   Float_t fFWHMofSinglePEPulse = readConfig->GetFWHMofSinglePEPulse(iTelType);

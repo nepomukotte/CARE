@@ -124,7 +124,7 @@ TGeoTranslation *tr = new TGeoTranslation(xPixelCoord,yPixelCoord, 0.);
 	 {
 		float xc = vXCoordModule[m] + vXCoordPixelInModule[p];
 		float yc = vYCoordModule[m] + vYCoordPixelInModule[p];
-		 *fConfigFile <<"* PMPIX "<<iTelID<<" "<<uPixID<<" "<<setw(10)<< setprecision(5)<<xc<<"   "<<yc<<" "<<fPixelPitch*10<<endl;
+		 *fConfigFile <<"* PMPIX "<<iTelID<<" 0  "<<uPixID<<" "<<setw(10)<< setprecision(5)<<xc<<"   "<<yc<<" "<<fPixelPitch*10<<" 0.0"<<endl;
 		vXCoordPixel.push_back(xc);
 		vYCoordPixel.push_back(yc);
 		uPixID++;
@@ -161,7 +161,7 @@ TGeoTranslation *tr = new TGeoTranslation(xPixelCoord,yPixelCoord, 0.);
 			   nghbrIDs.push_back(np);
 	   }
 
-	   *fConfigFile<<"* NEIGHBR "<<iTelID<<"  "<<p<<"  "<<nghbrIDs.size();
+	   *fConfigFile<<"* PIXNGHBR "<<iTelID<<"  "<<p<<"  "<<nghbrIDs.size();
 	   
        for(UInt_t np=0;np<nghbrIDs.size();np++)
               *fConfigFile<<"  "<<nghbrIDs[np];
@@ -222,7 +222,6 @@ TGeoTranslation *tr = new TGeoTranslation(xPixelCoord,yPixelCoord, 0.);
 	   {
 		   if(fabs(vXCoordGroup[ng]-xg)<=(sqrt(iNSummedPixel)+1)*fPixelPitch*10 && fabs(vYCoordGroup[ng]-yg)<=(sqrt(iNSummedPixel)+1)*fPixelPitch*10 && ng!=g )
 			   nghbrIDs.push_back(ng);
-			   cout<<"c"<<endl;
 	   }
 	   *fConfigFile<<"* GRPNGHBR "<<iTelID<<"  "<<g<<"  "<<nghbrIDs.size();
 	   

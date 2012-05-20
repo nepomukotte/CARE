@@ -24,10 +24,12 @@ class Display {
  public:
  
   Display( int argc, char **argv,ReadConfig *readConfig);
+  void ShowSelectedDiscriminatorPixels();
   void Show(int TelID, int pixel  );
   void SetTelescopeData(TelescopeData **AllTelescopes){ allTelData = AllTelescopes;};
   void AddCanvas(TCanvas *c);
-
+  void AddDiscriminatorTraces(int TelID, int triggerpixel,float threshold,TH1F hThresholdTrace,TH1F hCFDTrace);
+  void ResetTriggerTraces();
  protected:
 
  void MakeCameraParameterPlots();
@@ -43,6 +45,12 @@ class Display {
  TelescopeData **allTelData;
  vector<TCanvas*> vCanvasesToShow;
  vector<TCanvas*> vTelParCanvases;
+
+ vector<float>  vDiscThreshold;
+ vector<int>  vDiscTelID;
+ vector<int>  vDiscPixel;
+ vector<TH1F> vHCFDTrace;
+ vector<TH1F> vHThreshTrace;
 
 };
 

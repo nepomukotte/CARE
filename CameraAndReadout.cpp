@@ -678,7 +678,7 @@ int main( int argc, char **argv )
 	     //generate traces with trace generator
          Int_t telType = telData[tel]->GetTelescopeType();
 
-	   if(p%100==0)
+	   if(p%100==0 || p == readConfig->GetNumberOfPedestalEventsToStabilize())
 	     cout<<"RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
 
          telData[tel]->ResetTraces();
@@ -821,6 +821,8 @@ int main( int argc, char **argv )
 	     }
 	   else
 	     {
+               if(DEBUG_TELTRIGGER)
+               display->ResetTriggerTraces();
 	       //Loop over the telescopes and see if they have triggered
 	       for(UInt_t n = 0; n<uNumTelescopes; n++)
 		 {   
@@ -870,17 +872,19 @@ int main( int argc, char **argv )
 	       if(DEBUG_MAIN)
 		   cout<<"run trigger"<<endl;
            Teltrigger[telType]->RunTrigger();
+           
 
 		   // Teltrigger->ShowTrace(0,0);
 
 	       if(DEBUG_MAIN)
 		   cout<<"done trigger, RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
 
-           fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
-		   vGroupsInTriggerCluster[n] = telData[n]->GetTriggerCluster();
-		   GroupTriggerBits[n] =  telData[n]->GetTriggeredGroups();
-		   vTelescopeTriggerBits[n]=telData[n]->GetTelescopeTrigger();
-		 } //end looping over telescopes doing trigger
+              fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
+  	      vGroupsInTriggerCluster[n] = telData[n]->GetTriggerCluster();
+	      GroupTriggerBits[n] =  telData[n]->GetTriggeredGroups();
+	      vTelescopeTriggerBits[n]=telData[n]->GetTelescopeTrigger();
+
+	} //end looping over telescopes doing trigger
        
      
 	       //Go into the array trigger                       
@@ -905,7 +909,13 @@ int main( int argc, char **argv )
 		   
 		   if(DEBUG_MAIN)
 		     cout<<"Array triggered"<<endl<<endl;
-		   
+	
+                   if(DEBUG_TELTRIGGER)
+                    {
+                       display->ShowSelectedDiscriminatorPixels();
+                    }
+                   
+	   
 		   //Readout Telescopes
 		   for(UInt_t l =0 ; l<uNumTelescopes; l++)
 		     {
@@ -1081,7 +1091,13 @@ int main( int argc, char **argv )
 	 }
        
      }// Done looping over the events
-   
+
+   cout<<endl;
+      for(UInt_t t = 0 ; t<uNumTelescopeTypes; t++)
+     {
+       traceGenerator[t]->PrintHowOftenTheTraceWasTooShort();
+       fadc[t]->PrintHowOftenTheTraceWasTooShort();
+     } 
    cout<<"Close output file"<<endl;
 
    fOut->Close();

@@ -44,7 +44,8 @@ TriggerTelescopeNextNeighbor::TriggerTelescopeNextNeighbor(ReadConfig *readConfi
   iMultiplicity = -1;
   fSamplingTime = -1;
   fSamplingTimeAveragePulse = -1; //sampling time of the average PE pulse
-  fTraceLength = 15; //Length of simulated trace in ns
+  fTraceLength = 100; //Length of simulated trace in ns
+  fStartSamplingBeforeAverageTime = 30;
 
   lZeroCrossings = 0;               //holds the number of zerocrossings for one event counted over all pixels in the camera
   lNumEvents = 0;   
@@ -103,8 +104,8 @@ TH1F TriggerTelescopeNextNeighbor::GetTraceHistogramThreshold(int GroupID, bool 
   TString title;
   title.Form("Trace in pixel %i",GroupID);
   TH1F hTrace ("hTrace",title,
-	       telData->iNumSamplesPerTrace+1,telData->fAveragePhotonArrivalTime-fTraceLength*0.5-fSamplingTime*0.5,
-	       telData->fAveragePhotonArrivalTime+fTraceLength*0.5+fSamplingTime*0.5);
+	       telData->iNumSamplesPerTrace+1,telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime-fSamplingTime*0.5,
+	       telData->fAveragePhotonArrivalTime+fTraceLength-fStartSamplingBeforeAverageTime+fSamplingTime*0.5);
   hTrace.GetXaxis()->SetTitle("Time [ns]");
   hTrace.GetYaxis()->SetTitle("Amplitude [mV]");
 	     
@@ -125,8 +126,8 @@ TH1F TriggerTelescopeNextNeighbor::GetTraceHistogramCFD(int GroupID){
   TString title;
   title.Form("Trace in pixel %i",GroupID);
   TH1F hTraceCFD("hTraceCFD",title,
-		    telData->iNumSamplesPerTrace+1,telData->fAveragePhotonArrivalTime-fTraceLength*0.5-fSamplingTime*0.5,
-					      telData->fAveragePhotonArrivalTime+fTraceLength*0.5+fSamplingTime*0.5);
+		    telData->iNumSamplesPerTrace+1,telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime-fSamplingTime*0.5,
+					      telData->fAveragePhotonArrivalTime+fTraceLength-fStartSamplingBeforeAverageTime+fSamplingTime*0.5);
   hTraceCFD.GetXaxis()->SetTitle("Time [ns]");
   hTraceCFD.GetYaxis()->SetTitle("Amplitude [mV]");
 	     
@@ -139,6 +140,7 @@ TH1F TriggerTelescopeNextNeighbor::GetTraceHistogramCFD(int GroupID){
  return hTraceCFD;
 
 }
+
 
 void TriggerTelescopeNextNeighbor::ShowTrace(int GroupID, bool NSBOnly){
 
@@ -159,8 +161,8 @@ void TriggerTelescopeNextNeighbor::ShowTrace(int GroupID, bool NSBOnly){
 	hTrace.Draw();
 	hTraceCFD.Draw("same");
     
-    TLine lDisc(telData->fAveragePhotonArrivalTime-fTraceLength*0.5-fSamplingTime*0.5,fDiscThreshold,
-	         telData->fAveragePhotonArrivalTime+fTraceLength*0.5+fSamplingTime*0.5, fDiscThreshold);
+    TLine lDisc(telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime-fSamplingTime*0.5,fDiscThreshold,
+	         telData->fAveragePhotonArrivalTime+fTraceLength-fStartSamplingBeforeAverageTime+fSamplingTime*0.5, fDiscThreshold);
 	lDisc.Draw();
 
 	TTimer timer("gSystem->ProcessEvents();", 50, kFALSE);
@@ -268,17 +270,21 @@ Bool_t  TriggerTelescopeNextNeighbor::RunTrigger()
 
   //  cout<<"Done with the CFD"<<endl<<endl;
 
+  telData->vTriggerCluster.clear();
   //Below is the L2 simulation.
    if(bUsePatches==kFALSE)
      {
       if(bDebug)
        cout<<"Not using trigger patches in the simulation"<<endl;
+      iPixelTriggeredInPatch.resize(1);
       telData->bTelescopeHasTriggered =  RunL2Patch(0,&(telData->fTelescopeTriggerTime));//important, first argument has to be 0
+      telData->vTriggerCluster = iPixelTriggeredInPatch[0];
      }   
    else //If we use patches
      {
       if(bDebug)
        cout<<"Using trigger patches in the simulation"<<endl;
+       iPixelTriggeredInPatch.resize(vPatch.size());
        telData->bTelescopeHasTriggered = RunL2WithPatches();
      }
 
@@ -312,17 +318,22 @@ Bool_t  TriggerTelescopeNextNeighbor::RunL2WithPatches()
   TMath::Sort((Int_t)vPatch.size(),fPatchTriggertimes,indext,kFALSE);
   telData->fTelescopeTriggerTime = fPatchTriggertimes[ indext[0] ];
 
+
+
   delete [] fPatchTriggertimes;
                          
   //cout<<"Done with patches"<<endl;
 
   Bool_t triggered = bPatchTrigger[ indext[0] ];
 
-  if(bDebug && triggered == kTRUE)
+  if(triggered == kTRUE)
    {
+      telData->vTriggerCluster = iPixelTriggeredInPatch[ indext[0] ];
+      if(bDebug)
+       {
 	cout<<"we triggered: "<<triggered<<"; Patch that triggered: "<<indext[0]<<"  out of a total of "<<vPatch.size()<<" Patches"<<endl;
 	cout<<"Trigger time: "<<telData->fTelescopeTriggerTime<<"; Patch that triggered: "<<indext[0]<<"  out of a total of "<<vPatch.size()<<" Patches"<<endl;
-    
+       }
    }
 
   delete [] indext;
@@ -435,8 +446,8 @@ Bool_t  TriggerTelescopeNextNeighbor::RunL2Patch(Int_t PatchNumber,Float_t *fPat
   //which can be retrieved with GetTriggerCluster()
   //cout<< vGroupsInCluster->at(index[tmin]).size()<<endl;
   //cout<<(telData->vTriggerCluster).size()<<endl;
-  telData->vTriggerCluster = vGroupsInCluster->at(index[tmin]);
-  //cout<<"Have transferred the TriggerCluster"<<endl;
+  iPixelTriggeredInPatch[PatchNumber]=vGroupsInCluster->at(index[tmin]);
+  //cout<<"Have transferred the TriggerCluster"<<telData->vTriggerCluster.size()<<endl;
   //Now trigger if we have enough groups in the largest cluster
  
 
@@ -523,7 +534,7 @@ Bool_t TriggerTelescopeNextNeighbor::RunDiscriminator(Int_t GroupID)
 	  //In case both discriminators are firing we have a trigger
 	   if( bCFDOut && fsignal<=fDiscThreshold &&  telData->bTriggeredGroups[GroupID] == kFALSE ) 
              {
-	      telData->fDiscriminatorTime[GroupID] = i*fSamplingTime-fTraceLength*0.5;
+	      telData->fDiscriminatorTime[GroupID] = i*fSamplingTime-fStartSamplingBeforeAverageTime;
 	      telData->bTriggeredGroups[GroupID] = kTRUE;
 
 	    }
@@ -534,8 +545,8 @@ Bool_t TriggerTelescopeNextNeighbor::RunDiscriminator(Int_t GroupID)
      if(bDebug && telData->bTriggeredGroups[GroupID] == kTRUE)
       {
         cout<<"Trace on which the discriminator was run and triggered; groupid "<<GroupID<<endl;
-        //debugDisplay->Show(telData->GetTelescopeID(),GroupID);
-	    //ShowTrace(GroupID, false);
+        debugDisplay->AddDiscriminatorTraces(telData->GetTelescopeID(),GroupID,fDiscThreshold,GetTraceHistogramThreshold(GroupID,false),GetTraceHistogramCFD(GroupID));
+
       }
 
     return telData->bTriggeredGroups[GroupID];
@@ -675,7 +686,7 @@ void TriggerTelescopeNextNeighbor::RunBiasCurve(UInt_t Trials,Float_t LowerBound
        cout<<"Lower boundary: "<<LowerBoundary<<" upper boundary: "<<UpperBoundary<<" Step: "<<StepWidth<<" being at "<<LowerBoundary+StepWidth*t<<endl;
 	  SetDiscriminatorThresholdAndWidth(LowerBoundary+StepWidth*t,fWidthDiscriminator);
 	  RunTrigger();
-      cout<<"Number of groups that triggered "<<telData->GetNumTriggeredGroups()<<endl;
+      //cout<<"Number of groups that triggered "<<telData->GetNumTriggeredGroups()<<endl;
   	  if( telData->GetNumTriggeredGroups()!=0 )
 	    {
 	      fGroupRateVsThreshold[t]+=telData->GetNumTriggeredGroups();
@@ -815,6 +826,10 @@ void   TriggerTelescopeNextNeighbor::SetParametersFromConfigFile(ReadConfig *rea
    //Trace length in ns
    fTraceLength = readConfig->GetTraceLength(iTelType);
    cout<<"The analog trace is "<<fTraceLength<<" ns long"<<endl;
+
+   //Offset from average photon arrival time
+   fStartSamplingBeforeAverageTime = readConfig->GetStartSamplingTimeOffsetFromAveragePhotonTime(iTelType);
+   cout<<"The analog trace starts to be sampled "<<fStartSamplingBeforeAverageTime<<" ns before the average photon arrival time"<<endl; 
 
    //Width of one sample  of the trace
    fSamplingTime = readConfig->GetSamplingTime(iTelType);

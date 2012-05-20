@@ -25,6 +25,10 @@ class FADC {
 
   void SetDebugInfo(Float_t energy, Int_t telid, Float_t zenith, Float_t azimuth);
 
+  void     PrintHowOftenTheTraceWasTooShort();
+
+
+
  protected:
 
   void DigitizePixel( Int_t PixelID );
@@ -46,6 +50,9 @@ class FADC {
 
   Int_t iNumPixels;                                //Number of pixels in the camera 
 
+  Int_t iNumTimesOutOfAnalogueTraceUpperEnd;
+  Int_t iNumTimesOutOfAnalogueTraceLowerEnd;
+
   //Single PE pulse shape parameters
   Float_t fDCtoPEconversion;                       //the gain calibration constant DC per PE; defined for the amplitude of a single pe pulse
 
@@ -64,6 +71,7 @@ class FADC {
    
   Float_t fTraceSamplingTime;                     //The sampling time steps for the analog trace
   Float_t fTraceLength;                           //The total length of an analog trace
+  Float_t fStartSamplingBeforeAverageTime;        //the time before the average photon arrival time when the trace gets started to be sampled
 
   //Make Function that allows to scan the position of the Cherenkov pulse in the Trace
   Float_t fenergy;

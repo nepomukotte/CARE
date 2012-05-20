@@ -56,6 +56,82 @@ Bool_t Display::HandleInput()
   return kFALSE;
 }
 
+void Display::ResetTriggerTraces()
+{
+ vDiscThreshold.clear();
+ vDiscTelID.clear();
+ vDiscPixel.clear();
+ vHCFDTrace.clear();
+ vHThreshTrace.clear();
+}
+
+
+//Add one discriminator pixel that is supposed to be displayed
+void Display::AddDiscriminatorTraces(int TelID, int triggerpixel,float threshold, TH1F hThresholdTrace,TH1F hCFDTrace)
+{
+   //Add the two histograms to a vector of histograms
+   vDiscThreshold.push_back(threshold);
+   vDiscTelID.push_back(TelID);
+   vDiscPixel.push_back(triggerpixel);
+   vHCFDTrace.push_back(hCFDTrace);
+   vHThreshTrace.push_back(hThresholdTrace);
+}
+
+void Display::ShowSelectedDiscriminatorPixels()
+{
+   vector<TCanvas*> vCanvases;
+   vector<TLine> vThreshLvls;
+   vThreshLvls.resize(vDiscPixel.size());
+   for(int t=0;t<configuration->GetNumberOfTelescopes();t++)
+    {
+     TString title;
+     title.Form("cDisc%i",t);
+     vCanvases.push_back(new TCanvas(title.Data(),"Traces selected from Discriminator",1000,500));
+     title.Form("Traces selected from Discriminator for Telescope %i",t);
+     vCanvases[t]->SetTitle(title.Data());
+     cout<<"Pixel that triggered Telescope "<<t<<endl;
+     vector<int> trigclust = allTelData[t]->GetTriggerCluster();
+     vCanvases[t]->Divide(5,(trigclust.size()-1)/5+1);
+     int iPix=0;
+     for(unsigned i=0;i<trigclust.size();i++)
+      {  
+        cout<<trigclust[i]<<", ";
+
+        for(unsigned p=0;p<vDiscPixel.size();p++)
+          {
+            if(vDiscPixel[p]==trigclust[i] && vDiscTelID[p]==t)
+              {
+                cout<<iPix<<" plotting "<<vDiscPixel[p]<<" telescope "<<vDiscTelID[p]<<endl;
+                vCanvases[t]->cd(iPix+1);
+                gPad->SetGrid();
+                vHThreshTrace[p].SetMaximum(vHCFDTrace[p].GetMaximum()>vHThreshTrace[p].GetMaximum() ? 
+                                  vHCFDTrace[p].GetMaximum()+10:vHThreshTrace[p].GetMaximum()+10 );
+                vHThreshTrace[p].SetMinimum(vHCFDTrace[p].GetMinimum()<vHThreshTrace[p].GetMinimum() ? 
+                                  vHCFDTrace[p].GetMinimum()-10:vHThreshTrace[p].GetMinimum()-10 );
+
+                vHThreshTrace[p].Draw();
+                vHCFDTrace[p].Draw("same");
+                //cout<<vHThreshTrace[i].GetBinLowEdge(1)<<"  "<<vHThreshTrace[i].GetBinLowEdge(vHThreshTrace[i].GetNbinsX())<<" "<<vDiscThreshold[i]<<endl;
+                vThreshLvls[p]=TLine(vHThreshTrace[i].GetBinLowEdge(1),vDiscThreshold[i],
+	        vHThreshTrace[p].GetBinLowEdge(vHThreshTrace[i].GetNbinsX()), vDiscThreshold[i]);
+                vThreshLvls[p].Draw();
+                iPix++;
+               }
+    
+      
+    }
+      }
+     cout<<endl<<endl;
+  }
+
+  //hold the code;
+  TTimer timer("gSystem->ProcessEvents();", 50, kFALSE);
+  timer.TurnOn();
+  TString input = Getline("Type <return> to go on: ");
+  timer.TurnOff();
+  vCanvases.clear();
+}
+
 void Display::Show(int TelID = 0,int PixID = 0 )
 {
     cout<<"Showing TelID "<<TelID<<"  Pixel: "<<PixID<<endl;

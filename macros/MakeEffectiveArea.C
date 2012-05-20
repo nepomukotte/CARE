@@ -1,4 +1,4 @@
-void MakeEffectiveArea(string directory,double radius = 750,double zd = 20.)
+void MakeEffectiveArea(string directory,double radius = 750)
 {
 
   gStyle->SetOptStat(0);
@@ -44,6 +44,8 @@ void MakeEffectiveArea(string directory,double radius = 750,double zd = 20.)
 
  TH1D *hRadialEventDistr = new TH1D("hRadialEventDistr","Radial Event distribution",200,0,1000);
 
+ TH1D *hGroupsTriggered = new TH1D("hGroupsTriggered","Nummber of triggered groups in triggere cluster",500,0,499);
+
  for(int i =0;i<vFiles.size();i++)
    {
      stringstream fnamestream;
@@ -70,14 +72,24 @@ void MakeEffectiveArea(string directory,double radius = 750,double zd = 20.)
 
      Float_t energy;
      t->SetBranchAddress("energy", &energy );
-     Char_t arrayTriggerBit;
+//     Bool_t arrayTriggerBit;
+// tSimulatedEvents.Branch("arrayTriggerBit",&arrayTriggerBit,"arrayTriggerBit/B");
+    Char_t arrayTriggerBit;
      t->SetBranchAddress("arrayTriggerBit", &arrayTriggerBit);
      Float_t xcore;
      t->SetBranchAddress("xcore", &xcore);
      Float_t ycore;
      t->SetBranchAddress("ycore", &ycore);
+     TString namevar;
+     namevar.Form("vGroupsInTriggerClusterTel0");
+     std::vector< int > *vGroupsInTriggerCluster=0;
+     TBranch *b_vGroupsInTriggerCluster;
+     t->SetBranchAddress(namevar.Data(),&vGroupsInTriggerCluster,&b_vGroupsInTriggerCluster);
+     std::vector< Bool_t > *vTelescopeTriggerBits=0 ;
+     TBranch *b_vTelescopeTriggerBits;
+     t->SetBranchAddress("vTelescopeTriggerBits",&vTelescopeTriggerBits,&b_vTelescopeTriggerBits);
 
-     //Looping over events in File
+     //Looping ove)r events in File
      for( int n = 0; n < t->GetEntries() ; n++ )
        {
 	 
@@ -87,11 +99,13 @@ void MakeEffectiveArea(string directory,double radius = 750,double zd = 20.)
 	 
 	 if( arrayTriggerBit == 1)
 	   {
+             if((Bool_t)(vTelescopeTriggerBits->at(0)) == 1)
+                 hGroupsTriggered->Fill(vGroupsInTriggerCluster->size());
 	     hTriggered->Fill(log10(energy));
 	     Float_t r = sqrt(xcore*xcore+ycore*ycore);
 	     //cout<<radius<<endl;
 	     if(r!=0);
-	     hRadialEventDistr->Fill(ycore);//,1/(TMath::Pi()*radius*radius))
+	     hRadialEventDistr->Fill(r);//,1/(TMath::Pi()*radius*radius))
 	   }
 
        }//end looping over events in file
@@ -110,8 +124,10 @@ void MakeEffectiveArea(string directory,double radius = 750,double zd = 20.)
 
      if(dNEvents!=0)
        {
+	 //hEffArea->SetBinContent(i,dTriggered/dNEvents);
 	 hEffArea->SetBinContent(i,dTriggered/dNEvents*radius*radius*TMath::Pi());
 	 hEffArea->SetBinError(i,sqrt(dTriggered)/dNEvents*radius*radius*TMath::Pi());
+	 //hEffArea->SetBinError(i,sqrt(dTriggered)/dNEvents);
        }
      else
         hEffArea->SetBinContent(i,0);
@@ -127,4 +143,14 @@ void MakeEffectiveArea(string directory,double radius = 750,double zd = 20.)
  TCanvas *cRadialDistribution = new TCanvas("cRadialDistribution","",800,500);
  cRadialDistribution->Draw();
  hRadialEventDistr->Draw();
+
+ TCanvas *cothers = new TCanvas("cothers","",1000,500);
+ cothers->Divide(2,2);
+ cothers->cd(1);
+hTriggered->Draw();
+ cothers->cd(2);
+hEvents->Draw();
+cothers->cd(3);
+hGroupsTriggered->Draw();
+ 
 }
