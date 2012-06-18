@@ -249,7 +249,7 @@ Bool_t  TriggerTelescopeNextNeighbor::RunTrigger()
     lZeroCrossings += GetNumZeroCrossings();
     lNumEvents++;
 
-    //cout<<"Have done the zerocrossings "<<lZeroCrossings<<endl;
+//    cout<<"Have done the zerocrossings "<<lZeroCrossings<<endl;
 
     //Set the updated RFB feedback
     if(bDiscRFBUsage)
@@ -258,7 +258,6 @@ Bool_t  TriggerTelescopeNextNeighbor::RunTrigger()
 	  cout<<lNumEvents<<" RFB dynamic value  "<<fDiscRFBConstant * lZeroCrossings /(lNumEvents* (fTraceLength-fDiscDelay)*1e-3*iNumSumPixGroups)<<endl;
        SetDiscriminatorRFBDynamic(fDiscRFBConstant * lZeroCrossings /(lNumEvents* (fTraceLength-fDiscDelay)*1e-3*iNumSumPixGroups));
       }
-
 
    //Run the CFD simulation
    telData->iNumTriggeredGroups=0;
@@ -285,8 +284,8 @@ Bool_t  TriggerTelescopeNextNeighbor::RunTrigger()
       if(bDebug)
        cout<<"Using trigger patches in the simulation"<<endl;
        iPixelTriggeredInPatch.resize(vPatch.size());
-       telData->bTelescopeHasTriggered = RunL2WithPatches();
-     }
+ telData->bTelescopeHasTriggered = RunL2WithPatches();
+}
 
    
   if(telData->bTelescopeHasTriggered && bDebug)
@@ -304,7 +303,7 @@ Bool_t  TriggerTelescopeNextNeighbor::RunTrigger()
 // An L2 trigger that does care about patches
 Bool_t  TriggerTelescopeNextNeighbor::RunL2WithPatches()
 {
-   //cout<<"Patches"<<endl;
+  // cout<<"Patches"<<endl;
   //Go over all patches and find those which would fullfil the trigger conditions
   vector< Bool_t > bPatchTrigger(vPatch.size(),kFALSE);
   Float_t *fPatchTriggertimes = new Float_t[vPatch.size()];
@@ -347,7 +346,7 @@ Bool_t  TriggerTelescopeNextNeighbor::RunL2WithPatches()
 // An L2 trigger that does care about patches
 Bool_t  TriggerTelescopeNextNeighbor::RunL2Patch(Int_t PatchNumber,Float_t *fPatchTriggerTimes)
 {
-  if(bDebug)
+ if(bDebug)
   cout<<"Running L2 Patch "<<PatchNumber<<endl;
 
   if(iClusterID)
@@ -567,10 +566,8 @@ Int_t TriggerTelescopeNextNeighbor::CalcCluster(Int_t GroupID, Int_t ClusterID, 
   // If we have visited this group in this round ... do nothing.
   if (iClusterID[GroupID]==ClusterID)
     return 0;
-
   // Assign the new cluster ID this Group
   iClusterID[GroupID]=ClusterID;
-
   //Put the group in the list of groups that belong to this cluster centered around the group with ID ClusterID
   vGroupsInCluster->at(ClusterID).push_back(GroupID);
   
@@ -595,7 +592,6 @@ Int_t TriggerTelescopeNextNeighbor::CalcCluster(Int_t GroupID, Int_t ClusterID, 
            && GroupInPatch(GroupIDNeighbor,PatchID))
 	NumGroupsInCluster += CalcCluster(GroupIDNeighbor,ClusterID,PatchID);
     }
-
  // return the number of groups in this cluster
   return NumGroupsInCluster;
 
@@ -678,7 +674,6 @@ void TriggerTelescopeNextNeighbor::RunBiasCurve(UInt_t Trials,Float_t LowerBound
       tracegenerator->GenerateNSB();
       //Load event with trace from trace generator
       LoadEvent(telData);
-
 
       for(Int_t t = 0; t<NumScanPoints; t++)
 	{

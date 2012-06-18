@@ -17,6 +17,13 @@ _
 
                                                      -*-*- END OF LINE -*-*-
 
+  2012/06/18  Nepomuk Otte
+
+   * CameraAndReadout.cpp
+     - reverted to previous way of writing vbf files. Setting the number of
+     pixel per telescope just before the telescope data are written to file
+     did not work.
+
   2012/05/20  Nepomuk Otte
 
    * TraceGenerator.cpp

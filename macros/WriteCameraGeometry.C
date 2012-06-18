@@ -124,7 +124,7 @@ TGeoTranslation *tr = new TGeoTranslation(xPixelCoord,yPixelCoord, 0.);
 	 {
 		float xc = vXCoordModule[m] + vXCoordPixelInModule[p];
 		float yc = vYCoordModule[m] + vYCoordPixelInModule[p];
-		 *fConfigFile <<"* PMPIX "<<iTelID<<" 0  "<<uPixID<<" "<<setw(10)<< setprecision(5)<<xc<<"   "<<yc<<" "<<fPixelPitch*10<<" 0.0"<<endl;
+		 *fConfigFile <<"* PMPIX "<<iTelID<<" 1  "<<uPixID<<" "<<setw(10)<< setprecision(5)<<xc<<"   "<<yc<<" "<<fPixelPitch*sqrt(2.0)*10<<" 0.0"<<endl;
 		vXCoordPixel.push_back(xc);
 		vYCoordPixel.push_back(yc);
 		uPixID++;

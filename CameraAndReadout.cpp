@@ -625,6 +625,7 @@ int main( int argc, char **argv )
        cout<<"Dumping the header written into the VBF file"<<endl;
        cout<<sSimInfoForHeader.c_str()<<endl;
 
+	   //VBFwrite->makeSimulationHeader( sConfigFileName,
 	   VBFwrite->makeSimulationHeader( sSimInfoForHeader,
 					   simulator,
 					   dObsHeight,
@@ -717,6 +718,9 @@ int main( int argc, char **argv )
 	       //pedVBF->setDebugLevel(1);
 	       VBFwrite->makeArrayTrigger(); // number of triggering telescopes = all
 	       // telescopes, 
+        //VBFwrite->setMaxNumberChannels(telData[0]->iNumPixels); // set channelNum for this telescope
+        //VBFwrite->setNumFadcSamples( telData[0]->iNumFADCSamples);  // set numFadcSamples for this telescope
+
 	       
 	       for (UInt_t tel=0;tel<uNumTelescopes;tel++){
         
@@ -724,8 +728,9 @@ int main( int argc, char **argv )
 		 
          // these two methods will set the numFadcsamples and the MaxNumberChannels which
          //    I also set to the MaxNumber
-        VBFwrite->setMaxNumberChannels(telData[tel]->iNumPixels); // set channelNum for this telescope
-        VBFwrite->setNumFadcSamples( telData[tel]->iNumFADCSamples);  // set numFadcSamples for this telescope
+         //cout<<"Number of pixel in telescope "<<tel<<" are "<<telData[tel]->iNumPixels<<endl;
+        //VBFwrite->setMaxNumberChannels(telData[tel]->iNumPixels); // set channelNum for this telescope
+        //VBFwrite->setNumFadcSamples( telData[tel]->iNumFADCSamples);  // set numFadcSamples for this telescope
 
 		 VBFwrite->makeEvent();  // make event for this telescope
        
@@ -1025,8 +1030,8 @@ int main( int argc, char **argv )
 		   //vw->setDebugLevel(1);
             // these two methods will set the numFadcsamples and the MaxNumberChannels which
              //    I also set to the MaxNumber
-            VBFwrite->setMaxNumberChannels(telData[tel]->iNumPixels); // set channelNum for this telescope
-            VBFwrite->setNumFadcSamples( telData[tel]->iNumFADCSamples);  // set numFadcSamples for this telescope
+            //VBFwrite->setMaxNumberChannels(telData[tel]->iNumPixels); // set channelNum for this telescope
+            //VBFwrite->setNumFadcSamples( telData[tel]->iNumFADCSamples);  // set numFadcSamples for this telescope
 
 		   VBFwrite->makeEvent();        // make the individual telescope event
 		   //vw->setDebugLevel(0);
