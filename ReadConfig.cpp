@@ -240,13 +240,35 @@ vector< Float_t > ReadConfig::GetRelGain(UInt_t telType, const vector< Float_t >
   return vRelGain;
 }
 
+void ReadConfig::ReadCommandLine( int argc, char **argv)
+{
+   cout<<"Parsing the command line"<<endl;
+   //Dummy input file stream needed as argument by ReadLine
+   std::ifstream *inFileStream = NULL;
+   for (int i = 1; i < argc; i+=2) {
+      string iline="* ";
+      iline+=argv[i];
+      if (i + 1 < argc) { // Make sure we aren't at the end of argv!
+         iline+=" ";
+         iline+=argv[++i];
+      }else { // Uh-oh, there was no argument to the option.
+         std::cerr << "There is an option missing, so far found: "<<iline<< std::endl;
+      }
+     //cout<<"Have created "<<iline<<endl;
+     ReadLine(iline,inFileStream);
+   }
+   delete inFileStream;
+
+   cout<<"Finished reading the command line"<<endl<<endl; 
+}
+
 Bool_t ReadConfig::ReadConfigFile( string iFile )
 {
    if( fDebug ) cout << "ReadConfig::ReadConfigFile " << iFile << endl;
 
    //iFile.insert( 0, fConfigDir );
-   std::ifstream inFileStream( iFile.c_str() );
-   if( !inFileStream )
+   std::ifstream *inFileStream = new ifstream( iFile.c_str() );
+   if( !*inFileStream )
    {
       cout << "TriggerRead::ReadConfigFile() error: config file not found: " << iFile << endl;
       exit( -1 );
@@ -254,19 +276,38 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
    }
 
    string iline;
-   string i_char;
-   unsigned int i_telType = 0;
-   unsigned int i_chan = 0;
-   unsigned int i_NN = 0;
 
-  
-   while( getline( inFileStream, iline ) )
+   while( getline( *inFileStream, iline ) )
    {
      // '*' in line 
      if( iline.substr( 0, 1 ) != "*" ) continue;
 
      // '#' in line
      if( iline.substr( 0, 1 ) == "#" ) continue;
+
+     ReadLine(iline,inFileStream);     
+
+   }
+
+   convertMMtoDeg();
+
+   delete inFileStream;
+
+   if( fDebug ) cout << "END: ReadConfig::ReadConfigFile " << iFile << endl;
+
+   return true;
+
+}
+
+//Read in one line 
+void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
+{
+
+   string i_char;
+   unsigned int i_telType = 0;
+   unsigned int i_chan = 0;
+   unsigned int i_NN = 0;
+
 
      istringstream i_stream( iline );
 
@@ -299,12 +340,12 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
         //  -the number of groups of summed pixel
         //  * CAMRA 0 11328 2832
          i_stream >> i_char; i_stream >> i_char;
-	     i_stream >> i_telType;                                   
+	 i_stream >> i_telType;                                   
          i_stream >> fCNChannels[i_telType];
-     i_stream >> iNumberGroups[i_telType];
-      cout << "FPI configuration of telescope type "<<i_telType<<endl; 
-	    cout << "total number of channels: " << fCNChannels[i_telType]  << endl;
-	    cout << "the number of sum groups: " << iNumberGroups[i_telType]  << endl;
+         i_stream >> iNumberGroups[i_telType];
+         cout << "FPI configuration of telescope type "<<i_telType<<endl; 
+	 cout << "total number of channels: " << fCNChannels[i_telType]  << endl;
+	 cout << "the number of sum groups: " << iNumberGroups[i_telType]  << endl;
 
         if(i_telType == (UInt_t)(iNumberOfTelescopeTypes-1))
              resetCamVectors();
@@ -315,9 +356,9 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
      if( iline.find( "TELESCOPEFOCALLENGTH " ) < iline.size() )
       {
         i_stream >> i_char; i_stream >> i_char;
-	     i_stream >> i_telType;
-         i_stream >> fMirFocalLength[i_telType];
-         cout<<"Telescope type "<<i_telType<<"  Focal Lengths of telescopes in m for conversion of pixel from mm to deg: "<<fMirFocalLength[i_telType]<<endl;
+	i_stream >> i_telType;
+        i_stream >> fMirFocalLength[i_telType];
+        cout<<"Telescope type "<<i_telType<<"  Focal Lengths of telescopes in m for conversion of pixel from mm to deg: "<<fMirFocalLength[i_telType]<<endl;
        }
  
        
@@ -328,7 +369,7 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
      if( iline.find( "STARTSAMPLINGBEFOREAVERAGEPHOTONARRIVALTIME " ) < iline.size() )
       {
 	i_stream >> i_char; i_stream >> i_char; 
-    i_stream >> i_telType;
+        i_stream >> i_telType;
 	i_stream >> fStartSamplingBeforeAverageTime[i_telType];
 	cout<<"Telescope type "<<i_telType<<" The sampling of the trace start ns "<<fStartSamplingBeforeAverageTime[i_telType]<<" before the average photon arrival time"<<endl;
       }
@@ -337,7 +378,7 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
      if( iline.find( "TRACELENGTH " ) < iline.size() )
       {
 	i_stream >> i_char; i_stream >> i_char; 
-    i_stream >> i_telType;
+        i_stream >> i_telType;
 	i_stream >> fTraceLength[i_telType];
 	cout<<"Telescope type "<<i_telType<<" Trace length in ns set to "<<fTraceLength[i_telType]<<endl;
       }
@@ -356,7 +397,7 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
      if( iline.find( "SINGLEPEWIDTH " ) < iline.size() )
       {
 	i_stream >> i_char; i_stream >> i_char; 
-    i_stream >> i_telType;
+        i_stream >> i_telType;
 	i_stream >>  fFWHMofSinglePEPulse[i_telType];
 	if(fFWHMofSinglePEPulse[i_telType]>0)
 	{
@@ -373,7 +414,7 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
      if( iline.find( "SINGLEPEPULSESHAPE " ) < iline.size() )
       {
 	i_stream >> i_char; i_stream >> i_char; 	
-    i_stream >> i_telType;
+        i_stream >> i_telType;
 	i_stream >>  sSinglePEPulseShape[i_telType];
       }
 
@@ -381,7 +422,7 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
      if( iline.find( "SINGLEPEAMPLSIGMA " ) < iline.size() )
       {
 	i_stream >> i_char; i_stream >> i_char; 
-    i_stream >> i_telType;
+        i_stream >> i_telType;
 	i_stream >>   fSigmaSinglePEPulseHeightDistribution[i_telType];
 	cout<<"Telescope type "<<i_telType<<" The sigma of the single PE pulse height distribution "<< fSigmaSinglePEPulseHeightDistribution[i_telType]<<endl;
       }
@@ -390,7 +431,7 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
      if( iline.find( "SINGLEPESAMPLING " ) < iline.size() )
       {
 	i_stream >> i_char; i_stream >> i_char; 
-    i_stream >> i_telType;
+        i_stream >> i_telType;
 	i_stream >>  fSampleWidthAveragePulse[i_telType];
 	cout<<"Telescope type "<<i_telType<<" The sampling width used in the  single pe pulse in ns is "<<fSampleWidthAveragePulse[i_telType]<<endl;
       }
@@ -399,7 +440,7 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
      if( iline.find( "LOWGAINPULSESHAPE " ) < iline.size() )
       {               
 	i_stream >> i_char; i_stream >> i_char; 	
-    i_stream >> i_telType;
+        i_stream >> i_telType;
 	i_stream >>  sLowGainSinglePEPulseShape[i_telType];
       }
 
@@ -419,6 +460,7 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
 	i_stream >> i_char; i_stream >> i_char; 
     i_stream >> i_telType;
 	i_stream >>  fNSBRatePerPixel[i_telType];
+        fNSBRatePerPixel[i_telType]*=1000;
 	cout<<"Telescope type "<<i_telType<<" The NSB rate in kHz per pixel in the focal plane is set to "<<fNSBRatePerPixel[i_telType]<<endl;
       }
 
@@ -510,7 +552,7 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
 	cout<<datapoints<<endl;
 	for(Int_t i=0;i<datapoints;i++)
 	  {
-	    getline( inFileStream, iline );
+	    getline( *inFileStream, iline );
 	    istringstream d_stream( iline );
 	    Float_t w;
 	    Float_t q;
@@ -1090,13 +1132,7 @@ Bool_t ReadConfig::ReadConfigFile( string iFile )
            cout<<endl;
 	    }
 
-   }
-
-   convertMMtoDeg();
 
 
-   if( fDebug ) cout << "END: ReadConfig::ReadConfigFile " << iFile << endl;
-
-   return true;
-
-}                
+}
+                

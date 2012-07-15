@@ -17,6 +17,20 @@ _
 
                                                      -*-*- END OF LINE -*-*-
 
+  2012/07/15  Nepomuk Otte
+
+   * CameraAndReadout.cpp
+     - Changed the way the command line options are given. Instead of just
+     listing the arguments, every argument has a flag. The order is not
+     important anymore. Just calling CameraAndReadout without options will
+     print out the help with the options names
+   * CameraAndReadout.cpp; ReadConfig.[h,cpp]
+     - parameters normally in the configuration file can also be given on the
+     command line. see ./CameraAndReadout -h for how this is done.
+   * ReadConfig.cpp
+     - the nsb rate per pixel has to given in MHz in the config file.
+     ReadConfig multiplies it with 1000 to get kHz
+
   2012/06/18  Nepomuk Otte
 
    * CameraAndReadout.cpp

@@ -97,48 +97,127 @@ void getRotatedShowerDirection( double ze, double az, double y, double x, double
 
 void help()
 {
-     cout << "CameraAndReadout <rng seed> <Care cfg file> <basename output files> <pe input file> <VBF run number>" << endl;
+     cout << "CameraAndReadout" << endl;
      cout << endl;
      cout << "command line options: " << endl;
-     cout << "\t <rng seed> \t Seed of the random number generator" << endl;
-     cout << "\t <Care cfg file> \t configuration file of the Camera and electronics" << endl;
-     cout << "\t <basename output files> \t the base name for the vbf and root output files" << endl;
-     cout << "\t <pe input file> \t the input pe file" << endl;
-     cout << "\t <VBF run number> \t the runnumber written into the vbf file" << endl;
-     cout << "\t <Pedestal flag> \t if 1 the pedestal events will be written into the output file" << endl;
+     cout << "\t -h or --help:                               This help message"<<endl;
+     cout << "\t -s or --seed <rng seed>                     Seed of the random number generator" << endl;
+     cout << "\t -c or --configfile <Care cfg file>          Configuration file of the Camera and electronics" << endl;
+     cout << "\t -of or --outputfile <basename output files> The base name for the vbf and root output files" << endl;
+     cout << "\t -if or --inputfile <pe input file>          The input pe file, only needed if showers are simulated" << endl;
+     cout << "\t -vbf or --vbfrunnumber <VBF run number>     The runnumber written into the vbf file, only needed if VBF file is written" << endl;
+     cout << "\t -wp or --writepedestals <Pedestal flag>     If 1 the pedestal events will be written into the output file, only effective if an output file is specified" << endl;
+     cout << "\t -vd or --vbfdebug                           If 1 the vbf debug is turned on" << endl;
      cout << endl;
-
+     cout << "One can also give all options for the configuration file directly on the command line. In this case the value from the configuration file is overwritten. For example if you want to set the NSB level for telescope type 0 to 100 MHz you have to give NSBRATEPERPIXEL \"0 100000\" as an option. Do not forget to put the argument in quotation marks."<<endl;
     exit( 0 );
 }
 
 int main( int argc, char **argv )
 {
-   if( argc < 3 ) help();
-   
-   //configuration File
-   
-   UInt_t uSeed = (UInt_t)(atoi( argv[1] ) );
-   string sConfigFileName = argv[2]; 
-   string sOutputFileName = argv[3];
-
-
+   //Options you can send on command line  
+   UInt_t uSeed = 0;
+   string sConfigFileName = ""; 
+   string sOutputFileName = "";
    string fInputFileName;
-   if(argc >= 5)
-     fInputFileName = argv[4];
-  
-   long lVBFRunNum;
-   if(argc >= 6)
-     lVBFRunNum  = (long)(atoi( argv[5] ) );
-   else
-     lVBFRunNum = 99999;
-   
+   long lVBFRunNum = 99999;
    Int_t iPedestalWriteFlag = 0;
-   if(argc >=7)
-	  iPedestalWriteFlag = (int)(atoi( argv[6] ) );
-
    Int_t iDebugLevel=0;
-    if(argc == 8)
-      iDebugLevel  = atoi( argv[7] );
+ 
+    if (argc < 3) {
+         help();
+        }
+
+   for (int i = 1; i < argc; ++i) {
+                std::string arg = argv[i];
+                if ((arg == "-h") || (arg == "--help")) {
+                        help();
+                } else if ((arg == "-s") || (arg == "--seed")) {
+                        if (i + 1 < argc) { // Make sure we aren't at the end of argv!
+                                uSeed = (UInt_t)(atoi( argv[++i] ) );
+                                cout<<"The seed for the random number generator is "<<uSeed<<endl;
+                        } else { // Uh-oh, there was no argument to the option.
+                              std::cerr << "--seed option requires an integer number." << std::endl;
+                                return 1;
+                        }  
+                } else if ((arg == "-c") || (arg == "--configfile")) {
+                        if (i + 1 < argc) { // Make sure we aren't at the end of argv!
+                                sConfigFileName = argv[++i];
+                                cout<<"The configuration file name is: "<<sConfigFileName<<endl;
+                        } else { // Uh-oh, there was no argument to the option.
+                              std::cerr << "--configfile requires a file name with path." << std::endl;
+                                return 1;
+                        }  
+                } else if ((arg == "-of") || (arg == "--outputfile")) {
+                        if (i + 1 < argc) { // Make sure we aren't at the end of argv!
+                                sOutputFileName = argv[++i];
+                                cout<<"The output file name is: "<<sOutputFileName<<endl;
+                        } else { // Uh-oh, there was no argument to the option.
+                              std::cerr << "--outputfile requires a file name with path, without specifying the filetype .root or .vbf ..." << std::endl;
+                                return 1;
+                        }  
+                } else if ((arg == "-if") || (arg == "--inputfile")) {
+                        if (i + 1 < argc) { // Make sure we aren't at the end of argv!
+                                fInputFileName = argv[++i];
+                                cout<<"The input file name is: "<<fInputFileName<<endl;
+                        } else { // Uh-oh, there was no argument to the option.
+                              std::cerr << "--inputfile requires an input file name with path" << std::endl;
+                                return 1;
+                        }  
+                } else if ((arg == "-vbf") || (arg == "--vbfrunnumber")) {
+                        if (i + 1 < argc) { // Make sure we aren't at the end of argv!
+                                lVBFRunNum  = (long)(atoi( argv[++i] ) );
+                                cout<<" The VBF runnumber is: "<<lVBFRunNum<<endl;
+                        } else { // Uh-oh, there was no argument to the option.
+                              std::cerr << "--vbfrunnumber requires an integer number for the runnumber" << std::endl;
+                                return 1;
+                        }  
+                } else if ((arg == "-wp") || (arg == "--writepedestals")) {
+                        if (i + 1 < argc) { // Make sure we aren't at the end of argv!
+	                        iPedestalWriteFlag = (int)(atoi( argv[++i] ) );
+                                cout<<"We write pedestals: "<<iPedestalWriteFlag<<endl;
+                        } else { // Uh-oh, there was no argument to the option.
+                              std::cerr << "--writepedestals requires an argument either 0 or 1" << std::endl;
+                                return 1;
+                        }  
+                } else if ((arg == "-vd") || (arg == "--vbfdebug")) {
+                        if (i + 1 < argc) { // Make sure we aren't at the end of argv!
+	                        iDebugLevel = (int)(atoi( argv[++i] ) );
+                                cout<<"VBF debug set to: "<<iDebugLevel<<endl;
+                        } else { // Uh-oh, there was no argument to the option.
+                              std::cerr << "--vbfdebug requires an argument either 0 or 1" << std::endl;
+                                return 1;
+                        }  
+                } 
+
+        }//end looping over all input parameters
+
+    //check if seed has been set
+    if(uSeed == 0)
+        {
+          std::cerr << "you need to set a seed." << std::endl;
+          help();
+        }
+    if(sConfigFileName.empty())
+        {
+          std::cerr << "you need to give a configuration file name." << std::endl;
+          help();
+        }
+    if(sOutputFileName.empty())
+        {
+          std::cerr << "you need to give an output file name." << std::endl;
+          help();
+        }
+    if(iPedestalWriteFlag < 0 || iPedestalWriteFlag > 1)
+        {
+          std::cerr << "the argument of writepedestals has to be 0 or 1 and not " << iPedestalWriteFlag << std::endl;
+          help();
+        }
+    if(iDebugLevel < 0 || iDebugLevel > 1)
+        {
+          std::cerr << "the argument of vbfdebug has to be 0 or 1 and not " << iDebugLevel << std::endl;
+          help();
+        }
 
    gROOT->ProcessLine("#include <vector>");
    gStyle->SetPalette(1);
@@ -159,9 +238,12 @@ int main( int argc, char **argv )
    //
    ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
+   
    ReadConfig *readConfig = new ReadConfig(rand);
+   //1. The config file name
    readConfig->ReadConfigFile(sConfigFileName);
+   //2. overwrite with command line options
+   readConfig->ReadCommandLine(argc,argv);
 
    ///////////////////////////////////////////////////////
    //

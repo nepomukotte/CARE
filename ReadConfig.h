@@ -24,6 +24,7 @@ class ReadConfig
   ReadConfig(TRandom3 *random);
   ~ReadConfig() {};
   Bool_t  ReadConfigFile( string iFile );
+  void ReadCommandLine( int argc, char **argv);
   Float_t GetStartSamplingTimeOffsetFromAveragePhotonTime(UInt_t telType){ return fStartSamplingBeforeAverageTime[telType]; };
   Float_t GetTraceLength(UInt_t telType){ return fTraceLength[telType]; };
   Float_t GetSamplingTime(UInt_t telType){ return fSamplingTime[telType]; };
@@ -137,6 +138,8 @@ class ReadConfig
   void resetTelTypeVectors();
  
   void convertMMtoDeg();
+
+  void ReadLine(string iline, std::ifstream *inFileStream);
 
   Bool_t fDebug;
 
