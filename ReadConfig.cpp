@@ -245,7 +245,7 @@ void ReadConfig::ReadCommandLine( int argc, char **argv)
    cout<<"Parsing the command line"<<endl;
    //Dummy input file stream needed as argument by ReadLine
    std::ifstream *inFileStream = NULL;
-   for (int i = 1; i < argc; i+=2) {
+   for (int i = 1; i < argc; ++i) {
       string iline="* ";
       iline+=argv[i];
       if (i + 1 < argc) { // Make sure we aren't at the end of argv!
