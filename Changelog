@@ -17,6 +17,12 @@ _
 
                                                      -*-*- END OF LINE -*-*-
 
+
+
+  2012/07/15  Nepomuk Otte
+
+   * CameraAndReadout.cpp
+     - The number of FADC samples was not properly set in the VBF writer 
   2012/07/15  Nepomuk Otte
 
    * CameraAndReadout.cpp

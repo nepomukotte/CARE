@@ -496,6 +496,7 @@ int main( int argc, char **argv )
 				      numPixTel,outname,
 				      lVBFRunNum,
 				      iDebugLevel);
+           VBFwrite->setNumFadcSamples( telData[0]->iNumFADCSamples);  // set numFadcSamples for this telescope
 
 	 }
    
