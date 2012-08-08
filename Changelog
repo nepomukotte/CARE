@@ -19,11 +19,12 @@ _
 
 
 
-  2012/07/15  Nepomuk Otte
+  2012/08/06  Nepomuk Otte
 
    * CameraAndReadout.cpp
      - The number of FADC samples was not properly set in the VBF writer 
-  2012/07/15  Nepomuk Otte
+
+2012/07/15  Nepomuk Otte
 
    * CameraAndReadout.cpp
      - Changed the way the command line options are given. Instead of just
