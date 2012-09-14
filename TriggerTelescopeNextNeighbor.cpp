@@ -226,8 +226,8 @@ void  TriggerTelescopeNextNeighbor::LoadEvent(TelescopeData *TelData)
 	         }
             if(bDebug)
                 {
-                  //   cout<<"Summed group "<<g<<" added pixel "<<memberID<<endl; 
-	              //   ShowTrace(g, false);
+                     cout<<"Summed group "<<g<<" added pixel "<<memberID<<endl; 
+	                 ShowTrace(g, false);
                }
            
 	     }

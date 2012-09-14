@@ -513,8 +513,6 @@ int main( int argc, char **argv )
        Bool_t arrayTriggerBit ;
        std::vector< Bool_t > vTelescopeTriggerBits ;
        vTelescopeTriggerBits.assign(uNumTelescopes , 0 ) ;
-
-       std::vector< int > vGroupsInTriggerCluster[uNumTelescopes];
        
        Float_t DeltaTL3 ;
 
@@ -527,11 +525,20 @@ int main( int argc, char **argv )
        tSimulatedEvents.Branch("vTelescopeTriggerBits",&vTelescopeTriggerBits);
        tSimulatedEvents.Branch("DeltaTL3",&DeltaTL3,"DeltaTL3/F");
 
+       //Create a Tree for each telescope
+       TTree **tout = new TTree*[uNumTelescopes];
+       std::vector< int > vGroupsInTriggerCluster[uNumTelescopes];
        for(UInt_t i = 0; i<uNumTelescopes; i++)
 	 {
-	   TString namevar;
-	   namevar.Form("vGroupsInTriggerClusterTel%i",i);
-	   tSimulatedEvents.Branch(namevar.Data(),&(vGroupsInTriggerCluster[i]));
+           TString name;
+           name.Form("T%i",i);
+           TString title;
+           title.Form("Tree that holds all the data of telescope %i",i);
+           tout[i] = new TTree(name,title);
+           tout[i]->Branch("vGroupsInTriggerCluster",&(vGroupsInTriggerCluster[i]));
+           tout[i]->Branch("vPEInPixel", &(telData[i]->iPEInPixel));
+           tout[i]->Branch("vQDCValue", &(telData[i]->iQDCInPixel));
+           tout[i]->Branch("vFADCTraces", telData[i]->iFADCTraceInPixel);
 	 }
 
        //Open the photon input file
@@ -1039,8 +1046,13 @@ int main( int argc, char **argv )
          
 		 if(DEBUG_MAIN)
 			cout<<"writing event into file"<<endl; 
-	
+
+             //write event into root file	
 	     tSimulatedEvents.Fill(); 
+             for(UInt_t i = 0; i<uNumTelescopes; i++)
+                {
+                     tout[i]->Fill();
+                }
 
 	     //Write the event into the VBF File
 	     if(readConfig->GetVBFwriteBit())
@@ -1155,14 +1167,22 @@ int main( int argc, char **argv )
 
 
 
-       
+       //write and close the root file 
        fOut->cd("Events");
        tSimulatedEvents.Write();
+
+       for(UInt_t i = 0; i<uNumTelescopes; i++)
+         {
+            tout[i]->Write();
+         }
+
        //change back to the root root directory
        gROOT->cd();
 
        cout<<"Have "<<NumTriggeredEvents<<" triggered events!"<<endl;
        cout<<"Have "<<NumSkippeddEvents<<" events that are skipped because no telescope had the min required number of Cherenkov photons in the focal plane"<<endl;
+   
+       //Close the GrOptics file
        fO->Close();
 
 

@@ -188,6 +188,7 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
  	   cout<<"eff: "<<eff<<" lambda "<<lambda<<"  qe[lambda] "<<qe[lambda]<<" telData->fRelQEwWC[pixID] "<<telData->fRelQEwWC[pixID]<<" efficiency factor: "<<dEfficiencyFactor<<endl;
            if(rand->Uniform()<eff)
 	          AddPEToTrace(pixID, v_f_time->at(p)-(telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime)); //Start filling fStartSamplingBeforeAverageTime ns before the average time
+                  telData->iPEInPixel[pixID]++;
 	    }
     }
 
@@ -221,6 +222,7 @@ TH1F* TraceGenerator::GetAverageSinglePEPulse()
   h->GetYaxis()->SetTitle("Amplitude normalized to peak");
   for(Int_t i = 0; i<iNumSamplesAverageSinglePEPulse; i++)
     {
+      cout<<i<<"  "<<fAverageSinglePEPulse[i]<<endl;
       h->SetBinContent(i+1,fAverageSinglePEPulse[i]);
     }
 
@@ -757,15 +759,13 @@ void   TraceGenerator::SetSinglePEShapeFromFile(TString sfilename)
       t*=fSamplingTimeAveragePulse;
 
       Int_t d=0;
-      while(ts[d]-ts[imin]<t)
+      while(ts[d]-ts[imin]<t+1e-6)
 	d++;
 
       //average between two samples
       Double_t amplitude = y[d-1] + (t- (ts[d-1]-ts[imin]) ) * (y[d]-y[d-1])/(ts[d]-ts[d-1]);
-
       //normalizing so the peak is one
       amplitude = amplitude / dmin ; 
-
 
       fAverageSinglePEPulse[i] = amplitude;
       //cout<<i<<" "<<t<<"  "<<fAverageSinglePEPulse[i]<<endl;
@@ -862,7 +862,7 @@ void   TraceGenerator::SetLowGainSinglePEShapeFromFile(TString sfilename)
       t*=fSamplingTimeAveragePulse;
 
       Int_t d=0;
-      while(ts[d]-ts[imin]<t)
+      while(ts[d]-ts[imin]<t+1e-6)
 	d++;
 
       //average between two samples

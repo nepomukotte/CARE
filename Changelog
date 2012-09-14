@@ -19,6 +19,13 @@ _
 
 
 
+  2012/09/14  Nepomuk Otte
+
+   * CameraAndReadout.cpp; TelescopeData.[h,cpp]
+     - Added a new vector iPEInPixel to TelescopeData which is the number of
+       Cherenkov photo electrons in each pixel
+     - Now Write the QDC, FADC trace and photo electrons into the root file 
+
   2012/08/06  Nepomuk Otte
 
    * CameraAndReadout.cpp

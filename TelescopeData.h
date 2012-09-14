@@ -35,6 +35,8 @@ class TelescopeData {
   vector<Int_t>    GetFADCTrace(Int_t pixelID){ return iFADCTraceInPixel[pixelID]; };
   vector<Int_t>    GetQDCValues(){return iQDCInPixel; };  
 
+  vector<Int_t>    GetPEInPixels(){return iPEInPixel; };  
+
   //Telescope related stuff
   Int_t            GetTelescopeType(){return iTelType;};
   Int_t            GetTelescopeID(){return iTelID; };
@@ -86,6 +88,8 @@ class TelescopeData {
 
   //QDC
   vector<Int_t>   iQDCInPixel;
+
+  vector<Int_t>   iPEInPixel;                          //the number of Cherenkov photoelectrons in each pixel
 
   //Trigger related numbers
   Float_t         fDiscriminatorThreshold;              
