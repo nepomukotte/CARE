@@ -19,6 +19,17 @@ _
 
 
 
+  2012/10/07  Nepomuk Otte
+
+   This Version is tagged v1.2
+   * CameraAndReadout.cpp,TelescopeData.[h,cpp]
+     - added variable iNumPhotonsInFocalPlane to TelescopeData and write this
+     into the root file. It has all the photons that arrive in the focal plane
+   * CameraAndReadout.cpp
+     - Added a new option -nt or -notraces to CameraAndReadout. With this 
+       option in the commandline the traces are not written into the root file
+       making them considerably smaller.
+
   2012/09/14  Nepomuk Otte
 
    * CameraAndReadout.cpp; TelescopeData.[h,cpp]

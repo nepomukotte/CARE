@@ -73,6 +73,8 @@ class TelescopeData {
   Float_t         fAveragePhotonArrivalTime;               //Holds the average photon arrival time of all photons in one event
   Double_t        mean;                                     //trace mean
   Bool_t          bCherenkovPhotonsInCamera;
+  Int_t           iNumPhotonsInFocalPlane;                 //The number of photons that made it to the focal plane
+
 
   Int_t           iNumPixels;
   Int_t           iNumSamplesPerTrace;                     //the number of samples in the analog trace for each sum group

@@ -108,6 +108,7 @@ void help()
      cout << "\t -vbf or --vbfrunnumber <VBF run number>     The runnumber written into the vbf file, only needed if VBF file is written" << endl;
      cout << "\t -wp or --writepedestals <Pedestal flag>     If 1 the pedestal events will be written into the output file, only effective if an output file is specified" << endl;
      cout << "\t -vd or --vbfdebug                           If 1 the vbf debug is turned on" << endl;
+     cout << "\t -nt or --notraces                           traces will not be written into the root file" << endl;
      cout << endl;
      cout << "One can also give all options for the configuration file directly on the command line. In this case the value from the configuration file is overwritten. For example if you want to set the NSB level for telescope type 0 to 100 MHz you have to give NSBRATEPERPIXEL \"0 100000\" as an option. Do not forget to put the argument in quotation marks."<<endl;
     exit( 0 );
@@ -123,7 +124,8 @@ int main( int argc, char **argv )
    long lVBFRunNum = 99999;
    Int_t iPedestalWriteFlag = 0;
    Int_t iDebugLevel=0;
- 
+   bool bWriteTracesToRootFile = true;
+
     if (argc < 3) {
          help();
         }
@@ -188,6 +190,9 @@ int main( int argc, char **argv )
                               std::cerr << "--vbfdebug requires an argument either 0 or 1" << std::endl;
                                 return 1;
                         }  
+                } else if ((arg == "-nt") || (arg == "--notraces")) {
+	                        bWriteTracesToRootFile = false;
+                                cout<<"will not write traces to root file: "<<bWriteTracesToRootFile<<endl;
                 } 
 
         }//end looping over all input parameters
@@ -538,7 +543,9 @@ int main( int argc, char **argv )
            tout[i]->Branch("vGroupsInTriggerCluster",&(vGroupsInTriggerCluster[i]));
            tout[i]->Branch("vPEInPixel", &(telData[i]->iPEInPixel));
            tout[i]->Branch("vQDCValue", &(telData[i]->iQDCInPixel));
-           tout[i]->Branch("vFADCTraces", telData[i]->iFADCTraceInPixel);
+           tout[i]->Branch("iPhotonsInFocalPlane", &(telData[i]->iNumPhotonsInFocalPlane));
+           if(bWriteTracesToRootFile)
+               tout[i]->Branch("vFADCTraces", telData[i]->iFADCTraceInPixel);
 	 }
 
        //Open the photon input file
@@ -891,7 +898,11 @@ int main( int argc, char **argv )
 	       xcore = fXcore;
 	       ycore = fYcore;
 
-           Int_t telType = telData[n]->GetTelescopeType();
+               Int_t telType = telData[n]->GetTelescopeType();
+
+               telData[n]->ResetTraces();
+               
+               telData[n]->iNumPhotonsInFocalPlane=v_f_time->size();
 
 	       if(v_f_time->size()>readConfig->GetRequestedMinNumberOfPhotonsInCamera(telType))
 		 bSkipEvent = kFALSE;
@@ -951,10 +962,9 @@ int main( int argc, char **argv )
            //generate traces with trace generator
            Int_t telType = telData[n]->GetTelescopeType();
 
-           telData[n]->ResetTraces();
            traceGenerator[telType]->SetTelData(telData[n]);
 
-		   traceGenerator[telType]->LoadCherenkovPhotons( v_f_x ,  v_f_y, v_f_time, v_f_lambda, fDelay,dGlobalPhotonEffic);	
+	   traceGenerator[telType]->LoadCherenkovPhotons( v_f_x ,  v_f_y, v_f_time, v_f_lambda, fDelay,dGlobalPhotonEffic);	
 		   
 		   //   TelData->ShowTrace(0,kTRUE); 
            		   

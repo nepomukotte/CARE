@@ -123,7 +123,6 @@ void Display::ShowSelectedDiscriminatorPixels()
       }
      cout<<endl<<endl;
   }
-
   //hold the code;
   TTimer timer("gSystem->ProcessEvents();", 50, kFALSE);
   timer.TurnOn();

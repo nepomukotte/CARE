@@ -117,7 +117,7 @@ void TelescopeData::ResetTraces()
   fAveragePhotonArrivalTime = 0.0;
   mean = 0.0;
   bCherenkovPhotonsInCamera = kFALSE;
-
+  iNumPhotonsInFocalPlane = 0;
   iQDCInPixel.assign(iNumPixels,0);
   iPEInPixel.assign(iNumPixels,0);
   bInLoGain.assign(iNumPixels,kFALSE);
