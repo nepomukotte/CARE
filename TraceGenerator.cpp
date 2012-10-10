@@ -740,7 +740,7 @@ void   TraceGenerator::SetSinglePEShapeFromFile(TString sfilename)
 
   cout<<"Found that the amplitude is minimal at time: "<<imin<<" =  "<<ts[imin]<<". The amplitude is: "<<y[imin]<<endl;
  
-  cout<<ts[0]<<endl;
+  cout<<"Number of samples in the sample pulse: "<<ts.size()<<endl;
   fStartTimeAveragePulse=fabs(ts[imin]-ts[0]);
   fStopTimeAveragePulse=ts[ts.size()-2]-ts[imin];
 
@@ -752,14 +752,14 @@ void   TraceGenerator::SetSinglePEShapeFromFile(TString sfilename)
   
   fAverageSinglePEPulse.assign(iNumSamplesAverageSinglePEPulse,0.0);
 
- 
+//cout<<iNumSamplesAverageSinglePEPulse<<endl; 
   for(Int_t i = 0; i<iNumSamplesAverageSinglePEPulse; i++)
     {
       Float_t t = -1*Int_t(fStartTimeAveragePulse/fSamplingTimeAveragePulse)+i;
       t*=fSamplingTimeAveragePulse;
 
-      Int_t d=0;
-      while(ts[d]-ts[imin]<t+1e-6)
+      unsigned d=0;
+      while(ts[d]-ts[imin]<t+1e-6 && d<ts.size()-1)
 	d++;
 
       //average between two samples
@@ -768,7 +768,7 @@ void   TraceGenerator::SetSinglePEShapeFromFile(TString sfilename)
       amplitude = amplitude / dmin ; 
 
       fAverageSinglePEPulse[i] = amplitude;
-      //cout<<i<<" "<<t<<"  "<<fAverageSinglePEPulse[i]<<endl;
+      //cout<<i<<" "<<t<<"  "<<d<<"  "<<fAverageSinglePEPulse[i]<<endl;
     }
 
  
@@ -861,8 +861,8 @@ void   TraceGenerator::SetLowGainSinglePEShapeFromFile(TString sfilename)
       Float_t t = -1*Int_t(fLowGainStartTimeAveragePulse/fSamplingTimeAveragePulse)+i;
       t*=fSamplingTimeAveragePulse;
 
-      Int_t d=0;
-      while(ts[d]-ts[imin]<t+1e-6)
+      unsigned d=0;
+      while(ts[d]-ts[imin]<t+1e-6 && d<ts.size()-1)
 	d++;
 
       //average between two samples

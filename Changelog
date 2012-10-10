@@ -19,6 +19,16 @@ _
 
 
 
+  2012/10/10  Nepomuk Otte
+
+   This Version is tagged v1.2.1
+   * TraceGenerator.cpp
+     - fixed bug in the procedure that reads in the pulse shape from a text
+     file. Sometimes it could happen that for the last sample unallocated
+     memory was looked at. 
+   * config/VTSCameraDraw.C
+     - added root macro to write the VERITAS camera geometry
+
   2012/10/07  Nepomuk Otte
 
    This Version is tagged v1.2
