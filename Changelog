@@ -17,6 +17,15 @@ _
 
                                                      -*-*- END OF LINE -*-*-
 
+  2012/10/12  Nepomuk Otte
+
+   This Version is tagged v1.2.2
+   * CameraAndReadout.cpp
+     - Fixed a check that was comparing the number of telescopes in the input
+     file with the number of telescopes in the configuration file. That check
+     exited the code if the number of telescopes in the configuration file was
+     less than the number of telescopes in the input file. But this is a
+     possibility if one wants to study subarrays.
 
 
   2012/10/10  Nepomuk Otte

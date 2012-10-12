@@ -597,9 +597,9 @@ int main( int argc, char **argv )
         cout<<"Global Photon Efficiency "<<dGlobalPhotonEffic<<endl;
         cout<<"File header "<<fileheader->c_str()<<endl; 
 
-        if((unsigned)readConfig->GetNumberOfTelescopes() != telIDVector->size())
+        if((unsigned)readConfig->GetNumberOfTelescopes() > telIDVector->size())
 		{
-			cout<<"The number of telescopes in the input file does not match the number of telescopes in the configuration file"<<endl;
+			cout<<"The number of telescopes in the input file is larger than the number of telescopes in the configuration file"<<endl;
 			exit(1);
 		}
 
