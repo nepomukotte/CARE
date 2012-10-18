@@ -532,7 +532,6 @@ int main( int argc, char **argv )
 
        //Create a Tree for each telescope
        TTree **tout = new TTree*[uNumTelescopes];
-       std::vector< int > vGroupsInTriggerCluster[uNumTelescopes];
        for(UInt_t i = 0; i<uNumTelescopes; i++)
 	 {
            TString name;
@@ -540,7 +539,7 @@ int main( int argc, char **argv )
            TString title;
            title.Form("Tree that holds all the data of telescope %i",i);
            tout[i] = new TTree(name,title);
-           tout[i]->Branch("vGroupsInTriggerCluster",&(vGroupsInTriggerCluster[i]));
+           tout[i]->Branch("vGroupsInTriggerCluster",&(telData[i]->vTriggerCluster));
            tout[i]->Branch("vPEInPixel", &(telData[i]->iPEInPixel));
            tout[i]->Branch("vQDCValue", &(telData[i]->iQDCInPixel));
            tout[i]->Branch("iPhotonsInFocalPlane", &(telData[i]->iNumPhotonsInFocalPlane));
@@ -618,7 +617,7 @@ int main( int argc, char **argv )
 				             telData[c]->TelZpos = telLocZGCVector->at(i);
 							 cout<<"Telescope "<<c<<" location x: "<< telData[c]->TelXpos<<" y: "<<telData[c]->TelYpos<<" z: "<<telData[c]->TelZpos<<endl; 
 							 telData[c]->OpticsTransitTime = transitTimeVector->at(i);
-                             cout<<"transit time throught the telescope optics "<<telData[c]->OpticsTransitTime<<endl;
+                             cout<<"transit time through the telescope optics "<<telData[c]->OpticsTransitTime<<endl;
                              vTelTransitTimes.push_back(transitTimeVector->at(i)); 
                              break;
 						  }
@@ -874,6 +873,9 @@ int main( int argc, char **argv )
 	     if(i%1000==0) cout<<endl<<"Event "<<i<<endl;
 
 	   bool isArrayTriggered=false;
+     
+           //reset the vectors that are written to the output file
+           vTelescopeTriggerBits.assign(uNumTelescopes , 0 ) ;
 
 	   //Check if the minimum number of photons arrive in the focal plane if not skip the event
 	   Bool_t bSkipEvent = kTRUE;
@@ -904,7 +906,7 @@ int main( int argc, char **argv )
                
                telData[n]->iNumPhotonsInFocalPlane=v_f_time->size();
 
-	       if(v_f_time->size()>readConfig->GetRequestedMinNumberOfPhotonsInCamera(telType))
+	       if(v_f_time->size()>=readConfig->GetRequestedMinNumberOfPhotonsInCamera(telType))
 		 bSkipEvent = kFALSE;
 
 	       if(n == 0 && DEBUG_MAIN )
@@ -985,7 +987,6 @@ int main( int argc, char **argv )
 		   cout<<"done trigger, RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
 
               fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
-  	      vGroupsInTriggerCluster[n] = telData[n]->GetTriggerCluster();
 	      GroupTriggerBits[n] =  telData[n]->GetTriggeredGroups();
 	      vTelescopeTriggerBits[n]=telData[n]->GetTelescopeTrigger();
 

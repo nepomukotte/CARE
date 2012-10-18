@@ -17,6 +17,13 @@ _
 
                                                      -*-*- END OF LINE -*-*-
 
+  2012/10/18 Nepomuk Otte
+
+   This Version is tagged v1.2.3
+   * CameraAndReadout.cpp
+     - Fixed a bug in properly writing out the telescope trigger bits into the
+     root file.
+
   2012/10/12  Nepomuk Otte
 
    This Version is tagged v1.2.2
