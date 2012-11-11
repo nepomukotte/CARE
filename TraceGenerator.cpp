@@ -923,11 +923,11 @@ vector<Float_t> TraceGenerator::GetLowGainTrace(Int_t PixelID){
 
   vector<Float_t> trace(telData->iNumSamplesPerTrace,-1*telData->mean);
 
+
   for(UInt_t g=0;g<telData->fTimesInPixel[PixelID].size();g++)
     {
       Float_t amplitude = telData->fAmplitudesInPixel[PixelID][g];
       Float_t time = telData->fTimesInPixel[PixelID][g];
-
       //In Reference of Trace
       Float_t StartTime = time-fLowGainStartTimeAveragePulse;
       Int_t StartSample = Int_t(StartTime/fSamplingTime+1);
@@ -952,7 +952,7 @@ vector<Float_t> TraceGenerator::GetLowGainTrace(Int_t PixelID){
       StopSample = telData->iNumSamplesPerTrace;
     }
 
-      //  cout<<"Fill pe from: "<<StartSample<<" to "<<StopSample<<" Start time is "<<StartTime<<endl;
+      // cout<<"Fill pe from: "<<StartSample<<" to "<<StopSample<<" Start time is "<<StartTime<<endl;
 
 
       //Fill the PE into the trace

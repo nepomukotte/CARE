@@ -17,6 +17,16 @@ _
 
                                                      -*-*- END OF LINE -*-*-
 
+  2012/11/10 Nepomuk Otte
+
+   This version is tagged v1.3
+   * FADC.cpp
+   - Fixed major bug that prevented the Low Gain trace from being properly
+   generated
+
+   CameraAndReadout.cpp
+     - added the hi/lo gain bit in the output root file
+
   2012/10/18 Nepomuk Otte
 
    This Version is tagged v1.2.3

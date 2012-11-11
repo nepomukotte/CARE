@@ -544,7 +544,10 @@ int main( int argc, char **argv )
            tout[i]->Branch("vQDCValue", &(telData[i]->iQDCInPixel));
            tout[i]->Branch("iPhotonsInFocalPlane", &(telData[i]->iNumPhotonsInFocalPlane));
            if(bWriteTracesToRootFile)
+              {
                tout[i]->Branch("vFADCTraces", telData[i]->iFADCTraceInPixel);
+               tout[i]->Branch("vHiLoGainBit", &(telData[i]->bInLoGain));
+              }
 	 }
 
        //Open the photon input file

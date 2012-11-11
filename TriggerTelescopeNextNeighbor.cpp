@@ -860,7 +860,7 @@ void   TriggerTelescopeNextNeighbor::SetParametersFromConfigFile(ReadConfig *rea
        
    //The dyamic value in the RFB in the discriminator
    fDiscRFBDynamic = readConfig->GetDiscriminatorRFBDynamic(iTelType);
-   cout<<"The initial dynamic value in the RFB in mV (will be mulitplied with 0.18 in the sims). If RFB circuit is not used this stays constant "<<fDiscRFBDynamic<<endl;
+   cout<<"The initial dynamic value in the RFB in mV (will be mulitplied with 0.18 in the sims). If RFB circuit is not used this is not used "<<fDiscRFBDynamic<<endl;
      
    //How many goups need to be in a cluster for a telescope trigger
    iMultiplicity = readConfig->GetGroupMultiplicity(iTelType);

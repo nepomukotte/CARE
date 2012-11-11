@@ -142,7 +142,10 @@ void FADC::DigitizePixel( Int_t PixelID )
     //Get the right trace
     vector<Float_t> trace;
     if(bLowGain)
-      trace = tracegenerator->GetLowGainTrace(PixelID);
+      {
+        tracegenerator->SetTelData(telData);
+        trace = tracegenerator->GetLowGainTrace(PixelID);
+      }
     else
       trace = telData->fTraceInPixel[PixelID];
 
@@ -200,8 +203,6 @@ void FADC::DigitizePixel( Int_t PixelID )
 	    telData->iFADCTraceInPixel[PixelID][i] = (Int_t)fDigitizedValue;
 
       }
-
-
 }
 
 //////////////////////////////////////////////////////
