@@ -146,7 +146,7 @@ void FADC::DigitizePixel( Int_t PixelID )
         tracegenerator->SetTelData(telData);
         trace = tracegenerator->GetLowGainTrace(PixelID);
       }
-    else
+    else 
       trace = telData->fTraceInPixel[PixelID];
 
     //Write the FADC trace
@@ -203,6 +203,7 @@ void FADC::DigitizePixel( Int_t PixelID )
 	    telData->iFADCTraceInPixel[PixelID][i] = (Int_t)fDigitizedValue;
 
       }
+//if(bLowGain) ShowTraceOfPixel(PixelID);
 }
 
 //////////////////////////////////////////////////////

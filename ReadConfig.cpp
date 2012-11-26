@@ -91,6 +91,8 @@ void ReadConfig::resetTelVectors()
     iTelType.assign( iNumberOfTelescopes, 0 );
     bBlurPSF.assign( iNumberOfTelescopes, 0 ); 
     fBlurSigma.assign( iNumberOfTelescopes, 0 );                 //Additional Bluring of the optical psf
+    fSigmaElectronicNoise.assign( iNumberOfTelescopes, 0 );                 //The relative gain of each telescope
+    fRelativeTelescopeGain.assign( iNumberOfTelescopes, 0 );                 //The relative gain of each telescope
     fWinstonConeEfficiency.assign( iNumberOfTelescopes, 0 );                 //The efficiency of the Winstoncone
 }
 
@@ -211,13 +213,13 @@ vector< Float_t > ReadConfig::GetRelQE(UInt_t telType)
 
 //----------------------------------------------------------------------------------------------------
 // Function to create and return the distributions of the relative gains between pixels in a camera
-vector< Float_t > ReadConfig::GetRelGain(UInt_t telType, const vector< Float_t > vRelQE)
+vector< Float_t > ReadConfig::GetRelGain(UInt_t telType, UInt_t telID, const vector< Float_t > vRelQE)
 {
 
    vector< Float_t > vRelGain;
 
-   if(fGainSigma[telType]<=0) //no gain distribution, perfect world
-      vRelGain.assign(fCNChannels[telType],1.0);
+   if(fGainSigma[telType]<=0) //no gain distribution, perfect world for pixel. Only fill with relative telescope gain.
+      vRelGain.assign(fCNChannels[telType],GetRelativeTelescopeGain(telID));
    else
      {
 		cout<<"The photon sensors get different rel gains, distributed following a normal distribution with a sigma of "<<fGainSigma[telType]<<endl;
@@ -233,7 +235,7 @@ vector< Float_t > ReadConfig::GetRelGain(UInt_t telType, const vector< Float_t >
 				  { 
                     relGain /= vRelQE[i];
 				  }  
-               vRelGain.push_back(relGain);
+               vRelGain.push_back(relGain*GetRelativeTelescopeGain(telID));
            }
      }
       
@@ -995,10 +997,26 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
 	     i_stream >> id;
 	     i_stream >> iTelIDInSuperArray[id];
 	     i_stream >> iTelType[id];
+	     i_stream >> fSigmaElectronicNoise[id];
+	     i_stream >> fRelativeTelescopeGain[id];
 	     i_stream >> fWinstonConeEfficiency[id];
 	     i_stream >> fBlurSigma[id];
 
          bBlurPSF[id] = fBlurSigma[id]<=0 ? kFALSE : kTRUE; 
+         
+         if( fSigmaElectronicNoise[id]<0)
+          {
+           cout<<"TelescopeID: "<<id<<" the electronic noise for this telescope is set wrong. It has to be larger than 0 "<<endl;
+           cout<<"You tried to set it to "<<fSigmaElectronicNoise[id]<<endl;
+           exit(1);
+          }
+
+         if( fRelativeTelescopeGain[id]<=0 ||  fRelativeTelescopeGain[id]>1)
+          {
+           cout<<"TelescopeID: "<<id<<" the relative gain of this telescope is set wrong. It has to be between 0 and 1"<<endl;
+           cout<<"You tried to set it to "<<fRelativeTelescopeGain[id]<<endl;
+           exit(1);
+          }
          
          if( fWinstonConeEfficiency[id]<=0 ||  fWinstonConeEfficiency[id]>1)
           {
@@ -1009,7 +1027,7 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
          
 
          cout <<"Telescope :"<<id<<" SuperArrayID: "<<iTelIDInSuperArray[id]<<" telType: "<<iTelType[id]<<" (id=" << id << ")" 
-     << "  Winston Cone efficieny : "<<fWinstonConeEfficiency[id]<<" BlurSigma [mm]: "<<fBlurSigma[id]<<endl;
+     <<" sigma electronic noise: "<<fSigmaElectronicNoise[id]<<" relative gain: "<<fRelativeTelescopeGain[id]<<";  Winston Cone efficieny : "<<fWinstonConeEfficiency[id]<<" BlurSigma [mm]: "<<fBlurSigma[id]<<endl;
       }
 
 

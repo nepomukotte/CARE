@@ -1,3 +1,4 @@
+//Add AzTel and AzPrim to output root file
 /*! \file CameraAndReadout.cpp
     \Main program of CARE a camera simulation for Cherenkov telescopes
 
@@ -43,56 +44,6 @@ static const Bool_t DEBUG_ARRAYTRIGGER = kFALSE;
 static const Bool_t DEBUG_MAIN = kFALSE;
 static const Bool_t DEBUG_TELESCOPEDATA = kFALSE;
 
-
-void getRotatedShowerDirection( double ze, double az, double y, double x, double &rze, double &raz )
-{
-
-    double degrad = 57.29577;
-
-// get all directions in [rad]
-    x /= degrad;
-    y /= (-1*degrad);
-
-// assume all telescopes point in same directions
-    double el = (90.-ze)/degrad;
-    az = az/degrad;
-// these are the resulting directions
-
-    double r = sqrt( 1. + x*x + y*y );
-    double cx = x/r;
-    double cy = 1./r;
-    double cz = y/r;
-
-// rotate telescope around elevation axis
-    double ex = cx;
-    double ey = cy * cos( el ) - cz * sin( el );
-    double ez = cy * sin( el ) + cz * cos( el );
-// rotate around azimuth
-    double rx, ry, rz;
-    rx =     ex * cos( az ) + ey * sin( az );
-    ry = -1.*ex * sin( az ) + ey * cos( az );
-    rz = ez;
-// calculate new azimuth, zenith
-    r = sqrt( rx*rx + ry*ry );
-// small value check
-    if( fabs(r) < 1.e-10 ) r = 0.;
-    if( fabs(rx) < 1.e-10 ) rx = 0.;
-    if( fabs(ry) < 1.e-10 ) ry = 0.;
-    if( fabs(rz) < 1.e-10 ) rz = 0.;
-
-    if( r == 0. ) raz = az * degrad;
-    else
-    {
-        raz = (TMath::Pi()/2.-atan2(ry,rx))*degrad;
-        if( raz > 180. )  raz = -1.*(360.-raz);
-        if( raz < -180. ) raz *= -1.;
-    }
-    if( rz == 0. ) rze = 90. - el*degrad;
-    else
-    {
-        rze = 90.-atan2(rz,r)*degrad;
-    }
-}
 
 
 void help()
@@ -515,13 +466,21 @@ int main( int argc, char **argv )
        UInt_t eventNumber ; 
        Float_t xcore ;
        Float_t ycore ;
+       Float_t azPrim ;
+       Float_t znPrim ;
        Bool_t arrayTriggerBit ;
        std::vector< Bool_t > vTelescopeTriggerBits ;
        vTelescopeTriggerBits.assign(uNumTelescopes , 0 ) ;
+       std::vector< Float_t > vAzTel ;
+       vAzTel.assign(uNumTelescopes , 0 ) ;
+       std::vector< Float_t > vZnTel ;
+       vZnTel.assign(uNumTelescopes , 0 ) ;
        
        Float_t DeltaTL3 ;
 
        tSimulatedEvents.Branch("energy",&energy,"energy/F");
+       tSimulatedEvents.Branch("ZnPrim",&znPrim,"ZnPrim/F");
+       tSimulatedEvents.Branch("AzPrim",&azPrim,"AzPrim/F");
        tSimulatedEvents.Branch("xcore",&xcore,"xcore/F");
        tSimulatedEvents.Branch("ycore",&ycore,"ycore/F");
        tSimulatedEvents.Branch("arrayTriggerBit",&arrayTriggerBit,"arrayTriggerBit/B");
@@ -543,6 +502,8 @@ int main( int argc, char **argv )
            tout[i]->Branch("vPEInPixel", &(telData[i]->iPEInPixel));
            tout[i]->Branch("vQDCValue", &(telData[i]->iQDCInPixel));
            tout[i]->Branch("iPhotonsInFocalPlane", &(telData[i]->iNumPhotonsInFocalPlane));
+           tout[i]->Branch("fAzTel", &(vAzTel[i]));
+           tout[i]->Branch("fZnTel", &(vZnTel[i]));
            if(bWriteTracesToRootFile)
               {
                tout[i]->Branch("vFADCTraces", telData[i]->iFADCTraceInPixel);
@@ -588,10 +549,10 @@ int main( int argc, char **argv )
 
         tGeneralInfo->SetBranchAddress("telIDVector",&telIDVector,&b_telIDVector);
         tGeneralInfo->SetBranchAddress("telLocXVector",&telLocXGCVector,&b_telLocXGCVector);
-		tGeneralInfo->SetBranchAddress("telLocYVector",&telLocYGCVector,&b_telLocYGCVector);
-		tGeneralInfo->SetBranchAddress("telLocZVector",&telLocZGCVector,&b_telLocZGCVector);
-		tGeneralInfo->SetBranchAddress("transitTimeVector",&transitTimeVector,&b_transitTimeVector);
-		tGeneralInfo->SetBranchAddress("obsHgt", &dObsHeight );
+	tGeneralInfo->SetBranchAddress("telLocYVector",&telLocYGCVector,&b_telLocYGCVector);
+	tGeneralInfo->SetBranchAddress("telLocZVector",&telLocZGCVector,&b_telLocZGCVector);
+	tGeneralInfo->SetBranchAddress("transitTimeVector",&transitTimeVector,&b_transitTimeVector);
+	tGeneralInfo->SetBranchAddress("obsHgt", &dObsHeight );
         tGeneralInfo->SetBranchAddress("globalEffic", &dGlobalPhotonEffic );
         tGeneralInfo->SetBranchAddress("fileHeader", &fileheader,&b_fileheader );
         tGeneralInfo->GetEntry( 0 );
@@ -607,25 +568,25 @@ int main( int argc, char **argv )
 
          vector<float> vTelTransitTimes;
         //loop over telescopes in CARE
-		for(int c =0 ; c<readConfig->GetNumberOfTelescopes() ; c++)
-		   {
-               //loop over telescopes in GrOptics file to find the right match
-               for(unsigned i = 0;i<telIDVector->size();i++)
-            	   {
-		              int iGrOpticsTelID = telIDVector->at(i);
+	for(int c =0 ; c<readConfig->GetNumberOfTelescopes() ; c++)
+	   {
+              //loop over telescopes in GrOptics file to find the right match
+              for(unsigned i = 0;i<telIDVector->size();i++)
+           	   {
+	              int iGrOpticsTelID = telIDVector->at(i);
                       if(readConfig->GetTelescopeIDinSuperArray(c) == iGrOpticsTelID)
-			              {
-				             telData[c]->TelXpos = telLocXGCVector->at(i);
-				             telData[c]->TelYpos = telLocYGCVector->at(i);
-				             telData[c]->TelZpos = telLocZGCVector->at(i);
-							 cout<<"Telescope "<<c<<" location x: "<< telData[c]->TelXpos<<" y: "<<telData[c]->TelYpos<<" z: "<<telData[c]->TelZpos<<endl; 
-							 telData[c]->OpticsTransitTime = transitTimeVector->at(i);
-                             cout<<"transit time through the telescope optics "<<telData[c]->OpticsTransitTime<<endl;
-                             vTelTransitTimes.push_back(transitTimeVector->at(i)); 
-                             break;
-						  }
-				    }     
-			   }
+		              {
+			         telData[c]->TelXpos = telLocXGCVector->at(i);
+			         telData[c]->TelYpos = telLocYGCVector->at(i);
+			         telData[c]->TelZpos = telLocZGCVector->at(i);
+	  			 cout<<"Telescope "<<c<<" location x: "<< telData[c]->TelXpos<<" y: "<<telData[c]->TelYpos<<" z: "<<telData[c]->TelZpos<<endl; 
+				 telData[c]->OpticsTransitTime = transitTimeVector->at(i);
+                                 cout<<"transit time through the telescope optics "<<telData[c]->OpticsTransitTime<<endl;
+                                 vTelTransitTimes.push_back(transitTimeVector->at(i)); 
+                                 break;
+			      }
+		    }     
+	   }
         arraytrigger->SetInterTelTransitTimes(vTelTransitTimes);
        // read trees from file one for each telescope
        TTree **t = new TTree*[uNumTelescopes];
@@ -654,6 +615,10 @@ int main( int argc, char **argv )
        float fXsource = 0.;
        float fYsource = 0.;
        float fDelay = 0.;
+       float fAzPrim = 0.;
+       float fZnPrim = 0.;
+       float fAzTel = 0.;
+       float fZnTel = 0.;
        std::vector< float > *v_f_x = 0;
        std::vector< float > *v_f_y = 0;
        std::vector< float > *v_f_time = 0;
@@ -680,8 +645,6 @@ int main( int argc, char **argv )
 
        //we need this information for the VBF file simulation header and pedestals
        t[0]->SetBranchAddress("primaryType", &iPrimaryType );
-       t[0]->SetBranchAddress("Xcos", &fXcos );
-       t[0]->SetBranchAddress("Ycos", &fYcos );
        t[0]->GetEntry( 0 );
 
        if(readConfig->GetVBFwriteBit())
@@ -718,7 +681,7 @@ int main( int argc, char **argv )
 		   
 	   std::string simulator = readConfig->GetSimulatorName().Data();
 
-       string sSimInfoForHeader = sConfigFileName;
+           string sSimInfoForHeader = sConfigFileName;
 	   sSimInfoForHeader.append(*fileheader); 
 
        cout<<"Dumping the header written into the VBF file"<<endl;
@@ -764,7 +727,7 @@ int main( int argc, char **argv )
 	   Int_t NumPedestalsToSimulate = readConfig->GetNumberOfPedestalEvents() 
 	                                   + readConfig->GetNumberOfPedestalEventsToStabilize();
        
-	   for(Int_t p = 0 ;p<  NumPedestalsToSimulate;p++)
+      for(Int_t p = 0 ;p<  NumPedestalsToSimulate;p++)
 	 {
 
 	   if( p>readConfig->GetNumberOfPedestalEventsToStabilize() && iPedestalWriteFlag==0)
@@ -773,16 +736,17 @@ int main( int argc, char **argv )
 	   if(p%100==0)
 	     cout<<endl<<"Done "<<p<<" pedestal events"<<endl;
 
-	   for (UInt_t tel=0;tel<uNumTelescopes;tel++){
+	   for (UInt_t tel=0;tel<uNumTelescopes;tel++)
+             {
 		 
 	     //generate traces with trace generator
-         Int_t telType = telData[tel]->GetTelescopeType();
+             Int_t telType = telData[tel]->GetTelescopeType();
 
-	   if(p%100==0 || p == readConfig->GetNumberOfPedestalEventsToStabilize())
-	     cout<<"RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
+	     if(p%100==0 || p == readConfig->GetNumberOfPedestalEventsToStabilize())
+	            cout<<"RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
 
-         telData[tel]->ResetTraces();
-         traceGenerator[telType]->SetTelData(telData[tel]);
+             telData[tel]->ResetTraces();
+             traceGenerator[telType]->SetTelData(telData[tel]);
 	     traceGenerator[telType]->GenerateNSB();
 		 
 	     //Load event with trace from trace generator.
@@ -791,36 +755,32 @@ int main( int argc, char **argv )
          
 	     //Running the FADC
 	     telData[tel]->fTriggerTime = telData[tel]->fAveragePhotonArrivalTime ;
-         fadc[telType]->RunFADC(telData[tel]);
-	   }
+             fadc[telType]->RunFADC(telData[tel]);
+	    }
 
 	   //save to VBF file if we want to do that
 	   if(readConfig->GetVBFwriteBit() 
 		         && p>=readConfig->GetNumberOfPedestalEventsToStabilize() 
-				 && iPedestalWriteFlag==1)
+			 && iPedestalWriteFlag==1)
 	     {
 	       VBFwrite->setPedestalEvent();  // tell the writer this is peds packet
 	       for (UInt_t tel1=0;tel1<uNumTelescopes;tel1++) {
-
-		 Float_t Az = atan2( fXcos, fYcos );
-		 Float_t Ze = 1. - (fXcos*fXcos+fYcos*fYcos);
-		 if( Ze < 0. ) Ze = 0.;  // should never happen
-		 Ze = acos( sqrt( Ze ) );
-
-		 VBFwrite->setAzimElevTelDeg(tel1,Az*57.29577,90.0-Ze*57.29577);//az, elev in deg
-        
+                    t[tel1]->SetBranchAddress("AzTel", &fAzTel );
+                    t[tel1]->SetBranchAddress("ZnTel", &fZnTel );
+                    t[tel1]->GetEntry( 0 );
+		    VBFwrite->setAzimElevTelDeg(tel1,fAzTel,90.0-fZnTel);//az, elev in deg
 	       }
-	       VBFwrite->makePacket(); // make packet,
+	       
+               VBFwrite->makePacket(); // make packet,
 	       
 	       VBFwrite->makeArrayEvent();  // make array event
 	       
 	       //pedVBF->setDebugLevel(1);
 	       VBFwrite->makeArrayTrigger(); // number of triggering telescopes = all
 	       // telescopes, 
-        //VBFwrite->setMaxNumberChannels(telData[0]->iNumPixels); // set channelNum for this telescope
-        //VBFwrite->setNumFadcSamples( telData[0]->iNumFADCSamples);  // set numFadcSamples for this telescope
+               //VBFwrite->setMaxNumberChannels(telData[0]->iNumPixels); // set channelNum for this telescope
+               //VBFwrite->setNumFadcSamples( telData[0]->iNumFADCSamples);  // set numFadcSamples for this telescope
 
-	       
 	       for (UInt_t tel=0;tel<uNumTelescopes;tel++){
         
 		 VBFwrite->setTelescope(tel);  // set telescope number, starting from zero
@@ -889,6 +849,10 @@ int main( int argc, char **argv )
 	       t[n]->SetBranchAddress("time", &v_f_time, &b_v_f_time );
 	       t[n]->SetBranchAddress("eventNumber", &fEventNumber );
 	       t[n]->SetBranchAddress("primaryEnergy", &fPrimaryEnergy ); 
+               t[n]->SetBranchAddress("AzTel", &fAzTel );
+               t[n]->SetBranchAddress("ZnTel", &fZnTel );
+               t[n]->SetBranchAddress("AzPrim", &fAzPrim );
+               t[n]->SetBranchAddress("ZnPrim", &fZnPrim );
 	       t[n]->SetBranchAddress("Xcore", &fXcore );
 	       t[n]->SetBranchAddress("Ycore", &fYcore );
 	       t[n]->SetBranchAddress("Xcos", &fXcos );
@@ -896,12 +860,18 @@ int main( int argc, char **argv )
 	       t[n]->SetBranchAddress("Xsource", &fXsource );
 	       t[n]->SetBranchAddress("Ysource", &fYsource );
        	       t[n]->GetEntry( i );
+               //        cout<<i<<": a "<<sqrt((fAzTel-fAzPrim)*(fAzTel-fAzPrim)+(fZnTel-fZnPrim)*(fZnTel-fZnPrim))<<endl;
 
 	       //General things we want to have in the root output file characterizing the event
-	       energy = fPrimaryEnergy;
+	       //why not pipe this directly into the root file and not use these variables
+               energy = fPrimaryEnergy;
 	       eventNumber = fEventNumber;
 	       xcore = fXcore;
 	       ycore = fYcore;
+               vZnTel[n] = fZnTel;
+               vAzTel[n] = fAzTel;
+               azPrim = fAzPrim;
+               znPrim = fZnPrim;
 
                Int_t telType = telData[n]->GetTelescopeType();
 
@@ -940,77 +910,66 @@ int main( int argc, char **argv )
 	       
 		   if(DEBUG_MAIN)
 		     cout<<"Telescope "<<n<<endl;
+
 		   t[n]->SetBranchAddress("eventNumber", &fEventNumber );
 		   t[n]->SetBranchAddress("primaryEnergy", &fPrimaryEnergy );
 		   t[n]->SetBranchAddress("primaryType", &iPrimaryType );
 		   t[n]->SetBranchAddress("delay", &fDelay );
-		   t[n]->SetBranchAddress("Xcore", &fXcore );
-		   t[n]->SetBranchAddress("Ycore", &fYcore );
-		   t[n]->SetBranchAddress("Xcos", &fXcos );
-		   t[n]->SetBranchAddress("Ycos", &fYcos );
-		   t[n]->SetBranchAddress("Xsource", &fXsource );
-		   t[n]->SetBranchAddress("Ysource", &fYsource );
 		   t[n]->SetBranchAddress("photonX", &v_f_x, &b_v_f_x ); 
 		   t[n]->SetBranchAddress("photonY", &v_f_y, &b_v_f_y ); 
 		   t[n]->SetBranchAddress("time", &v_f_time, &b_v_f_time );
 		   t[n]->SetBranchAddress("wavelength", &v_f_lambda, &b_v_f_lambda );
-
 		   t[n]->GetEntry( i );
 		
-		if( v_f_time->size() != v_f_x->size() )
+		   if( v_f_time->size() != v_f_x->size() )
 		     {
-		       
 		       cout<<"Vectors do not have the same size, should never happen, isn't it?"<<endl;
 		     }
-		   
 
-           //generate traces with trace generator
-           Int_t telType = telData[n]->GetTelescopeType();
+                   //generate traces with trace generator
+                   Int_t telType = telData[n]->GetTelescopeType();
 
-           traceGenerator[telType]->SetTelData(telData[n]);
-
-	   traceGenerator[telType]->LoadCherenkovPhotons( v_f_x ,  v_f_y, v_f_time, v_f_lambda, fDelay,dGlobalPhotonEffic);	
+                   traceGenerator[telType]->SetTelData(telData[n]);
+	           traceGenerator[telType]->LoadCherenkovPhotons( v_f_x ,  v_f_y, v_f_time, v_f_lambda, fDelay,dGlobalPhotonEffic);	
 		   
 		   //   TelData->ShowTrace(0,kTRUE); 
            		   
-
 		   //run the telescope trigger
-	       if(DEBUG_MAIN)
-		   cout<<"Load the traces into trigger"<<endl;
-           Teltrigger[telType]->LoadEvent(telData[n]);
+	           if(DEBUG_MAIN)
+		     cout<<"Load the traces into trigger"<<endl;
+                   Teltrigger[telType]->LoadEvent(telData[n]);
  
-	       if(DEBUG_MAIN)
-		   cout<<"run trigger"<<endl;
-           Teltrigger[telType]->RunTrigger();
+	           if(DEBUG_MAIN)
+		     cout<<"run trigger"<<endl;
+                   Teltrigger[telType]->RunTrigger();
            
-
 		   // Teltrigger->ShowTrace(0,0);
 
-	       if(DEBUG_MAIN)
-		   cout<<"done trigger, RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
+	           if(DEBUG_MAIN)
+		    cout<<"done trigger, RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
 
-              fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
-	      GroupTriggerBits[n] =  telData[n]->GetTriggeredGroups();
-	      vTelescopeTriggerBits[n]=telData[n]->GetTelescopeTrigger();
+                   fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
+	           GroupTriggerBits[n] =  telData[n]->GetTriggeredGroups();
+	           vTelescopeTriggerBits[n]=telData[n]->GetTelescopeTrigger();
 
-	} //end looping over telescopes doing trigger
+	         } //end looping over telescopes doing trigger
        
      
-	       //Go into the array trigger                       
-	       if(DEBUG_MAIN)
+	        //Go into the array trigger                       
+	        if(DEBUG_MAIN)
 		 {
 		   cout<<endl<<"Event trigger status"<<endl;
 		   cout<<"Telescope trigger bits: "<<vTelescopeTriggerBits[0]<<vTelescopeTriggerBits[1]<<vTelescopeTriggerBits[2]<<vTelescopeTriggerBits[3]<<endl;
 		   cout<<"Telescope trigger times: "<<fTelTriggerTimes[0]<<"  "<<fTelTriggerTimes[1]<<"  "<<fTelTriggerTimes[2]<<"  "<<fTelTriggerTimes[3]<<"  "<<endl;
 		 }
 	   
-	       arraytrigger->SetTelescopeTriggerBitsAndTimes(vTelescopeTriggerBits,fTelTriggerTimes);
-	       isArrayTriggered = arraytrigger->RunTrigger(); //think of changing this if no array trigger is used
-	       arrayTriggerBit = 0;
-	       DeltaTL3=1e6;
+	        arraytrigger->SetTelescopeTriggerBitsAndTimes(vTelescopeTriggerBits,fTelTriggerTimes);
+	        isArrayTriggered = arraytrigger->RunTrigger(); //think of changing this if no array trigger is used
+	        arrayTriggerBit = 0;
+	        DeltaTL3=1e6;
 
 		   //Run FADC
-	       if(isArrayTriggered)
+	        if(isArrayTriggered)
 		 {
 		   NumTriggeredEvents++;
 		   arrayTriggerBit = 1;
@@ -1038,19 +997,18 @@ int main( int argc, char **argv )
 			 }
 
 			  //This should only happen if something is wrong in real life with the array trigger and this telescope gets dropped
-                if(  arraytrigger->GetArrayTriggerTime(l)>5e5 )
-                     telData[l]->bTelescopeHasTriggered = kFALSE;
-                else
-                     telData[l]->bTelescopeHasTriggered = kTRUE;
+                     if(  arraytrigger->GetArrayTriggerTime(l)>5e5 )
+                       telData[l]->bTelescopeHasTriggered = kFALSE;
+                     else
+                       telData[l]->bTelescopeHasTriggered = kTRUE;
 					  
 
-               //Do this
-               Int_t telType = telData[l]->GetTelescopeType();
-		       fadc[telType]->SetDebugInfo(fPrimaryEnergy,l,0,0);
-		       //needs to change to work with option no Array trigger
-		       telData[l]->fTriggerTime = arraytrigger->GetArrayTriggerTime(l) ;
-		       fadc[telType]->RunFADC(telData[l]);
-		    
+                    //Do this
+                    Int_t telType = telData[l]->GetTelescopeType();
+	            fadc[telType]->SetDebugInfo(fPrimaryEnergy,l,0,0);
+	             //needs to change to work with option no Array trigger
+	            telData[l]->fTriggerTime = arraytrigger->GetArrayTriggerTime(l) ;
+	            fadc[telType]->RunFADC(telData[l]);
 
 			   if(DEBUG_MAIN)
 				 cout<<"FADC completed"<<endl;
@@ -1063,41 +1021,34 @@ int main( int argc, char **argv )
 
              //write event into root file	
 	     tSimulatedEvents.Fill(); 
-             for(UInt_t i = 0; i<uNumTelescopes; i++)
+             for(UInt_t n = 0; n<uNumTelescopes; n++)
                 {
-                     tout[i]->Fill();
+                     tout[n]->Fill();
                 }
 
 	     //Write the event into the VBF File
 	     if(readConfig->GetVBFwriteBit())
 	       {
-		 // check numbers to avoid atan2(0.,-0.) = 3.14159
-		 if( fabs(fYcos) < 1.e-10 ) fYcos = 0.;
 
-		 Float_t Az = atan2( fXcos, fYcos );
-		 Float_t Ze = 1. - (fXcos*fXcos+fYcos*fYcos);
-		 if( Ze < 0. ) Ze = 0.;  // should never happen
-		 Ze = acos( sqrt( Ze ) );
 		 // set telescope azimuth and elevation vectors in vbf writer
-		 for (UInt_t tel1=0;tel1 < uNumTelescopes;tel1++){     
-		   VBFwrite->setAzimElevTelDeg(tel1,Az*57.29577,90.0-Ze*57.29577);
+		 for (UInt_t n=0;n < uNumTelescopes;n++){     
+                    t[n]->SetBranchAddress("AzTel", &fAzTel );
+                    t[n]->SetBranchAddress("ZnTel", &fZnTel );
+                    t[n]->GetEntry( i );
+		    VBFwrite->setAzimElevTelDeg(n,fAzTel,90.0-fZnTel);//az, elev in deg
 		 }              
     
 		 VBFwrite->setDataEvent();  // tell vw that the event is a data event and
 		 //      not a pedestal event
 		 
 		 VBFwrite->makePacket();   // create an empty packet
-	       
-		 double rze;
-		 double raz;
-		 getRotatedShowerDirection( Ze*57.29577,Az*57.29577,fYsource,fXsource,rze,raz );
-	       
+
 		 // make simulation data header and add to packet
 		 VBFwrite->makeVSimulationData( fPrimaryEnergy * 1000.0,
-					      rze, //primary zenith angle fix
-					      raz, //primary az angle
+					      fZnPrim, //primary zenith angle fix
+					      fAzPrim, //primary az angle
 					      fXcore, //x:primary core east
-					      -fYcore,//-y : primary core south
+					      -fYcore,//y : primary core south  //N.O. removed minus
 					      dObsHeight, //observatory altitude
 					      iPrimaryType);
 

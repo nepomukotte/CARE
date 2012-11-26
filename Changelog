@@ -16,6 +16,39 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
+  2012/11/26 Nepomuk Otte
+
+   * VBF-0.3.3.tar.gz 
+   - added the VBF package
+
+  2012/11/25 Nepomuk Otte
+
+   * ReadConfig.[cpp,h]; TelescopeData.[cpp,h]; TraceGenerator.[cpp,h];
+   CameraAndReadout.cpp
+   - added capability to set the relative gain for each telescope
+   - added the capability to set electronic noise
+     Both are set as parameters of the TLCFG record
+     * TLCFG 0  1 0 0 1  0.75 0.0
+     #   Parameters for each telescope (TLCFG) the parameters are:
+     #   -the telescope identification number in the CARE simulations 
+     #   -the telescopes ID in the hyperarray (for CTA) is the same as tel id
+     if all telescopes are used
+     #   -the telescope type
+     #   -the sigma of the electronic noise in units of the single pe
+     amplitude for a relative telescope gain of one
+     #    a sigma of 0 means no electronic noise
+     #   -the relative gain of the telescope
+     #   -the Winston Cone efficiency can be modified to adjust 
+     #    the total optical throughput of that specific telescope
+     #   -the sigma by which the optical psf is blured [mm]
+     #    Add additional bluring of optical PSF. The position of the photon
+     will be reevaluated by adding
+     #    a random shift  x = x + 1/sqrt(2 pi sigma^2)e(-x_rand^2/(2sigma^2)
+     and the same in y
+     #    the sigma of the Gaussians in mm by which the optical PSF should be
+     blured in addition
+     #    if the sigma is <=0 no blurring is used
+
 
   2012/11/10 Nepomuk Otte
 

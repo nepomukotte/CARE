@@ -18,7 +18,7 @@ class TelescopeData {
  public:
  
 
-  TelescopeData( ReadConfig *readConfig, Int_t telTID = 0, Bool_t debug = kFALSE);
+  TelescopeData( ReadConfig *readConfig, Int_t telTID = 0,  TRandom3 *generator = NULL, Bool_t debug = kFALSE);
 
   //Trace related Functions
   Float_t          GetAverageArrivalTime(){return fAveragePhotonArrivalTime;};
@@ -109,6 +109,10 @@ class TelescopeData {
   vector< Float_t > fRelQEwWC;                           //with Winston cone efficiency
   vector< Float_t > fRelGain;
 
+  Float_t fRelativeTelescopeGain;                       //the relative gain of the telescope
+
+  Float_t fSigmaElectronicNoise;                        //the sigma of the electronic noise
+
   //Blur optical PSF and optical efficieny
   Float_t fWinstonConeEfficiency;                       //The efficiency of the Winstoncone
   Bool_t  bBlurPSF;                      
@@ -126,6 +130,7 @@ private:
   void SetupArrays();   //initializes all arrays
 
   Bool_t bDebug;
+  TRandom3 *rand;                                  //Our random number generator
 
   Int_t iTelID;
   Int_t iTelIDinSuperArray;

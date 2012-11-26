@@ -73,7 +73,7 @@ class ReadConfig
 
 
   vector< Float_t > GetRelQE(UInt_t telType);
-  vector< Float_t > GetRelGain(UInt_t telType,const vector< Float_t > vRelQE);
+  vector< Float_t > GetRelGain(UInt_t telType,UInt_t telID, const vector< Float_t > vRelQE);
 
 
   Int_t   GetTelescopeMultiplicity(){ return iTelescopeMultiplicity; };
@@ -125,6 +125,8 @@ class ReadConfig
   Int_t   GetTelescopeType(UInt_t telID){return iTelType[telID]; };
   Int_t   GetTelescopeIDinSuperArray(UInt_t telID){return iTelIDInSuperArray[telID]; };
   Float_t GetWinstonConeEfficiency(UInt_t telID){ return fWinstonConeEfficiency[telID]; };
+  Float_t GetRelativeTelescopeGain(UInt_t telID){ return fRelativeTelescopeGain[telID]; };
+  Float_t GetSigmaElectronicNoise(UInt_t telID){ return fSigmaElectronicNoise[telID]; };
   Bool_t  GetOpticalPSFBlurBit(UInt_t telID){return bBlurPSF[telID];};
   Float_t GetOpticalPSFBlurSigma(UInt_t telID){return fBlurSigma[telID];};
 
@@ -205,6 +207,11 @@ class ReadConfig
 
   //Cherenkovphoton throughput
   vector<Float_t> fWinstonConeEfficiency;                 //The efficiency of the Winstoncone
+
+  //Relative gain of telescopes
+  vector<Float_t> fRelativeTelescopeGain;                 //The relative gain of each telescope
+
+  vector<Float_t> fSigmaElectronicNoise;                 //The electronic noise in the readout chain
 
   //Quantum/PDE of the Photon detectors
   vector<vector<Float_t> > wl;

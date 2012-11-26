@@ -21,12 +21,14 @@ using namespace std;
 
 //---------------------------------------------------------------------------------------
 //Constructor
-TelescopeData::TelescopeData( ReadConfig *readConfig, Int_t telID, Bool_t debug)
+TelescopeData::TelescopeData( ReadConfig *readConfig, Int_t telID, TRandom3 *generator, Bool_t debug)
 {
 
   bDebug = debug;
 
   iTelID = telID;
+
+  rand = generator;
 
   iNumPixels = 0;
   fTraceInPixel = NULL;
@@ -126,8 +128,18 @@ void TelescopeData::ResetTraces()
   //Clear the trace arrays
   for(Int_t g=0;g<iNumPixels;g++)
     {
-      fTraceInPixel[g].assign(iNumSamplesPerTrace,0.0);
       fTraceInPixelNSBOnly[g].assign(iNumSamplesPerTrace,0.0);
+
+      fTraceInPixel[g].assign(iNumSamplesPerTrace,0.0);
+      //add electronic noise
+      if(fSigmaElectronicNoise>0)
+        {
+          for(Int_t i=0; i<iNumSamplesPerTrace;i++)
+             {
+               fTraceInPixel[g][i]=rand->Gaus(0.0,fSigmaElectronicNoise);
+             }
+        }
+
       fTimesInPixel[g].clear();
       fAmplitudesInPixel[g].clear();
       iFADCTraceInPixel[g].assign(iNumFADCSamples,0);
@@ -181,10 +193,15 @@ void   TelescopeData::SetParametersFromConfigFile( ReadConfig *readConfig ){
    iNumFADCSamples = readConfig->GetFADCSamples(iTelType);
    
    fRelQE = readConfig->GetRelQE(iTelType);
-   fRelQEwWC = fRelQE; 
-   fRelGain = readConfig->GetRelGain(iTelType,fRelQE);
+   fRelQEwWC = fRelQE;
+   fRelGain = readConfig->GetRelGain(iTelType,iTelID,fRelQE);
 
-   fWinstonConeEfficiency = readConfig->GetWinstonConeEfficiency(iTelID) ;   //The efficiency of the Winstoncone
+   fRelativeTelescopeGain = readConfig->GetRelativeTelescopeGain(iTelID); //the relative gain of the telescope   
+   cout<<"Relative telescope gain: "<<fRelativeTelescopeGain<<endl;
+
+   fSigmaElectronicNoise = readConfig->GetSigmaElectronicNoise(iTelID);
+
+   fWinstonConeEfficiency = readConfig->GetWinstonConeEfficiency(iTelID);   //The efficiency of the Winstoncone
    cout<<"Winstoncone efficiency: "<<fWinstonConeEfficiency<<endl;
    //add the WinstonConeQE to the rel QE
    for(UInt_t i = 0; i<fRelQEwWC.size();i++)
