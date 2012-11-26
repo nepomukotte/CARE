@@ -20,6 +20,8 @@ _
    This version is taged v1.4
    * VBF-0.3.3.tar.gz 
    - added the VBF package
+   - added an example configuration file for VERITAS
+   config/CARE_VERITAS_Example.cfg
 
   2012/11/25 Nepomuk Otte
 
