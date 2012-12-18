@@ -502,7 +502,7 @@ void TraceGenerator::GenerateNSB()
       exit(1);
     }
 
-   if(fNSBRatePerPixel<=0)
+   if(fNSBRatePerPixel<=0 && bUseNSB)
      {
       cout<<"FillPixelsNSB: You need to set the NSB rate in kHz per pixel with SetNSBRatePerPixel(Float_t rate)"<<endl;
       exit(1);

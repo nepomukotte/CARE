@@ -83,8 +83,8 @@ void MakeEffectiveArea(string directory,double radius = 750)
      TString namevar;
      namevar.Form("vGroupsInTriggerClusterTel0");
      std::vector< int > *vGroupsInTriggerCluster=0;
-     TBranch *b_vGroupsInTriggerCluster;
-     t->SetBranchAddress(namevar.Data(),&vGroupsInTriggerCluster,&b_vGroupsInTriggerCluster);
+     //TBranch *b_vGroupsInTriggerCluster;
+     //t->SetBranchAddress(namevar.Data(),&vGroupsInTriggerCluster,&b_vGroupsInTriggerCluster);
      std::vector< Bool_t > *vTelescopeTriggerBits=0 ;
      TBranch *b_vTelescopeTriggerBits;
      t->SetBranchAddress("vTelescopeTriggerBits",&vTelescopeTriggerBits,&b_vTelescopeTriggerBits);
@@ -99,8 +99,8 @@ void MakeEffectiveArea(string directory,double radius = 750)
 	 
 	 if( arrayTriggerBit == 1)
 	   {
-             if((Bool_t)(vTelescopeTriggerBits->at(0)) == 1)
-                 hGroupsTriggered->Fill(vGroupsInTriggerCluster->size());
+//             if((Bool_t)(vTelescopeTriggerBits->at(0)) == 1)
+  //               hGroupsTriggered->Fill(vGroupsInTriggerCluster->size());
 	     hTriggered->Fill(log10(energy));
 	     Float_t r = sqrt(xcore*xcore+ycore*ycore);
 	     //cout<<radius<<endl;
@@ -127,6 +127,7 @@ void MakeEffectiveArea(string directory,double radius = 750)
 	 //hEffArea->SetBinContent(i,dTriggered/dNEvents);
 	 hEffArea->SetBinContent(i,dTriggered/dNEvents*radius*radius*TMath::Pi());
 	 hEffArea->SetBinError(i,sqrt(dTriggered)/dNEvents*radius*radius*TMath::Pi());
+         hTriggered->SetBinContent(i,dTriggered/dNEvents*radius*radius*TMath::Pi()*TMath::Power(TMath::Power(10,hEvents->GetBinCenter(i)),-2.6));
 	 //hEffArea->SetBinError(i,sqrt(dTriggered)/dNEvents);
        }
      else

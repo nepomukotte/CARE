@@ -658,7 +658,7 @@ int main( int argc, char **argv )
 	   
 	   //telescope and pixel locations
 	   for (UInt_t tel = 0; tel < uNumTelescopes; tel++) {
-	     float telSouth = -telData[tel]->TelYpos;
+	     float telSouth = -1.0*telData[tel]->TelYpos;
 	     float telEast  = telData[tel]->TelXpos;
 	     float telUp    = telData[tel]->TelZpos;
 	     VBFwrite->setTelescopeLocations(tel,
