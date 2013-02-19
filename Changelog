@@ -16,6 +16,11 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
+  2013/02/19 Nepomuk Otte
+   This version is taged v1.4.1
+   * TraceGenerator.[cpp]
+   - fixed bug that wrote all cherenkov photons into file and not the pe
+
   2012/11/26 Nepomuk Otte
    This version is taged v1.4
    * VBF-0.3.3.tar.gz 

@@ -187,8 +187,10 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
            if(bDebug)
  	   cout<<"eff: "<<eff<<" lambda "<<lambda<<"  qe[lambda] "<<qe[lambda]<<" telData->fRelQEwWC[pixID] "<<telData->fRelQEwWC[pixID]<<" efficiency factor: "<<dEfficiencyFactor<<endl;
            if(rand->Uniform()<eff)
+                 {
 	          AddPEToTrace(pixID, v_f_time->at(p)-(telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime)); //Start filling fStartSamplingBeforeAverageTime ns before the average time
                   telData->iPEInPixel[pixID]++;
+                 }
 	    }
     }
 
