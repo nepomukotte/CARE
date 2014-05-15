@@ -19,10 +19,6 @@ class FADC {
   //Event handling
   void RunFADC(TelescopeData *telData);
 
-  void ShowTraceOfPixel(Int_t PixNum);
-
-  TH1F GetTraceHistogram(Int_t PixNum);
-
   void SetDebugInfo(Float_t energy, Int_t telid, Float_t zenith, Float_t azimuth);
 
   void     PrintHowOftenTheTraceWasTooShort();
@@ -64,7 +60,8 @@ class FADC {
   Float_t fFADCconversion;                         //the conversion of mV to DC
   Float_t fHiLoGainThreshold;                      //dc counts at which the HiLoGain switch is activated
   Float_t fLowHiGainRatio;                         //Gain ratio logain/higain
-  Float_t fPedestal;                               //Pedestal offset in the FADC
+  Float_t fHighGainPedestal;                       //High Gain Pedestal offset in the FADC
+  Float_t fLowGainPedestal;                        //Low Gain Pedestal offset in the FADC
 
   //Event dependent parameters
   Float_t fTimeStartFirstSample;

@@ -45,9 +45,9 @@ class TriggerTelescopeNextNeighbor {
   TVectorD GetGroupRateVsThreshold(){ return fGroupRateVsThreshold; };
   TVectorD GetGroupRateVsThresholdError(){ return fGroupRateVsThresholdErr; };
 
-  void ShowTrace(int GroupID, bool NSBOnly=kFALSE);
+  void ShowTrace(int GroupID);
   TH1F GetTraceHistogramCFD(int GroupID);
-  TH1F GetTraceHistogramThreshold(int GroupID, bool NSBOnly=kFALSE);
+  TH1F GetTraceHistogramThreshold(int GroupID);
 
  protected:
 

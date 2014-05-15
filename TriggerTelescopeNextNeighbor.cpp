@@ -29,7 +29,6 @@ TriggerTelescopeNextNeighbor::TriggerTelescopeNextNeighbor(ReadConfig *readConfi
   debugDisplay = display;
   iTelType = telType;
   fTracesInSumGroups = NULL;
-  fTracesInSumGroupsNSBOnly = NULL;
   fTracesInSumGroupsConstantFraction = NULL;	
   iClusterID = NULL;
   rand = generator;
@@ -73,15 +72,6 @@ void TriggerTelescopeNextNeighbor::CreateTraces()
   fTracesInSumGroups = new vector<Float_t>[iNumSumPixGroups];
    
 
-  if(fTracesInSumGroupsNSBOnly)
-    {
-      //for(Int_t i=0;i<iNumSumPixGroups;i++)
-      delete []  fTracesInSumGroupsNSBOnly;
-    }
-  //create the array with all the vectors, one vector for each sumgroup
-  fTracesInSumGroupsNSBOnly = new vector<Float_t>[iNumSumPixGroups];
-  
-
   if(fTracesInSumGroupsConstantFraction)
     {
       //for(Int_t i=0;i<iNumSumPixGroups;i++)
@@ -98,7 +88,7 @@ void TriggerTelescopeNextNeighbor::CreateTraces()
 
 
 
-TH1F TriggerTelescopeNextNeighbor::GetTraceHistogramThreshold(int GroupID, bool NSBOnly){
+TH1F TriggerTelescopeNextNeighbor::GetTraceHistogramThreshold(int GroupID ){
 
  
   TString title;
@@ -111,7 +101,7 @@ TH1F TriggerTelescopeNextNeighbor::GetTraceHistogramThreshold(int GroupID, bool 
 	     
   for(Int_t i = 0; i<telData->iNumSamplesPerTrace; i++)
     {
-      Float_t signal = NSBOnly ? fTracesInSumGroupsNSBOnly[GroupID][i] : fTracesInSumGroups[GroupID][i];
+      Float_t signal = fTracesInSumGroups[GroupID][i];
       hTrace.SetBinContent(i+1,signal);
     }
 
@@ -142,14 +132,14 @@ TH1F TriggerTelescopeNextNeighbor::GetTraceHistogramCFD(int GroupID){
 }
 
 
-void TriggerTelescopeNextNeighbor::ShowTrace(int GroupID, bool NSBOnly){
+void TriggerTelescopeNextNeighbor::ShowTrace(int GroupID){
 
  	TCanvas cTraceTriggeredGroup("cTraceTriggeredGroup","Trace in triggered group",700,500);
         cTraceTriggeredGroup.Divide(1,2);
 	cTraceTriggeredGroup.cd(1);
 	gPad->SetGrid();
       
-	TH1F hTrace = GetTraceHistogramThreshold(GroupID,NSBOnly);
+	TH1F hTrace = GetTraceHistogramThreshold(GroupID);
 	TH1F hTraceCFD = GetTraceHistogramCFD(GroupID);
 
 	
@@ -205,7 +195,6 @@ void  TriggerTelescopeNextNeighbor::LoadEvent(TelescopeData *TelData)
  for(Int_t g=0;g<iNumSumPixGroups;g++)
     {
       fTracesInSumGroups[g].assign(telData->iNumSamplesPerTrace,0.0);
-      fTracesInSumGroupsNSBOnly[g].assign(telData->iNumSamplesPerTrace,0.0);
       fTracesInSumGroupsConstantFraction[g].assign(telData->iNumSamplesPerTrace,fOffsetDueToRFBinCFD);
       //loop over all group members and add their trace to the trace of the sumgroup
       for(UInt_t n = 0; n<iSumGroupMembers[g].size();n++)
@@ -221,7 +210,6 @@ void  TriggerTelescopeNextNeighbor::LoadEvent(TelescopeData *TelData)
 	      
 	             Float_t CFDsignal = fsignal*fDiscConstantFractionAttenuation-fsigDelayed;
 	             fTracesInSumGroups[g][i]+=fsignal;
-	             fTracesInSumGroupsNSBOnly[g][i]+=telData->fTraceInPixelNSBOnly[memberID][i];
 	             fTracesInSumGroupsConstantFraction[g][i]+=CFDsignal;
 	         }
             if(bDebug)
@@ -544,7 +532,7 @@ Bool_t TriggerTelescopeNextNeighbor::RunDiscriminator(Int_t GroupID)
      if(bDebug && telData->bTriggeredGroups[GroupID] == kTRUE)
       {
         cout<<"Trace on which the discriminator was run and triggered; groupid "<<GroupID<<endl;
-        debugDisplay->AddDiscriminatorTraces(telData->GetTelescopeID(),GroupID,fDiscThreshold,GetTraceHistogramThreshold(GroupID,false),GetTraceHistogramCFD(GroupID));
+        debugDisplay->AddDiscriminatorTraces(telData->GetTelescopeID(),GroupID,fDiscThreshold,GetTraceHistogramThreshold(GroupID),GetTraceHistogramCFD(GroupID));
 
       }
 
@@ -672,6 +660,7 @@ void TriggerTelescopeNextNeighbor::RunBiasCurve(UInt_t Trials,Float_t LowerBound
       //Load the NSB into the Traces and adjust the RFB Feedback
       //generate traces with trace generator
       tracegenerator->GenerateNSB();
+      tracegenerator->BuildAllHighGainTraces();      
       //Load event with trace from trace generator
       LoadEvent(telData);
 
@@ -718,7 +707,6 @@ void TriggerTelescopeNextNeighbor::RunBiasCurve(UInt_t Trials,Float_t LowerBound
 
       fGroupRateVsThresholdErr[t]=sqrt(fGroupRateVsThreshold[t])/iNumSumPixGroups/(Trials*fTraceLength*1e-9);
       fGroupRateVsThreshold[t]=fGroupRateVsThreshold[t]/iNumSumPixGroups/(Trials*fTraceLength*1e-9);
-
       cout<<"NSB Telescope Trigger rate at "<<LowerBoundary+StepWidth*t<<" mV threshold "<<fBiasCurve[t]<<"+-"<<fBiasCurveErr[t]<<" Hz"<<endl;
       cout<<"Group rate :"<<fGroupRateVsThreshold[t]<<"+-"<<fGroupRateVsThresholdErr[t]<<" Hz"<<endl;
     }

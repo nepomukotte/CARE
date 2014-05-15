@@ -16,6 +16,7 @@ class ArrayTrigger {
  
   Float_t GetL3DeltaT(){ return fDeltaTL3; };
   Float_t GetArrayTriggerTime(int TelID){ return vTelTriggerTimesAfterArrayTrigger[TelID]; };
+  Float_t GetEarliestArrayTriggerTime(){ return fEarliestTriggerTime; };
 
  protected:
 
@@ -30,7 +31,9 @@ class ArrayTrigger {
   Int_t                *iClusterID;                       //Helper variable that assigns a cluster ID to each triggered telescope
 
   Float_t              *fDeltaL3Cluster;                  //Stores the smallest time difference between L2 signals contributing to an L3 trigger
-
+ 
+  Float_t              fEarliestTriggerTime;              //The earliest time the array trigger triggered for this event.
+ 
   Int_t                iNumTel;                           //The number of telescopes
   Int_t                iMultiplicity;                     //How many telescopes need to trigger
   Bool_t               bNextNeighborReq;                  //If the multiplicity requires next neighbors

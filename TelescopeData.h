@@ -67,9 +67,9 @@ class TelescopeData {
 
   //Trace related parameters  analog signal
   vector<Float_t> *fTraceInPixel;
-  vector<Float_t> *fTraceInPixelNSBOnly;
   vector<Float_t> *fTimesInPixel;
   vector<Float_t> *fAmplitudesInPixel;
+  vector<Float_t> *fPileUpAmplitudeForPhoton;
   Float_t         fAveragePhotonArrivalTime;               //Holds the average photon arrival time of all photons in one event
   Double_t        mean;                                     //trace mean
   Bool_t          bCherenkovPhotonsInCamera;

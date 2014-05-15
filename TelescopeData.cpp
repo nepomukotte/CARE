@@ -32,8 +32,8 @@ TelescopeData::TelescopeData( ReadConfig *readConfig, Int_t telID, TRandom3 *gen
 
   iNumPixels = 0;
   fTraceInPixel = NULL;
-  fTraceInPixelNSBOnly = NULL;
   fTimesInPixel  = NULL;
+  fPileUpAmplitudeForPhoton = NULL;
   fAmplitudesInPixel = NULL;
   iNumSamplesPerTrace = -1; 
 
@@ -44,6 +44,8 @@ TelescopeData::TelescopeData( ReadConfig *readConfig, Int_t telID, TRandom3 *gen
   TelYpos = 0;
   TelZpos = 0;
   OpticsTransitTime = 0;
+
+  fSigmaElectronicNoise = 0;
 
   vTriggerCluster.resize(0);
 
@@ -72,14 +74,6 @@ void   TelescopeData::SetupArrays(){
   //create the array with all the vectors, one vector for each pixel
   fTraceInPixel = new vector<Float_t>[iNumPixels];
 
-  if(fTraceInPixelNSBOnly )
-    {
-	delete []  fTraceInPixelNSBOnly ;
-    }
-   //create the array with all the vectors, one vector for each pixel
-  fTraceInPixelNSBOnly  = new vector<Float_t>[iNumPixels];
-
-
   if(fTimesInPixel )
     {
       delete []  fTimesInPixel ;
@@ -93,6 +87,13 @@ void   TelescopeData::SetupArrays(){
     }
   //create the array with all the vectors, one vector for each pixel
   fAmplitudesInPixel  = new vector<Float_t>[iNumPixels];
+
+  if(fPileUpAmplitudeForPhoton )
+    {
+      delete []  fPileUpAmplitudeForPhoton ;
+    }
+  //create the array with all the vectors, one vector for each pixel
+  fPileUpAmplitudeForPhoton  = new vector<Float_t>[iNumPixels];
 
   if(iFADCTraceInPixel)
     {
@@ -128,19 +129,10 @@ void TelescopeData::ResetTraces()
   //Clear the trace arrays
   for(Int_t g=0;g<iNumPixels;g++)
     {
-      fTraceInPixelNSBOnly[g].assign(iNumSamplesPerTrace,0.0);
-
       fTraceInPixel[g].assign(iNumSamplesPerTrace,0.0);
-      //add electronic noise
-      if(fSigmaElectronicNoise>0)
-        {
-          for(Int_t i=0; i<iNumSamplesPerTrace;i++)
-             {
-               fTraceInPixel[g][i]=rand->Gaus(0.0,fSigmaElectronicNoise);
-             }
-        }
 
       fTimesInPixel[g].clear();
+      fPileUpAmplitudeForPhoton[g].clear();
       fAmplitudesInPixel[g].clear();
       iFADCTraceInPixel[g].assign(iNumFADCSamples,0);
     }

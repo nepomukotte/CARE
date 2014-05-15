@@ -24,12 +24,20 @@ class TraceGenerator {
   TraceGenerator(ReadConfig *readConfig, int telType,  TRandom3 *generator, Bool_t debug = kFALSE,  Display *display = NULL);
   void             LoadCherenkovPhotons( std::vector< float > *v_f_X,std::vector< float > *v_f_Y,std::vector< float > *v_f_time,std::vector< float > *v_f_lambda, Float_t delay, Double_t dEfficiencyFactor);      //Loads Photons into traces
   void             GenerateNSB();
-  Float_t          GetAreaToPeakConversion(){return fAreaToPeakConversion;};
 
   vector<Float_t>  GetLowGainTrace(Int_t PixelID);
 
+  vector<Float_t>  GetTrace(Int_t PixelID,Bool_t bLowGain=kFALSE);
 
-  void     ShowAverageSinglePEPulse();
+  Float_t GetHighGainAreaToPeak(Int_t pulse){ return fHighGainAreaToPeakConversion[pulse]; };
+
+  void BuildAllHighGainTraces();
+
+  void BuildTrace(Int_t PixelID,Bool_t bLowGain=kFALSE);
+
+  void BuildLowGainTrace(Int_t PixelID);
+
+  void     ShowPulseShape(UInt_t n);
   //Need to generate vector with times for each sample
 
 
@@ -73,9 +81,12 @@ class TraceGenerator {
            //Set the low gain single pe pulse shape from an external file
   void     SetLowGainSinglePEShapeFromFile(TString sfilename);
 
+           //Set the pulse shapes from an external file
+  void     SetPulseShapesFromFile(TString sfilename,Bool_t bLowGain);
+
             //returns a TH1F histogram with the average single PE pulse shape used in the simulation
-  TH1F*    GetAverageSinglePEPulse();
-  TH1F*    GetAverageSinglePELowGainPulse();
+  TH1F*    GetHighGainPulse(UInt_t n);
+  TH1F*    GetLowGainPulse(UInt_t n);
   //Variables
 
   TelescopeData *telData;
@@ -95,14 +106,19 @@ class TraceGenerator {
   //PMT signal related variables
   Float_t  fSigmaSinglePEPulseHeightDistribution;  //sigma of the single PE pulse height distribution
   
-  vector<Float_t> fAverageSinglePEPulse;           //Holds the average digitized single PE pulse
+  vector< vector<Float_t> > fHighGainPulse;        //Holds the average digitized single PE pulse
                                                    //Max amplitude is normalized to one 20 nsec pulses are simulated
-  Float_t fAreaToPeakConversion;                   //the conversion factor from area to peak value for a single pe pulse.
-  Int_t iNumSamplesAverageSinglePEPulse;           //the number of samples in the average pulse  
-  Float_t fStartTimeAveragePulse;                  //How long before the maximum the pulse is being sampled in nanoseconds
-  Float_t fStopTimeAveragePulse;                   //How long after the maximum the pulse is being sampled in nanoseconds
+  vector<Float_t> fHighGainStartTime;         //How long before the maximum the pulse is being sampled in nanoseconds
+  vector<Float_t> fHighGainStopTime;          //How long after the maximum the pulse is being sampled in nanoseconds
+  vector<Float_t> fHighGainAreaToPeakConversion;            
+  vector<Float_t> fHighGainLinearAmplitude;
+  vector<Float_t> fHighGainNonLinearityFactor;
+
   Float_t fFWHMofSinglePEPulse;                    //if set to null the pulse shape is read from an external file
   
+  Float_t fLinearGainmVPerPE;                     //The mv/pe conversion factor at the input of the FADC in the linear regime
+
+  Float_t fPileUpWindow;                    //The width of the sliding window used to find the number of photons that pile up around any given photon 
 
   //SiPM related Variable
   Bool_t bSiPM;                                    //flag to figure out if we use SiPMs
@@ -111,11 +127,12 @@ class TraceGenerator {
   vector<Float_t > vSiPMOpticalCrosstalk;          //the optical crosstalk of the SiPM
 
   //The low gain pulse shape 
-  vector<Float_t> fAverageLowGainSinglePEPulse;    //The average pulse shape for the low gain channel
-  Float_t fLowGainAreaToPeakConversion;            
-  Float_t fLowGainStartTimeAveragePulse;
-  Float_t fLowGainStopTimeAveragePulse;
-  Int_t iNumSamplesLowGainAverageSinglePEPulse;
+  vector< vector<Float_t> > fLowGainPulse;    //The average pulse shape for the low gain channel
+  vector<Float_t> fLowGainAreaToPeakConversion;            
+  vector<Float_t> fLowGainStartTime;
+  vector<Float_t> fLowGainStopTime;
+  vector<Float_t> fLowGainLinearAmplitude;
+  vector<Float_t> fLowGainNonLinearityFactor;
 
   Float_t         fSamplingTime;                           //The sampling rate or resolution of the simulated trace
   Float_t         fSamplingTimeAveragePulse;               //The sampling time of the average PE pulse shape

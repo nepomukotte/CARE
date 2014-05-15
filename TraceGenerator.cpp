@@ -45,14 +45,12 @@ TraceGenerator::TraceGenerator( ReadConfig *readConfig , int telType, TRandom3 *
   fSamplingTime = -1;
   fSamplingTimeAveragePulse = -1; //sampling time of the average PE pulse
   fNSBRatePerPixel = -1; 
-  fStopTimeAveragePulse = 35; //time in ns 
-  fStartTimeAveragePulse = 5; //time in ns 
   fTraceLength = 100; //Length of simulated trace in ns
   fStartSamplingBeforeAverageTime=30;
-  iNumSamplesAverageSinglePEPulse=-1; 
   bAfterPulsing = kFALSE;
   fFWHMofSinglePEPulse = -1;
-  fAreaToPeakConversion = 0;
+  fLinearGainmVPerPE = -1;
+  fPileUpWindow = -1;
   //Read the config file
   SetParametersFromConfigFile( readConfig );
   
@@ -63,7 +61,10 @@ gridsearch = new GOrderedGridSearch(fXTubeMM,fYTubeMM,fSizeTubeMM,iTubeSides,fRo
   if(bDebug) cout<<"Done initializing the TraceGenerator"<<endl;
 
   if(bDebug)
-    ShowAverageSinglePEPulse();
+   { 
+     for(UInt_t i=0;i<max(fLowGainPulse.size(),fHighGainPulse.size());i++)
+      ShowPulseShape(i);
+   }
 }
 
 
@@ -74,6 +75,7 @@ gridsearch = new GOrderedGridSearch(fXTubeMM,fYTubeMM,fSizeTubeMM,iTubeSides,fRo
 void   TraceGenerator::SetTelData(TelescopeData *TelData){
 
 telData = TelData;
+
 
 }
 
@@ -93,7 +95,7 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
 
   if(fSamplingTime <= 0)
     {
-      cout<<"You need to set the sampling rate with SetSampleWidth(Float_t t)"<<endl;
+      cout<<"You need to set the sampling rate with SetTraceSampleWidthAndLength(Float_t t)"<<endl;
       exit(0);
     }
 
@@ -204,96 +206,6 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
 
   //cout<<"Finished loading the event"<<endl;
 
-}
-
-
-//-------------------------------------------------------------------------------------------
-//
-// Get simulated average single pe pulse. Returns a root histogram
-TH1F* TraceGenerator::GetAverageSinglePEPulse()
-{
-
-  if(fAverageSinglePEPulse.empty())
-    {
-      cout<<"Pulse has not been set. Set a pulse shape first"<<endl;
-      return NULL;
-    }
-
-  TH1F *h = new TH1F("h","Average Single PE Pulse",iNumSamplesAverageSinglePEPulse,-1*fStartTimeAveragePulse- fSamplingTimeAveragePulse*0.5,fStopTimeAveragePulse+ fSamplingTimeAveragePulse*0.5);
-  h->GetXaxis()->SetTitle("Time [ns]");
-  h->GetYaxis()->SetTitle("Amplitude normalized to peak");
-  for(Int_t i = 0; i<iNumSamplesAverageSinglePEPulse; i++)
-    {
-      cout<<i<<"  "<<fAverageSinglePEPulse[i]<<endl;
-      h->SetBinContent(i+1,fAverageSinglePEPulse[i]);
-    }
-
-
-  return h;
-}
-
-//-------------------------------------------------------------------------------------------
-//
-// Get simulated average single pe pulse. Returns a root histogram
-TH1F* TraceGenerator::GetAverageSinglePELowGainPulse()
-{
-
-  if(fAverageLowGainSinglePEPulse.empty())
-    {
-      cout<<"Low Gain pulse has not been set. Set a pulse shape first"<<endl;
-      return NULL;
-    }
-  
-  TH1F *h = new TH1F("h","Average LowGain Single PE Pulse",iNumSamplesLowGainAverageSinglePEPulse,-1*fLowGainStartTimeAveragePulse- fSamplingTimeAveragePulse*0.5,fLowGainStopTimeAveragePulse+ fSamplingTimeAveragePulse*0.5);
-  h->GetXaxis()->SetTitle("Time [ns]");
-  h->GetYaxis()->SetTitle("Amplitude normalized to peak");
-  for(Int_t i = 0; i<iNumSamplesLowGainAverageSinglePEPulse; i++)
-    {
-      h->SetBinContent(i+1,fAverageLowGainSinglePEPulse[i]);
-    }
-
-
-  return h;
-}
-
-
-
-//-------------------------------------------------------------------------------------------
-//
-// shows the average single pe pulse shape
-void  TraceGenerator::ShowAverageSinglePEPulse()
-{
-
-  TH1F *h = GetAverageSinglePEPulse();
-  h->GetXaxis()->SetTitle("Time [ns]");
-  h->GetYaxis()->SetTitle("Amplitude [photoelectrons]");
-
-  TH1F *hL = GetAverageSinglePELowGainPulse();
-  hL->GetXaxis()->SetTitle("Time [ns]");
-  hL->GetYaxis()->SetTitle("Amplitude [photoelectrons]");
-
-  TCanvas *cSinglePEShape = new TCanvas("cSinglePEShape","The single pe pulse Shape use in the simulation",1000,700);
-  
-  cSinglePEShape->Divide(2,1);
-  cSinglePEShape->Draw();
-  cSinglePEShape->cd(1);
-  gPad->SetGrid();
-	   
-  h->Draw();  
-  cSinglePEShape->cd(2);
-  gPad->SetGrid();
-	   
-  hL->Draw();  
-	      
-  TTimer timer("gSystem->ProcessEvents();", 50, kFALSE);
-	      
-  //
-  // While reading the input process gui events asynchronously
-  //
-  timer.TurnOn();
-  TString input = Getline("Type <return> to go on: ");
-  timer.TurnOff(); 
-	      
 }
 
 //-------------------------------------------------------------------------------------
@@ -429,65 +341,23 @@ void TraceGenerator::AddPEToTrace(Int_t PixelID, Float_t time, Int_t NumPE)
   telData->fTimesInPixel[PixelID].push_back(time);
   telData->fAmplitudesInPixel[PixelID].push_back(newAmpl);
 
- 
-  //In Reference of Trace
-  Float_t StartTime = time-fStartTimeAveragePulse;
-  Int_t StartSample = Int_t(StartTime/fSamplingTime+1);
-  Int_t StopSample = Int_t((StartTime+fStartTimeAveragePulse+fStopTimeAveragePulse)/fSamplingTime+1);
-
-  //The time between the start of the Trace and the first sampled value
-  Float_t TimeAveragePulse= StartSample*fSamplingTime-StartTime; 
-
-  //Catch the case when we get out of the trace window
-  //Trace fully out of window
-  if(StartTime<-fStartTimeAveragePulse-fStopTimeAveragePulse)
-    return;
-
-  if(StartSample<0)
+  //loop over neighboring pixel if crosstalk
+  if(bCrosstalk)
     {
-      TimeAveragePulse = -1.0*StartTime;
-      StartTime = 0;
-      StartSample = 0;
-    }
-  if(StopSample>telData->iNumSamplesPerTrace)
-    {
-      StopSample = telData->iNumSamplesPerTrace;
-    }
+     if(bDebug)
+        cout<<"Adding Crosstalk "<<fCrosstalk<<" to neighboring pixel"<<endl;
 
-  //  cout<<"Fill pe from: "<<StartSample<<" to "<<StopSample<<" Start time is "<<StartTime<<endl;
-
-  //Fill the PE into the trace
-  TimeAveragePulse = TimeAveragePulse / fSamplingTimeAveragePulse;
-  Float_t step = fSamplingTime/fSamplingTimeAveragePulse;
-  
-
-  for(Int_t i=StartSample;i<StopSample;i++)
-    {
-      Int_t s = (Int_t)(TimeAveragePulse);
-      telData->fTraceInPixel[PixelID][i]+=fAverageSinglePEPulse[s]*newAmpl;
-
-      //loop over neighboring pixel if crosstalk
-      if(bCrosstalk)
-        {
-          if(bDebug)
-            cout<<"Adding Crosstalk "<<fCrosstalk<<" to neighboring pixel"<<endl;
-
-          for(UInt_t n = 0;n<vNeighbors[PixelID].size(); n++)
+        for(UInt_t n = 0;n<vNeighbors[PixelID].size(); n++)
             {
-			if(bDebug)
-			   cout<<"visiting pixel "<<vNeighbors[PixelID][n]<<endl;
-               telData->fTraceInPixel[ vNeighbors[PixelID][n] ][i]+=fAverageSinglePEPulse[s]*newAmpl*fCrosstalk;
+		if(bDebug)
+		   cout<<"visiting pixel "<<vNeighbors[PixelID][n]<<endl;
+
+                telData->fTimesInPixel[ vNeighbors[PixelID][n] ].push_back(time);
+                telData->fAmplitudesInPixel[ vNeighbors[PixelID][n] ].push_back(newAmpl*fCrosstalk);
             }
         } 
 
-      TimeAveragePulse+=step;
-    }
 
-
-  if(bDebug)
-   {
-     //debugDisplay->Show(telData->GetTelescopeID(),PixelID);
-   }
 
 }
 
@@ -528,13 +398,13 @@ void TraceGenerator::GenerateNSB()
       //convert to counts per ns remember the rate is in units kHz 
       Float_t fNSBRate = fNSBRatePerPixel*1e-6 * telData->fRelQE[i]; ; 
 
-      Float_t t = -1.0*fStartTimeAveragePulse;
+      Float_t t = -1.0*fHighGainStopTime[0];
       
       while(1)
 	{
 	  t+= -1*log(rand->Uniform())/fNSBRate;
 	  
-	 if(t>fTraceLength+fStartTimeAveragePulse)
+	 if(t>fTraceLength+fHighGainStartTime[0])
 	   break;
 
       int l = 1;
@@ -556,40 +426,6 @@ void TraceGenerator::GenerateNSB()
 	}
     }
    } //end bUseNSB
-
-
-   //Shift all traces down by the global (camera) mean, i.e. AC coupling
-   telData->mean = 0.0;
-    for(Int_t i=0;i<iNumPixels;i++)
-    {
-      Double_t SumTrace = 0.0;
-      for(Int_t t=0;t<telData->iNumSamplesPerTrace;t++)
-	{
-	  SumTrace += telData->fTraceInPixel[i][t];
-	}
-      telData->mean+= SumTrace / (1.0*telData->iNumSamplesPerTrace * iNumPixels);
-    }
-
-    if(bDebug)
-	cout<<"Pedestal "<<telData->mean<<endl;
-
-    //shift trace up such that the mean is zero (AC coupling) 
-    for(Int_t i=0;i<iNumPixels;i++)
-      {
-	for(Int_t t=0;t<telData->iNumSamplesPerTrace;t++)
-	  {
-	    telData->fTraceInPixel[i][t]=telData->fTraceInPixel[i][t]-telData->mean;
-	  }
-      }
-
-  
-   //copy all traces into the array of NSB traces only 
-
-  //Copy vectors
-  for(Int_t g=0;g<iNumPixels;g++)
-    {
-      telData->fTraceInPixelNSBOnly[g] = telData->fTraceInPixel[g]; 
-    }
 
 }
 
@@ -628,7 +464,7 @@ void TraceGenerator::SetGaussianPulse(Float_t fwhm)
 
  if(fSamplingTimeAveragePulse <= 0)
     {
-      cout<<"SetGaussianPulse: You need to set the sampling rate with SetSampleWidth(Float_t t)"<<endl;
+      cout<<"SetGaussianPulse: You need to set the sampling rate with SetTraceSampleWidthAndLength"<<endl;
       exit(0);
     }
 
@@ -638,55 +474,64 @@ void TraceGenerator::SetGaussianPulse(Float_t fwhm)
       cout<<"SetGaussionPulse You need to set a FWHM > 0"<<endl;
       exit(0);
     }
+         
+  Float_t fStartTime = 3*fwhm;
+  Float_t fStopTime = 3*fwhm;
+  
 
- fStartTimeAveragePulse = 3*fwhm;
- fStopTimeAveragePulse = 3*fwhm;
+  Int_t iNumSamples=Int_t((fStartTime+fStopTime)/fSamplingTimeAveragePulse)+1; 
 
- iNumSamplesAverageSinglePEPulse=Int_t((fStartTimeAveragePulse+fStopTimeAveragePulse)/fSamplingTimeAveragePulse)+1; 
-
-  fAverageSinglePEPulse.assign(iNumSamplesAverageSinglePEPulse,0.0);
+  vector< Float_t > vPulse;
+  vPulse.assign(iNumSamples,0.0);
 
   //convert fwhm (in ns) into sampling units
   fwhm/=fSamplingTimeAveragePulse;
   Float_t sigma=fwhm/(2*sqrt(-2*log(0.5)));
-  cout<<"Simulate a Gaussian with sigma "<<sigma*fSamplingTimeAveragePulse<<" ns"<<endl;
+  cout<<"Simulate a Gaussian pulse shape with sigma "<<sigma*fSamplingTimeAveragePulse<<" ns"<<endl;
 
-  for(Int_t i = 0; i<iNumSamplesAverageSinglePEPulse; i++)
+  for(Int_t i = 0; i<iNumSamples; i++)
     {
-      Float_t t = -1*Int_t(fStartTimeAveragePulse/fSamplingTimeAveragePulse)+i;
-      fAverageSinglePEPulse[i] = -1.0*exp(-1*t*t/(2*sigma*sigma));
-      // cout<<i<<" "<<fAverageSinglePEPulse[i]<<endl;
+      Float_t t = -1*Int_t(fStartTime/fSamplingTimeAveragePulse)+i;
+      vPulse[i] = -1.0*exp(-1*t*t/(2*sigma*sigma));
     }
 
-fAreaToPeakConversion = 1./(sqrt(2*TMath::Pi())*sigma) ;
-cout<<"The area to peak conversion is: "<<fAreaToPeakConversion<<endl;
+  Float_t fAreaToPeakConversion = 1./(sqrt(2*TMath::Pi())*sigma) ;
+  cout<<"The area to peak conversion is: "<<fAreaToPeakConversion<<endl;
 
-//copy everything to the low gain pulse shape
- fAverageLowGainSinglePEPulse=fAverageSinglePEPulse;
- fLowGainAreaToPeakConversion = fAreaToPeakConversion ;
- 
- fLowGainStartTimeAveragePulse= fStartTimeAveragePulse;
- fLowGainStopTimeAveragePulse= fStopTimeAveragePulse;
+  //copy everything where it belongs
+  fHighGainAreaToPeakConversion.push_back(fAreaToPeakConversion);
+  fHighGainPulse.push_back(vPulse);
+  fHighGainLinearAmplitude.push_back(1.0);
+  fHighGainNonLinearityFactor.push_back(1.0);
+  fHighGainStartTime.push_back(fStartTime);
+  fHighGainStopTime.push_back(fStopTime);
 
- iNumSamplesLowGainAverageSinglePEPulse= iNumSamplesAverageSinglePEPulse;
+  fLowGainAreaToPeakConversion.push_back(fAreaToPeakConversion);
+  fLowGainPulse.push_back(vPulse);
+  fLowGainLinearAmplitude.push_back(1.0);
+  fLowGainNonLinearityFactor.push_back(1.0);
+  fLowGainStartTime.push_back(fStartTime);
+  fLowGainStopTime.push_back(fStopTime);
 
 }
 
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Set the shape of a single pe pulse from an external file
+// Set the pulse shapes and the non linearities with an external file
 // the format of the file is plain text with two columns
+// the very first line gives the amplitude in mV for which the pulse shape is valid and the 
+// relative deviation from linearity measured/expected
 // the first column holds the time in nanoseconds
 // the second column holds the amplitude of the file in arbitrary units
 // this function converts the pulse shape such that the peak amplitude is -1
-void   TraceGenerator::SetSinglePEShapeFromFile(TString sfilename)
+void   TraceGenerator::SetPulseShapesFromFile(TString sfilename,Bool_t bLowGain=kFALSE)
 { 
   
+  cout<<"Reading in the pulse shapes; LowGain="<<bLowGain<<endl;
+
   if(fSamplingTimeAveragePulse <= 0)
     {
-      cout<<"SetSinglePEShapeFromFile: You need to set the sampling rate with SetSampleWidth(Float_t t)"<<endl;
+      cout<<"SetPulseShapesFromFile: You need to set the sampling rate with SetTraceSampleWidthAndLength"<<endl;
       exit(0);
     }
 
@@ -694,48 +539,62 @@ void   TraceGenerator::SetSinglePEShapeFromFile(TString sfilename)
  
   if(!PulseShapefile)
     {
-      cout<<"SetSinglePEShapeFromFile:could not open file with the sample Pulse Shape"<<endl;
+      cout<<"SetPulseShapesFromFile: I could not open file with the Pulse Shapes: "<<sfilename.Data()<<endl;
       exit(1);
     }
 
-  cout<<"Setting the high gain pulse Shape from file"<<endl;
-  
-  vector<Double_t> ts;
-  vector<Double_t> y;
-  
 
-
-
+  //looping over the file getting one pulse shape after the other
+  Int_t iPulseNumber=0;
+  string iline;
+  getline( PulseShapefile, iline ) ;
   while(PulseShapefile.good()) {
+
+    vector<Double_t> ts;
+    vector<Double_t> y;
+
     Double_t time = 0;
     Double_t amplitude = 0;
 
-    PulseShapefile >> time;
-    PulseShapefile >> amplitude;
+  
+    //the first number in the first line gives the amplitude in mV 
+    //for the pulse shape if the system would be linear.
+    //The second number gives the factor by which the true amplitude deviates from linearity
+    istringstream i_stream( iline );
+    Float_t fLinearAmplitude;
+    Float_t fNonLinearityFactor;
+    i_stream>>fLinearAmplitude;
+    i_stream>>fNonLinearityFactor; 
 
-    // cout<<time<<"  "<<amplitude<<endl;
+    cout<<"Pulse Number "<<iPulseNumber<<", amplitude if linear: "<<fLinearAmplitude<<" [mV], "<<" non-linearity: "<<fNonLinearityFactor<<endl;
 
-    ts.push_back(time);
-    y.push_back(amplitude);
-  }
+    //loop over rest of lines to recover pulse. The end of the pulse shape is marked with a *
+    getline( PulseShapefile, iline );
+    while( (iline.substr( 0, 1 ) != "*") && PulseShapefile.good() ){
 
+      istringstream(iline)>>time>>amplitude;
+      cout<<time<<"  "<<amplitude<<endl;
 
- 
-  //Find the time where the pulse shape is minimal and get the conversion factor
-  Int_t imin = 0;
-  Double_t dmin = 1e9;
-  Double_t integral = 0;
-  for(UInt_t i = 1;i<ts.size()-1;i++)
-    {
-      integral+=y[i]*0.5*(ts[i+1]-ts[i-1]);;
-      if(y[i]<dmin)
-	{
+      ts.push_back(time);
+      y.push_back(amplitude);
+      getline( PulseShapefile, iline );
+    }
+
+    //process the pulse shape by normalizing it and filling it into the telescope data container
+    Int_t imin = 0;
+    Double_t dmin = 1e9;
+    Double_t integral = 0;
+    for(UInt_t i = 1;i<ts.size()-1;i++)
+      {
+        integral+=y[i]*0.5*(ts[i+1]-ts[i-1]);;
+        if(y[i]<dmin)
+	 {
 	  imin=i;
 	  dmin=y[i];
 	}
     }
 
-  fAreaToPeakConversion = dmin/(integral) ;
+  Float_t fAreaToPeakConversion = dmin/(integral) ;
   cout<<"The area to peak conversion factor is: "<<fAreaToPeakConversion<<endl;
 
   dmin=fabs(dmin);
@@ -743,21 +602,20 @@ void   TraceGenerator::SetSinglePEShapeFromFile(TString sfilename)
   cout<<"Found that the amplitude is minimal at time: "<<imin<<" =  "<<ts[imin]<<". The amplitude is: "<<y[imin]<<endl;
  
   cout<<"Number of samples in the sample pulse: "<<ts.size()<<endl;
-  fStartTimeAveragePulse=fabs(ts[imin]-ts[0]);
-  fStopTimeAveragePulse=ts[ts.size()-2]-ts[imin];
+  Float_t fStartTime=fabs(ts[imin]-ts[0]);
+  Float_t fStopTime=ts[ts.size()-2]-ts[imin];
 
-  cout<<"Start of sample pulse shape: "<<fStartTimeAveragePulse<<endl;
-  cout<<"Stop  of sample pulse shape: "<<fStopTimeAveragePulse<<endl;
+  cout<<"Start of sample pulse shape: "<<fStartTime<<endl;
+  cout<<"Stop  of sample pulse shape: "<<fStopTime<<endl;
 
   //now fill the vector with the normalized sample pulse shape
-  iNumSamplesAverageSinglePEPulse=Int_t((fStartTimeAveragePulse+fStopTimeAveragePulse)/fSamplingTimeAveragePulse); 
-  
-  fAverageSinglePEPulse.assign(iNumSamplesAverageSinglePEPulse,0.0);
+  Int_t iNumSamples=Int_t((fStartTime+fStopTime)/fSamplingTimeAveragePulse);
+  vector<Float_t> fPulse;  
+  fPulse.assign(iNumSamples,0.0);
 
-//cout<<iNumSamplesAverageSinglePEPulse<<endl; 
-  for(Int_t i = 0; i<iNumSamplesAverageSinglePEPulse; i++)
+  for(Int_t i = 0; i<iNumSamples; i++)
     {
-      Float_t t = -1*Int_t(fStartTimeAveragePulse/fSamplingTimeAveragePulse)+i;
+      Float_t t = -1*Int_t(fStartTime/fSamplingTimeAveragePulse)+i;
       t*=fSamplingTimeAveragePulse;
 
       unsigned d=0;
@@ -769,120 +627,60 @@ void   TraceGenerator::SetSinglePEShapeFromFile(TString sfilename)
       //normalizing so the peak is one
       amplitude = amplitude / dmin ; 
 
-      fAverageSinglePEPulse[i] = amplitude;
+      fPulse[i] = amplitude;
       //cout<<i<<" "<<t<<"  "<<d<<"  "<<fAverageSinglePEPulse[i]<<endl;
     }
 
- 
-  cout<<"Filled in the sample pulse shape"<<endl;
-}
+
+    if(bLowGain)
+      {
+         fLowGainPulse.push_back(fPulse);
+         fLowGainAreaToPeakConversion.push_back(fAreaToPeakConversion);
+         fLowGainStartTime.push_back(fStartTime);
+         fLowGainStopTime.push_back(fStopTime);
+         fLowGainLinearAmplitude.push_back(fLinearAmplitude);
+         fLowGainNonLinearityFactor.push_back(fNonLinearityFactor);
+
+      }
+    else
+      {
+
+         //if we are the first pulse lets get the gain conversion factor
+         fHighGainPulse.push_back(fPulse);
+         fHighGainAreaToPeakConversion.push_back(fAreaToPeakConversion);
+         fHighGainStartTime.push_back(fStartTime);
+         fHighGainStopTime.push_back(fStopTime);
+         fHighGainLinearAmplitude.push_back(fLinearAmplitude);
+         fHighGainNonLinearityFactor.push_back(fNonLinearityFactor);
+      }
+
+  if(bDebug)
+   {
+//     ShowPulseShape(iPulseNumber);
+   }
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Set the shape of a low gain single pe pulse from an external file
-// the format of the file is plain text with two columns
-// the first column holds the time in nanoseconds
-// the second column holds the amplitude of the file in arbitrary units
-// this function converts the pulse shape such that the peak amplitude is -1
-void   TraceGenerator::SetLowGainSinglePEShapeFromFile(TString sfilename)
-{ 
-  
-  cout<<"Reading in the low gain single pe pulse shape"<<endl;
+    //increment the number of pulses by one
+    iPulseNumber++;
+  getline( PulseShapefile, iline ) ;
+  }//end with the while loop, going to the next pulse shape in the file
 
-  if(fSamplingTimeAveragePulse <= 0)
-    {
-      cout<<"SetLowGainSinglePEShapeFromFile: You need to set the sampling rate with SetSampleWidth(Float_t t)"<<endl;
-      exit(0);
-    }
-
-  std::ifstream PulseShapefile(sfilename.Data());
- 
-  if(!PulseShapefile)
-    {
-      cout<<"SetSinglePEShapeFromFile:could not open file with the low gain sample Pulse Shape: "<<sfilename.Data()<<endl;
-      exit(1);
-    }
-
-  cout<<"Setting the high gain pulse Shape from file"<<endl;
-
-  
-  vector<Double_t> ts;
-  vector<Double_t> y;
-  
-  while(PulseShapefile.good()) {
-    Double_t time = 0;
-    Double_t amplitude = 0;
-
-    PulseShapefile >> time;
-    PulseShapefile >> amplitude;
-
-    // cout<<time<<"  "<<amplitude<<endl;
-
-    ts.push_back(time);
-    y.push_back(amplitude);
+ //make consistency check that all pulse shapes are in increasing order.
+ vector< Float_t> *la = &fHighGainLinearAmplitude;
+ if(bLowGain)
+   la = &fLowGainLinearAmplitude;
+ if(la->size()>1)
+  {
+    for(UInt_t i=1;i<la->size();i++)
+      {
+        if(la->at(i)<la->at(i-1))
+           {
+             cout<<"Pulse shape "<<i<<" is for a smaller amplitude ("<<la->at(i)<<") than the previous one ("<<la->at(i-1)<<")"<<endl;     
+             exit(0);
+           } 
+      }
   }
-
-
-  //Find the time where the pulse shape is minimal and get the conversion factor
-  Int_t imin = 0;
-  Double_t dmin = 1e9;
-  Double_t integral = 0;
-  for(UInt_t i = 1;i<ts.size()-1;i++)
-    {
-      integral+=y[i]*0.5*(ts[i+1]-ts[i-1]);
-      if(y[i]<dmin)
-	{
-	  imin=i;
-	  dmin=y[i];
-	}
-    }
-
-  fLowGainAreaToPeakConversion = dmin/(integral) ;
-  cout<<"The area to peak conversion factor is: "<<fLowGainAreaToPeakConversion<<endl;
-
-  dmin=fabs(dmin);
-
-  cout<<"Found that the amplitude is minimal at time: "<<imin<<" =  "<<ts[imin]<<". The amplitude is: "<<y[imin]<<endl;
- 
-  cout<<ts[0]<<endl;
-  fLowGainStartTimeAveragePulse=fabs(ts[imin]-ts[0]);
-  fLowGainStopTimeAveragePulse=ts[ts.size()-2]-ts[imin];
-
-  cout<<"Start of sample pulse shape: "<<fLowGainStartTimeAveragePulse<<endl;
-  cout<<"Stop  of sample pulse shape: "<<fLowGainStopTimeAveragePulse<<endl;
-
-  //now fill the vector with the normalized sample pulse shape
-  iNumSamplesLowGainAverageSinglePEPulse=Int_t((fLowGainStartTimeAveragePulse+fLowGainStopTimeAveragePulse)/fSamplingTimeAveragePulse); 
-  
-  fAverageLowGainSinglePEPulse.assign(iNumSamplesLowGainAverageSinglePEPulse,0.0);
-  cout<<"done assigning"<<endl;
- 
-  for(Int_t i = 0; i<iNumSamplesLowGainAverageSinglePEPulse; i++)
-    {
-      Float_t t = -1*Int_t(fLowGainStartTimeAveragePulse/fSamplingTimeAveragePulse)+i;
-      t*=fSamplingTimeAveragePulse;
-
-      unsigned d=0;
-      while(ts[d]-ts[imin]<t+1e-6 && d<ts.size()-1)
-	d++;
-
-      //average between two samples
-      Double_t amplitude = y[d-1] + (t- (ts[d-1]-ts[imin]) ) * (y[d]-y[d-1])/(ts[d]-ts[d-1]);
-
-      //normalizing so the peak is one
-      amplitude = amplitude / dmin ; 
-
-
-      fAverageLowGainSinglePEPulse[i] = amplitude;
-      // cout<<i<<" "<<t<<"  "<<fAverageLowGainSinglePEPulse[i]<<endl;
-    }
-
- 
-  cout<<"Filled in the low gain sample pulse shape"<<endl;
 }
-
-
 
 
 //----------------------------------------------------------------------------------------
@@ -917,59 +715,243 @@ void TraceGenerator::SetTraceSampleWidthAndLength(Float_t t,Float_t length,Float
 
 };
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Assemble the trace for a given pixel in low or high gain
+//
+
+void TraceGenerator::BuildTrace(Int_t PixelID,Bool_t bLowGain){
+
+  //First Check if the fPileUpAmplitudeForPhoton array is zero. If it is we have to generate it first
+  if(telData->fPileUpAmplitudeForPhoton[PixelID].size()==0 && telData->fTimesInPixel[PixelID].size()!=0)
+    {
+       telData->fPileUpAmplitudeForPhoton[PixelID].assign(telData->fTimesInPixel[PixelID].size(),0);
+       //loop over all the photons in that pixel and determine for each photon how many photons are next to it
+       //within a time window of +- fPileUpWindow
+        for(UInt_t g=0;g<telData->fTimesInPixel[PixelID].size();g++)
+         { 
+           //start with the photons own amplitude
+           telData->fPileUpAmplitudeForPhoton[PixelID][g]+=telData->fAmplitudesInPixel[PixelID][g];
+
+           for(UInt_t l=g+1;l<telData->fTimesInPixel[PixelID].size();l++)          
+              { 
+                 Float_t fDeltaT = telData->fTimesInPixel[PixelID][g]-telData->fTimesInPixel[PixelID][l];
+
+                 if(fDeltaT<0)
+                    fDeltaT*=-1.0;
+ 
+                 if(fDeltaT<fPileUpWindow)
+                     {
+                        telData->fPileUpAmplitudeForPhoton[PixelID][g]+=telData->fAmplitudesInPixel[PixelID][l];
+                        telData->fPileUpAmplitudeForPhoton[PixelID][l]+=telData->fAmplitudesInPixel[PixelID][g];
+                     }
+              }
+         }
+    }//end building the fPileUpAmplitudeForPhoton array
+
+   //add electronic noise to the high gain trace
+   if(telData->fSigmaElectronicNoise>0)
+     {
+       for(Int_t i=0; i<telData->iNumSamplesPerTrace;i++)
+         {
+               telData->fTraceInPixel[PixelID][i]=rand->Gaus(0.0,telData->fSigmaElectronicNoise);
+         }
+     }
+   else
+     telData->fTraceInPixel[PixelID].assign(telData->iNumSamplesPerTrace,0.0);
 
 
-vector<Float_t> TraceGenerator::GetLowGainTrace(Int_t PixelID){
+  //Now prepare to fill in the photons in the trace
 
-  vector<Float_t> trace(telData->iNumSamplesPerTrace,-1*telData->mean);
+  //get vectors to low gain or high gain pulses and information respectively
+  vector< vector<Float_t> > *vPulse; 
+  vector<Float_t> *vAreaToPeakConversion;
+  vector<Float_t> *vStartTime;
+  vector<Float_t> *vStopTime;
+  vector<Float_t> *vLinearAmplitude;
+  vector<Float_t> *vNonLinearityFactor;
 
+  if(bLowGain)
+   {
+    vPulse = &fLowGainPulse; 
+    vAreaToPeakConversion = &fLowGainAreaToPeakConversion;
+    vStartTime = &fLowGainStartTime;
+    vStopTime = &fLowGainStopTime;
+    vLinearAmplitude = &fLowGainLinearAmplitude;
+    vNonLinearityFactor = &fLowGainNonLinearityFactor;
+   }
+  else
+   {
+    vPulse = &fHighGainPulse;    
+    vAreaToPeakConversion = &fHighGainAreaToPeakConversion;
+    vStartTime = &fHighGainStartTime;
+    vStopTime = &fHighGainStopTime;
+    vLinearAmplitude = &fHighGainLinearAmplitude;
+    vNonLinearityFactor = &fHighGainNonLinearityFactor;
+   }
 
+  //loop over all the photons in the trace
   for(UInt_t g=0;g<telData->fTimesInPixel[PixelID].size();g++)
     {
-      Float_t amplitude = telData->fAmplitudesInPixel[PixelID][g];
       Float_t time = telData->fTimesInPixel[PixelID][g];
-      //In Reference of Trace
-      Float_t StartTime = time-fLowGainStartTimeAveragePulse;
-      Int_t StartSample = Int_t(StartTime/fSamplingTime+1);
-      Int_t StopSample = Int_t((StartTime+fLowGainStartTimeAveragePulse+fLowGainStopTimeAveragePulse)/fSamplingTime+1);
+
+      Float_t fNonLinearity = 1;
+      
+      //Figure out which pulse shape we ought to use
+      UInt_t uPulseShape = 0;
+      
+      //if we only have one pulse shape spare the pain of going through the following
+      if(vPulse->size()>1)
+       {
+        //1. Get the total amplitude in pe's that eventually make up the entire pulse shape 
+        Float_t fPileUpAmplitude = telData->fPileUpAmplitudeForPhoton[PixelID][g];
+
+        //2. Get the expected amplitude in mV at the FADC if everything is perfectly linear
+        Float_t fLinAmplitude = fPileUpAmplitude*fLinearGainmVPerPE;
+
+        if(bDebug)
+        cout<<"time (samples): "<<time/fSamplingTime<<" signal [pe]: "<<telData->fAmplitudesInPixel[PixelID][g]<<" fPileUpAmplitude "<<fPileUpAmplitude<<" fLinAmplitude "<<fLinAmplitude<<endl;
+
+        //3. loop over pulse shapes until we get the one that is closest to the expected amplitude
+        while(fLinAmplitude>vLinearAmplitude->at(uPulseShape) && uPulseShape<vLinearAmplitude->size()-1)
+           uPulseShape++;
+
+        if(uPulseShape>0 && uPulseShape!=vPulse->size()-1 )
+         {
+           //get the nonlinearity factor
+           fNonLinearity = vNonLinearityFactor->at(uPulseShape-1)+
+                                 (fLinAmplitude-vLinearAmplitude->at(uPulseShape-1))/
+                                 (vLinearAmplitude->at(uPulseShape)-vLinearAmplitude->at(uPulseShape-1))
+                                 *(vNonLinearityFactor->at(uPulseShape)-vNonLinearityFactor->at(uPulseShape-1));
+           //find out which is the better fit, this one or the previous pulse shape
+           if((fLinAmplitude - vLinearAmplitude->at(uPulseShape-1))/
+              (vLinearAmplitude->at(uPulseShape)-vLinearAmplitude->at(uPulseShape-1)) < 0.5)
+           uPulseShape--;
+           //fNonLinearity = vNonLinearityFactor->at(uPulseShape);
+         }
+        if(uPulseShape==vPulse->size()-1)
+         {
+           fNonLinearity = vNonLinearityFactor->at(uPulseShape); 
+         }
+       }
+
+      if(bDebug)
+      cout<<"Use pulse number: "<<uPulseShape<<" non linearity "<<fNonLinearity<<endl;       
+
+      //figure out where we start filling the signal into the Trace
+      Float_t StartTimeInTrace = time-vStartTime->at(uPulseShape);
+      Int_t StartSample = Int_t(StartTimeInTrace/fSamplingTime+1);
+      Int_t StopSample = Int_t((StartTimeInTrace+vStartTime->at(uPulseShape)+vStopTime->at(uPulseShape))/fSamplingTime+1);
 
       //The time between the start of the Trace and the first sampled value
-      Float_t TimeAveragePulse= StartSample*fSamplingTime-StartTime;
+      Float_t TimeAveragePulse= StartSample*fSamplingTime-StartTimeInTrace;
 
       //Catch the case when we get out of the trace window
       //Trace fully out of window
-      if(StartTime<-fLowGainStartTimeAveragePulse-fLowGainStopTimeAveragePulse)
-    continue;
+      if(StartTimeInTrace<-vStartTime->at(uPulseShape)-vStopTime->at(uPulseShape))
+        continue;
 
       if(StartSample<0)
-    {
-      TimeAveragePulse = -1.0*StartTime;
-      StartTime = 0;
+     {
+      TimeAveragePulse = -1.0*StartTimeInTrace;
+      StartTimeInTrace = 0;
       StartSample = 0;
-    }
+     }
       if(StopSample>telData->iNumSamplesPerTrace)
-    {
+     {
       StopSample = telData->iNumSamplesPerTrace;
-    }
+     }
 
       // cout<<"Fill pe from: "<<StartSample<<" to "<<StopSample<<" Start time is "<<StartTime<<endl;
 
-
-      //Fill the PE into the trace
+      //Finally fill the PE into the trace
       TimeAveragePulse = TimeAveragePulse / fSamplingTimeAveragePulse;
       Float_t step = fSamplingTime/fSamplingTimeAveragePulse;
+      Float_t amplitude = telData->fAmplitudesInPixel[PixelID][g]*fNonLinearity;
       for(Int_t i=StartSample;i<StopSample;i++)
+      {
+       Int_t s = (Int_t)(TimeAveragePulse);
+       telData->fTraceInPixel[PixelID][i]+= vPulse->at(uPulseShape)[s]*amplitude;
+       TimeAveragePulse+=step;
+      }
+
+    }//go to the next photon.
+
+  if(bDebug && telData->fTimesInPixel[PixelID].size()!=0)
+   {
+     cout<<"Pixel ID "<<PixelID<<endl;
+     debugDisplay->Show(telData->GetTelescopeID(),PixelID);
+   }
+
+}
+
+/////////////////////////////////////////////////////////////////
+//
+//  Assemble the high gain traces for all pixels
+//  
+void TraceGenerator::BuildAllHighGainTraces(){
+
+ if(bDebug)
+   cout<<"Generating all high gain traces"<<endl;
+ //go over all pixels and generate the traces
+ for(Int_t i=0;i<iNumPixels;i++)
     {
-          Int_t s = (Int_t)(TimeAveragePulse);
-      trace[i]+= fAverageLowGainSinglePEPulse[s]*amplitude;
-      TimeAveragePulse+=step;
+       BuildTrace(i,kFALSE);
     }
+    
+ //shift mean to zero, only needed if NSB is simulated
+ telData->mean = 0.0;
+ if(bUseNSB)
+   {
+     Float_t pix = 0;
+     for(Int_t i=0;i<iNumPixels;i++)
+       {
+         //use trace if it has 1 or less Cherenkov photons in it. 
+         if(telData->iPEInPixel[i]<2)
+            {
+               pix++;
+               Double_t SumTrace = 0.0;
+               for(Int_t t=0;t<telData->iNumSamplesPerTrace;t++)
+	         {
+	            SumTrace += telData->fTraceInPixel[i][t];
+	         }
+               telData->mean+= SumTrace/ (1.0*telData->iNumSamplesPerTrace);
+            }
+        }
 
-    }
+    if(pix!=0)
+       telData->mean=telData->mean/pix;
+    else
+      {
+        cout<<"TraceGenerator: Warning, Could not find a pixel with less then 1 Cherenkov Photon to calculate the mean of the traces"<<endl; 
+        telData->mean = 0.0;
+      }
 
-  return trace;
+    if(bDebug)
+	cout<<"Pedestal "<<telData->mean<<endl;
+
+    //shift trace up such that the mean is zero (AC coupling) 
+    for(Int_t i=0;i<iNumPixels;i++)
+      {
+	for(Int_t t=0;t<telData->iNumSamplesPerTrace;t++)
+	  {
+	    telData->fTraceInPixel[i][t]=telData->fTraceInPixel[i][t]-telData->mean;
+	  }
+      }
+   }//end shifting the mean to zero if we simulate NSB
+
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Building the low gain trace for one pixel
+//
+
+void TraceGenerator::BuildLowGainTrace(Int_t PixelID){
+
+  BuildTrace(PixelID,kTRUE);
 
 }
 
@@ -1037,22 +1019,26 @@ void   TraceGenerator::SetParametersFromConfigFile(ReadConfig *readConfig){
 
   SetTraceSampleWidthAndLength(readConfig->GetSamplingTime(iTelType),readConfig->GetTraceLength(iTelType),readConfig->GetStartSamplingTimeOffsetFromAveragePhotonTime(iTelType));
                                             
+  
+  fLinearGainmVPerPE =  readConfig->GetFADCConversionFactormVperPE(iTelType);
+
+  fPileUpWindow = readConfig->GetPileUpWindow(iTelType);  
 
   Float_t fFWHMofSinglePEPulse = readConfig->GetFWHMofSinglePEPulse(iTelType);
 
   if(fFWHMofSinglePEPulse<=0)
 	{
-	   SetSinglePEShapeFromFile(readConfig->GetNameofSinglePEPulseFile(iTelType));
-	   cout<<"The single pe pulse shape was read from: "<<readConfig->GetNameofSinglePEPulseFile(iTelType)<<endl;
+	   SetPulseShapesFromFile(readConfig->GetNameofHighGainPulseFile(iTelType),kFALSE);
+	   cout<<"Completed reading in the high gain pulse shapes from: "<<readConfig->GetNameofHighGainPulseFile(iTelType)<<endl;
 
-	   SetLowGainSinglePEShapeFromFile(readConfig->GetNameofLowGainSinglePEPulseFile(iTelType));
-	   cout<<"The low gain single pe pulse shape was read from: "<<readConfig->GetNameofLowGainSinglePEPulseFile(iTelType)<<endl;
+	   SetPulseShapesFromFile(readConfig->GetNameofLowGainPulseFile(iTelType),kTRUE);
+	   cout<<"Completed reading in the low gain pulse shapes from: "<<readConfig->GetNameofLowGainPulseFile(iTelType)<<endl;
 	}
 	else
 	{
           SetGaussianPulse(fFWHMofSinglePEPulse);
 	}
-   if(fAverageSinglePEPulse.size()==0)
+   if( fHighGainPulse.size()==0 || fLowGainPulse.size()==0 )
 	  {
 	     cout<<"Something went wrong, you did neither provide an external file with the pulse shape nor did you set a fwhm that can be used to generate a sample Gaus pulse"<<endl;
 	     exit(1);
@@ -1106,3 +1092,131 @@ void   TraceGenerator::SetParametersFromConfigFile(ReadConfig *readConfig){
   fRotAngle =  readConfig->GetTubeRotAngle(iTelType);
 
 }
+
+//-------------------------------------------------------------------------------------------
+//
+// Get simulated average single pe pulse. Returns a root histogram
+TH1F* TraceGenerator::GetHighGainPulse(UInt_t n)
+{
+
+  if(fHighGainPulse.empty())
+    {
+      cout<<"High gain pulses have not been set. Set a pulse shape first"<<endl;
+      return NULL;
+    }
+
+ if(fHighGainPulse.size()<=n)
+    {
+      cout<<"You are asking for a pulse shape that does not exist"<<endl;
+      return NULL;
+    }
+
+
+  TString title;
+  title.Form("High gain pulse %i, start: %2.1f, stop: %2.1f, AreaToPeak: %1.2f, amplitude: %2.2f, non-linearity: %2.2f"
+     ,n,fHighGainStartTime[n],fHighGainStopTime[n],fHighGainAreaToPeakConversion[n],fHighGainLinearAmplitude[n],fHighGainNonLinearityFactor[n]);
+
+  TString name;
+  name.Form("h%i",n);
+
+  TH1F *h = new TH1F(name.Data(),title.Data(),fHighGainPulse[n].size(),-1*fHighGainStartTime[n]-fSamplingTimeAveragePulse*0.5,fHighGainStopTime[n]+ fSamplingTimeAveragePulse*0.5);
+  h->GetXaxis()->SetTitle("Time [ns]");
+  h->GetYaxis()->SetTitle("Amplitude normalized to peak");
+  for(UInt_t i = 0; i<fHighGainPulse[n].size(); i++)
+    {
+      //cout<<i<<"  "<<fHighGainPulse[n][i]<<endl;
+      h->SetBinContent(i+1,fHighGainPulse[n][i]);
+    }
+
+
+  return h;
+}
+
+//-------------------------------------------------------------------------------------------
+//
+// Get low gain pulse. Returns a root histogram
+TH1F* TraceGenerator::GetLowGainPulse(UInt_t n)
+{
+
+ if(fLowGainPulse.empty())
+    {
+      cout<<"Low gain pulses have not been set. Set a pulse shape first"<<endl;
+      return NULL;
+    }
+
+ if(fLowGainPulse.size()<=n)
+    {
+      cout<<"You are asking for a pulse shape that does not exist"<<endl;
+      return NULL;
+    }
+
+  TString title;
+  title.Form("Low gain pulse %i, start: %2.1f, stop: %2.1f, AreaToPeak: %1.2f, amplitude: %2.2f, non-linearity: %2.2f"
+     ,n,fLowGainStartTime[n],fLowGainStopTime[n],fLowGainAreaToPeakConversion[n],fLowGainLinearAmplitude[n],fLowGainNonLinearityFactor[n]);
+
+  TString name;
+  name.Form("h%i",n);
+
+  TH1F *h = new TH1F(name.Data(),title.Data(),fLowGainPulse[n].size(),-1*fLowGainStartTime[n]-fSamplingTimeAveragePulse*0.5,fLowGainStopTime[n]+ fSamplingTimeAveragePulse*0.5);
+  h->GetXaxis()->SetTitle("Time [ns]");
+  h->GetYaxis()->SetTitle("Amplitude normalized to peak");
+  for(UInt_t i = 0; i<fLowGainPulse[n].size(); i++)
+    {
+      //cout<<i<<"  "<<fLowGainPulse[n][i]<<endl;
+      h->SetBinContent(i+1,fLowGainPulse[n][i]);
+    }
+
+
+  return h;
+}
+
+
+
+//-------------------------------------------------------------------------------------------
+//
+// shows the average single pe pulse shape
+void  TraceGenerator::ShowPulseShape(UInt_t n)
+{
+
+
+
+  TCanvas *cSinglePEShape = new TCanvas("cSinglePEShape","The pulse shape used in the simulation",1000,700);
+  
+  cSinglePEShape->Divide(2,1);
+  cSinglePEShape->Draw();
+  cSinglePEShape->cd(1);
+  gPad->SetGrid();
+
+  TH1F *h = NULL;
+  if(fHighGainPulse.size()>n)
+  {	   
+      h = GetHighGainPulse(n);
+      h->GetXaxis()->SetTitle("Time [ns]");
+      h->GetYaxis()->SetTitle("Amplitude [photoelectrons]");
+      h->Draw();  
+  }
+
+  cSinglePEShape->cd(2);
+  gPad->SetGrid();
+
+  TH1F *hL = NULL;
+  if(fLowGainPulse.size()>n)
+  {
+     hL = GetLowGainPulse(n);
+     hL->GetXaxis()->SetTitle("Time [ns]");
+     hL->GetYaxis()->SetTitle("Amplitude [photoelectrons]");
+     hL->Draw();  
+  }
+	      
+  TTimer timer("gSystem->ProcessEvents();", 50, kFALSE);
+	      
+  //
+  // While reading the input process gui events asynchronously
+  //
+  timer.TurnOn();
+  TString input = Getline("Type <return> to go on: ");
+  timer.TurnOff(); 
+	      
+}
+
+

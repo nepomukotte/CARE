@@ -27,6 +27,7 @@ ArrayTrigger::ArrayTrigger(ReadConfig *readConfig,Bool_t debug)
   fDeltaL3Cluster = NULL;        
   fCoincidence = -1;
   fDeltaTL3 = -10000;
+  fEarliestTriggerTime = -1;
 
   SetParametersFromConfigFile( readConfig );
   vTelTransitTimes.assign(iNumTel,0.0);
@@ -133,7 +134,7 @@ bool ArrayTrigger::RunTrigger()
   {
       for( Int_t i = 0; i<iNumTel; i++)        
 	   {
-	      if(bTelTriggerBit[iRefTelescope])
+	      if(bTelTriggerBit[i])
 		  {
 			if(bDebug)
 				cout<<"Telescope "<<i<<" triggered at time "<<fTelTriggerTimes[i]<<endl;
@@ -155,7 +156,8 @@ bool ArrayTrigger::RunTrigger()
 		  cout<<"No next neighbor coincidence and multipl > 1"<<endl;
 		  
       Float_t fArrayTriggerTime = 1e6;
-      
+     
+      //Determine if and when the array has triggered 
       for(Int_t i = 0; i < iNumTel; i++)
 	{
 	  if(bTelTriggerBit[i])
@@ -174,44 +176,72 @@ bool ArrayTrigger::RunTrigger()
 		      if(bDebug)
 			  {
 			  cout<<fDeltaT<<endl;
-		      cout<<i<<" i "<<fTelTriggerTimes[i]<<endl;
-		      cout<<a<<" a "<<fTelTriggerTimes[a]<<endl;
-               }
+		          cout<<i<<" i "<<fTelTriggerTimes[i]<<endl;
+		          cout<<a<<" a "<<fTelTriggerTimes[a]<<endl;
+                          }
 		      vTelTriggerTimes[NumTelFullfilTrigger]=fTelTriggerTimes[a];
 
 		      NumTelFullfilTrigger++;
 		    }
-		}
-	      if(NumTelFullfilTrigger>=iMultiplicity)
-		{  
+		 }
+	       if(NumTelFullfilTrigger>=iMultiplicity)
+		 {  
+		  ArrayHasTriggered = true;
 		  if(bDebug)
 		     cout<<NumTelFullfilTrigger<<"  "<<iMultiplicity<<endl;
-		  Int_t* index = new Int_t[NumTelFullfilTrigger];
+		  
+                  
+                  Int_t* index = new Int_t[NumTelFullfilTrigger];
 		  TMath::Sort(NumTelFullfilTrigger,vTelTriggerTimes,index,kFALSE);
-                  fArrayTriggerTime = vTelTriggerTimes[index[iMultiplicity-1]] < fArrayTriggerTime ? 
-                                                                 vTelTriggerTimes[index[iMultiplicity-1]] : fArrayTriggerTime ;
-		  ArrayHasTriggered = true;
-          vTelTriggerTimesAfterArrayTrigger.assign(iNumTel,fArrayTriggerTime);
+                  fArrayTriggerTime = vTelTriggerTimes[index[0]] < fArrayTriggerTime ? 
+                                                                 vTelTriggerTimes[index[0]] : fArrayTriggerTime ;
 		  if(bDebug)
 		    cout<<"Trigger time "<<fArrayTriggerTime<<endl;
 		  delete [] index;
+                  
 		}
 	      delete [] vTelTriggerTimes;
 	    }
 
 	}
+      //Now assign the individual telescope trigger times
+      //1. get the average trigger time from all the telescopes that fall within the coincidence window
+      Double_t fAverageTriggerTime=0.0;
+      Int_t iNumTriggeredTelescopesInWindow = 0;
+      for(Int_t i = 0; i < iNumTel; i++)
+	{
+	  if( bTelTriggerBit[i] && fabs(fTelTriggerTimes[i]-fArrayTriggerTime)<fCoincidence && fTelTriggerTimes[i]-fArrayTriggerTime > -1e-9)
+	    {
+                iNumTriggeredTelescopesInWindow++;
+                fAverageTriggerTime+=fTelTriggerTimes[i];
+            }
+         }
+        fAverageTriggerTime/=iNumTriggeredTelescopesInWindow;
+        //cout<<"The first valid trigger time is at: "<<fArrayTriggerTime<<" The average trigger time is: "<<fAverageTriggerTime<<endl;
+    
+      //2. assign average trigger time to all telescopes
+      vTelTriggerTimesAfterArrayTrigger.assign(iNumTel,fAverageTriggerTime);
+
+      //3. assign the trigger times to all the telescopes that fall within the trigger window
+      for(Int_t i = 0; i < iNumTel; i++)
+	{
+	  if( bTelTriggerBit[i] && fabs(fTelTriggerTimes[i]-fArrayTriggerTime)<fCoincidence && fTelTriggerTimes[i]-fArrayTriggerTime > -1e-9)
+	    {
+               vTelTriggerTimesAfterArrayTrigger[i]=fTelTriggerTimes[i];
+            }
+         }
     }
 
 
-  //adding back the inter telescope delay
+  //adding back the inter telescope delay and getting the earliest trigger time
+  fEarliestTriggerTime = 5e5;
   for(unsigned i=0;i<vTelTriggerTimesAfterArrayTrigger.size();i++)
    {
      if(bDebug)
        cout<<i<<" Adding back inter telescope transit time "<<vTelTransitTimes[i]<<endl;
      vTelTriggerTimesAfterArrayTrigger[i] += vTelTransitTimes[i];
+     fEarliestTriggerTime = vTelTriggerTimesAfterArrayTrigger[i] < fEarliestTriggerTime ? vTelTriggerTimesAfterArrayTrigger[i] : fEarliestTriggerTime;
    }
-
-  
 
   if(bDebug)
   cout<<"Final answer "<<ArrayHasTriggered<<endl;
@@ -270,17 +300,16 @@ bool ArrayTrigger::RunTriggerWithNextNeighborRequirement()
 
   //loop over all telescopes. If that telescopes receives enough triggers
   //including from itself within the coincidence window then it will readout. 
-  //the time for the readout is determined by the time the multiplicity requirement is reached
   for(Int_t i=0;i<iNumTel;i++)
     {
       if(bDebug)
-		  cout<<"Array Trigger With next neighbor: Checking Telescope "<<i<<endl;
+	  cout<<"Array Trigger With next neighbor: Checking Telescope "<<i<<endl;
 
       //initiate the array for the triggertimes 
-	  int iNumTriggeredTelescopes=0;
+      int iNumTriggeredTelescopes=0;
       Float_t *fTriggerTimesInGroup = new Float_t[iNumTel];
 
-	  //add trigger time if telescope itself triggered
+      //add trigger time if telescope itself triggered
       if (bTelTriggerBit[i])
 	  {
 		  iNumTriggeredTelescopes++;
@@ -289,20 +318,20 @@ bool ArrayTrigger::RunTriggerWithNextNeighborRequirement()
 			  cout<<" telescope itself triggered at time "<<fTriggerTimesInGroup[0]<<endl;
 	  }
 
-      //loop over all neighbors of this telescope
+      //loop over all neighbors of this telescope and identify triggered neighbours
       for(UInt_t n = 0; n<neighbors[i].size();n++)
         {
            Int_t GroupIDNeighbor = neighbors[i][n];
-		   if(bDebug)
-		      cout<<"checking telescope "<<GroupIDNeighbor<<endl; 
+	   if(bDebug)
+	      cout<<"checking telescope "<<GroupIDNeighbor<<endl; 
            if (bTelTriggerBit[GroupIDNeighbor])
-		     {
-		         fTriggerTimesInGroup[iNumTriggeredTelescopes]=fTelTriggerTimes[GroupIDNeighbor];
+	     {
+	         fTriggerTimesInGroup[iNumTriggeredTelescopes]=fTelTriggerTimes[GroupIDNeighbor];
                  if(bDebug)
-					 cout<<"Telescope triggered at time "<<fTriggerTimesInGroup[iNumTriggeredTelescopes]<<endl;
-		         iNumTriggeredTelescopes++;
+    		   cout<<"Telescope triggered at time "<<fTriggerTimesInGroup[iNumTriggeredTelescopes]<<endl;
+		 iNumTriggeredTelescopes++;
              }
-	    }
+	}
 	
       //Sort all times ascending
       Int_t* index = new Int_t[iNumTel];
@@ -312,29 +341,67 @@ bool ArrayTrigger::RunTriggerWithNextNeighborRequirement()
       int iFirstToTest = 0;
       while(iFirstToTest+iMultiplicity-1<iNumTriggeredTelescopes)
 	  {
-       Float_t fDeltaT = fTriggerTimesInGroup[index[iFirstToTest+iMultiplicity-1]] 
+             Float_t fDeltaT = fTriggerTimesInGroup[index[iFirstToTest+iMultiplicity-1]] 
 	                   - fTriggerTimesInGroup[ index[iFirstToTest] ];
        
-       if(bDebug)
-       cout<<"checking between "<<iFirstToTest<<" and "<<iFirstToTest+iMultiplicity-1<<" with times "<<fTriggerTimesInGroup[ index[iFirstToTest] ]<<" and "<<fTriggerTimesInGroup[index[iFirstToTest+iMultiplicity-1]]<<endl;
+             if(bDebug)
+                cout<<"checking between "<<iFirstToTest<<" and "<<iFirstToTest+iMultiplicity-1<<" with times "<<fTriggerTimesInGroup[ index[iFirstToTest] ]<<" and "<<fTriggerTimesInGroup[index[iFirstToTest+iMultiplicity-1]]<<endl;
 
-       if(fDeltaT<2*fCoincidence)
-		   {
-		     fDeltaTL3 = fDeltaT;
+             if(fDeltaT<fCoincidence)
+	       {
+                 bArrayHasTriggered = true;
+	         fDeltaTL3 = fDeltaT;
+                 //Set the trigger/readout times of the non L2 triggered telescopes to the average trigger time
+                 //1. get the average trigger time from all the telescopes that fall within the coincidence window
+                 Double_t fAverageTriggerTime=0.0;
+                 Int_t iNumTriggeredTelescopesInWindow = 0;
+                 //telescope itself
+                 if( bTelTriggerBit[i] && fabs(fTelTriggerTimes[i]-fTriggerTimesInGroup[ index[iFirstToTest]])<fCoincidence && fTelTriggerTimes[i]-fTriggerTimesInGroup[ index[iFirstToTest]] > -1e-9)
+                          {
+                             iNumTriggeredTelescopesInWindow++;
+                             fAverageTriggerTime+=fTelTriggerTimes[i];
+                          }
+                 //now all the neighbors
+                 for(UInt_t n = 0; n<neighbors[i].size();n++)
+	           {
+	               Int_t GroupIDNeighbor = neighbors[i][n];
+                       if( bTelTriggerBit[GroupIDNeighbor] && fabs(fTelTriggerTimes[GroupIDNeighbor]-fTriggerTimesInGroup[ index[iFirstToTest]])<fCoincidence && fTelTriggerTimes[GroupIDNeighbor]-fTriggerTimesInGroup[ index[iFirstToTest]]>-1e-9)
+	                  {
+                             iNumTriggeredTelescopesInWindow++;
+                             fAverageTriggerTime+=fTelTriggerTimes[GroupIDNeighbor];
+                          }
+                   } 
+                  fAverageTriggerTime/=iNumTriggeredTelescopesInWindow;
+                  //cout<<"The first valid trigger time is at: "<<fTriggerTimesInGroup[ index[iFirstToTest]]<<" The average trigger time is: "<<fAverageTriggerTime<<endl;
+    
+                //assign all the trigger/readout times
+                //for the telescope itself
+                if( bTelTriggerBit[i] && fabs(fTelTriggerTimes[i]-fTriggerTimesInGroup[ index[iFirstToTest]])<fCoincidence && fTelTriggerTimes[i]-fTriggerTimesInGroup[ index[iFirstToTest]]> -1e-9)
+                  vTelTriggerTimesAfterArrayTrigger[i]=fTelTriggerTimes[i];
+                else
+                  vTelTriggerTimesAfterArrayTrigger[i]=fAverageTriggerTime;    
 
-			 vTelTriggerTimesAfterArrayTrigger[i] = fTriggerTimesInGroup[index[iFirstToTest+iMultiplicity-1]];
-             bArrayHasTriggered = true;
-			 if(bDebug)
-				 cout<<"Ok, array triggered and this telescope is readout at time "<<vTelTriggerTimesAfterArrayTrigger[i]<<endl;
-             break;                  
-		   }
-	   iFirstToTest++;
-	  }
+                //assign the trigger times to all the telescopes that fall within the trigger window
+                for(UInt_t n = 0; n<neighbors[i].size();n++)
+	          {
+	             Int_t GroupIDNeighbor = neighbors[i][n];
+                     if( bTelTriggerBit[GroupIDNeighbor] && fabs(fTelTriggerTimes[GroupIDNeighbor]-fTriggerTimesInGroup[ index[iFirstToTest]])<fCoincidence && fTelTriggerTimes[GroupIDNeighbor]-fTriggerTimesInGroup[ index[iFirstToTest]] > -1e-9)
+                        vTelTriggerTimesAfterArrayTrigger[ GroupIDNeighbor]=fTelTriggerTimes[ GroupIDNeighbor];
+                     else
+                        vTelTriggerTimesAfterArrayTrigger[ GroupIDNeighbor]=fAverageTriggerTime < vTelTriggerTimesAfterArrayTrigger[ GroupIDNeighbor] ? fAverageTriggerTime : vTelTriggerTimesAfterArrayTrigger[ GroupIDNeighbor] ;    
+                  }
+
+    	         if(bDebug)
+		    cout<<"Ok, array triggered and this telescope is readout at time "<<vTelTriggerTimesAfterArrayTrigger[i]<<endl;
+                 break;                  
+	       }
+             iFirstToTest++;
+	   }
 
       delete [] index;
       delete [] fTriggerTimesInGroup;
 	 
-	}
+    }
                           
     return bArrayHasTriggered;
 

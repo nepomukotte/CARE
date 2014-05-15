@@ -114,7 +114,9 @@ void ReadConfig::resetTelTypeVectors()
   fDiscDelay.assign( iNumberOfTelescopeTypes, 0 );                  //Delay of the inverted signal in the CFD
   fDiscAttenuation.assign( iNumberOfTelescopeTypes, 0 );            //Attenuation of the non-inverted signal in the CFD
   fDiscRFBConstant.assign( iNumberOfTelescopeTypes, 0 );            //The constant in the RFB feedback units pe/MHz
-  fPEtomVConversion.assign( iNumberOfTelescopeTypes, 0 );           //The conversion factor at the input of the Discriminator mV per pe.
+  fDiscPEtomVConversion.assign( iNumberOfTelescopeTypes, 0 );       //The conversion factor at the input of the Discriminator mV per pe.
+  fFADCdctomVConversion.assign( iNumberOfTelescopeTypes, 0 );       //The conversion factor at the input of the FADC mV per pe.
+  fPileUpWindow.assign( iNumberOfTelescopeTypes, 0 );       //The width of the window used to integrate all photons and get the right pulse shape.
   fDiscRFBDynamic.assign( iNumberOfTelescopeTypes, 0 );             //The value in the RFB feedback in units pe applied as offset.
                                                //If the RFB circuit is used this is just a start value 
   bDiscUseCFD.assign( iNumberOfTelescopeTypes, 0 );                 //Do we use the CFD part of the discriminator
@@ -135,8 +137,8 @@ void ReadConfig::resetTelTypeVectors()
 
   //Trace related variables
   fFWHMofSinglePEPulse.assign( iNumberOfTelescopeTypes, 0 );        //The full width at hald maximum of the single pe pulse
-  sSinglePEPulseShape.assign( iNumberOfTelescopeTypes, "" );         //name of the file that stores the single pe pulse shape
-  sLowGainSinglePEPulseShape.assign( iNumberOfTelescopeTypes, "" );  //name of the file that stores the single pe pulse shape
+  sHighGainPulseShapeFile.assign( iNumberOfTelescopeTypes, "" );         //name of the file that stores the single pe pulse shape
+  sLowGainPulseShapeFile.assign( iNumberOfTelescopeTypes, "" );  //name of the file that stores the single pe pulse shape
   fSigmaSinglePEPulseHeightDistribution.assign( iNumberOfTelescopeTypes, 0 ); //The sigma of the single PE pulse height distribution
   fSampleWidthAveragePulse.assign( iNumberOfTelescopeTypes, 0 );    //The sample width used in the average single pe pulse
   fNSBRatePerPixel.assign( iNumberOfTelescopeTypes, 0 );            //the NSB rate per pixel in the focal plane;
@@ -159,7 +161,8 @@ void ReadConfig::resetTelTypeVectors()
   fFADCTimeOffsetFromTrigger.assign( iNumberOfTelescopeTypes, 0 );  //The offset between the trigger time and the start of the readout window
   fFADCHiLoGainThreshold.assign( iNumberOfTelescopeTypes, 0 );      //The Threshold in FADC counts at which switching to the low gain is activated
   fFADCLowHiGainRatio.assign( iNumberOfTelescopeTypes, 0 );         //Gain ratio logain/higain
-  fFADCPedestal.assign( iNumberOfTelescopeTypes, 0 );               //The FADC pedestal in dc counts
+  fFADCHighGainPedestal.assign( iNumberOfTelescopeTypes, 0 );               //The FADC high gain pedestal in dc counts
+  fFADCLowGainPedestal.assign( iNumberOfTelescopeTypes, 0 );               //The FADC low gain pedestal in dc counts
 
 
   fMirFocalLength.assign( iNumberOfTelescopeTypes, 0 );                    //the focal length of the mirror in m
@@ -412,12 +415,12 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
 	}
       }
 
-     //The filename of the single pe pulse shape that is used if singlepewidth is 0
-     if( iline.find( "SINGLEPEPULSESHAPE " ) < iline.size() )
+     //The filename of the highgain pulse shapes that is used if singlepewidth is 0
+     if( iline.find( "HIGHGAINPULSESHAPE " ) < iline.size() )
       {
 	i_stream >> i_char; i_stream >> i_char; 	
         i_stream >> i_telType;
-	i_stream >>  sSinglePEPulseShape[i_telType];
+	i_stream >>  sHighGainPulseShapeFile[i_telType];
       }
 
    //The sigma of the single PE pulse height distribution in units of PE
@@ -438,12 +441,12 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
 	cout<<"Telescope type "<<i_telType<<" The sampling width used in the  single pe pulse in ns is "<<fSampleWidthAveragePulse[i_telType]<<endl;
       }
 
-     //The filename of the file that contains the low gain single pe pulse shape
+     //The filename of the file that contains the low gain pulse shapes
      if( iline.find( "LOWGAINPULSESHAPE " ) < iline.size() )
       {               
 	i_stream >> i_char; i_stream >> i_char; 	
         i_stream >> i_telType;
-	i_stream >>  sLowGainSinglePEPulseShape[i_telType];
+	i_stream >>  sLowGainPulseShapeFile[i_telType];
       }
 
 
@@ -673,10 +676,29 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
       {
 	i_stream >> i_char; i_stream >> i_char; 
     i_stream >> i_telType;
-	i_stream >> fPEtomVConversion[i_telType];
-	cout<<"Telescope type "<<i_telType<<" The conversion factor at the input of the discriminator mV per pe (Amplitude)"<<fPEtomVConversion[i_telType]<<endl;
+	i_stream >> fDiscPEtomVConversion[i_telType];
+	cout<<"Telescope type "<<i_telType<<" The conversion factor at the input of the discriminator mV per pe (Amplitude)"<<fDiscPEtomVConversion[i_telType]<<endl;
       }
 
+     //The Conversion factor at the input of the FADC mV per dc. This is needed to find the right pulse shape when the trace gets assembled
+     if( iline.find( "FADCDCTOMVCONVERSION " ) < iline.size() )
+      {
+	i_stream >> i_char; i_stream >> i_char; 
+    i_stream >> i_telType;
+	i_stream >> fFADCdctomVConversion[i_telType];
+	cout<<"Telescope type "<<i_telType<<" The conversion factor at the input of the FADC mV per dc (Amplitude) where the FADC response is linear. This number is used to pick the right pulse shape when assembling the trace. Note that for the trigger the high gain trace is used"<<fFADCdctomVConversion[i_telType]<<endl;
+      }
+
+     //The width of the window that is used to determine the number of photons that pile up to produce one output signal. 
+     //That number is used to find the right pulse shape 
+     if( iline.find( "PILEUPWINDOW " ) < iline.size() )
+      {
+	i_stream >> i_char; i_stream >> i_char; 
+    i_stream >> i_telType;
+	i_stream >> fPileUpWindow[i_telType];
+        fPileUpWindow[i_telType]=fPileUpWindow[i_telType]/2.0;
+	cout<<"Telescope type "<<i_telType<<" The half width of the pileup window used to find the right pulse shape for each photon is"<<fPileUpWindow[i_telType]<<" ns"<<endl;
+      }
 
      //How many goups need to be in a cluster for a telescope trigger
      if( iline.find( "GROUPMULTIPLICITY " ) < iline.size() )
@@ -875,12 +897,19 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
       }
 
    //the FADC pedestal 
-     if( iline.find( "FADCPEDESTAL " ) < iline.size() )
+     if( iline.find( "FADCHIGHGAINPEDESTAL " ) < iline.size() )
       {
 	i_stream >> i_char; i_stream >> i_char; 
     i_stream >> i_telType;
-	i_stream >> fFADCPedestal[i_telType];
-    cout<<"Telescope type "<<i_telType<<" The FADC pedestal in dc is: "<<fFADCPedestal[i_telType]<<endl;
+	i_stream >> fFADCHighGainPedestal[i_telType];
+    cout<<"Telescope type "<<i_telType<<" The FADC high gain pedestal in dc is: "<<fFADCHighGainPedestal[i_telType]<<endl;
+      }
+     if( iline.find( "FADCLOWGAINPEDESTAL " ) < iline.size() )
+      {
+	i_stream >> i_char; i_stream >> i_char; 
+    i_stream >> i_telType;
+	i_stream >> fFADCLowGainPedestal[i_telType];
+    cout<<"Telescope type "<<i_telType<<" The FADC low gain pedestal in dc is: "<<fFADCLowGainPedestal[i_telType]<<endl;
       }
 
 

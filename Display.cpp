@@ -28,8 +28,10 @@ Display::Display( int argc, char **argv,ReadConfig *readConfig )
 
   configuration = readConfig;  
 
-  cTraceNSB = NULL;
-  hTraceNSB = NULL; 
+  cTrace = NULL;
+  cFADCTrace = NULL;
+  hFADCTrace = NULL; 
+  hTrace = NULL; 
 
 
 }
@@ -131,6 +133,51 @@ void Display::ShowSelectedDiscriminatorPixels()
   vCanvases.clear();
 }
 
+void Display::ShowFADC(int TelID = 0,int PixID = 0 )
+{
+
+    //if we have not yet created the plots showing the camera parameters
+    if(vTelParCanvases.size()==0)
+        MakeCameraParameterPlots();
+	
+      int iNumSamples = allTelData[TelID]->iNumFADCSamples;
+	{
+	   if(!cFADCTrace)
+		 cFADCTrace = new TCanvas("cFADCTrace","Trace",500,500);
+	   
+	   cFADCTrace->Draw();
+	   cFADCTrace->cd();
+	   if(hFADCTrace)
+		  hFADCTrace->Delete();
+           hFADCTrace = new TH1F("hFADCTrace","FADC Trace",iNumSamples,0,iNumSamples);
+	   vector<Int_t> iFADCTrace = allTelData[TelID]->iFADCTraceInPixel[PixID];
+	   for(int i = 0; i<iNumSamples;i++)
+		  hFADCTrace->SetBinContent(i+1,iFADCTrace[i]);
+	   hFADCTrace->Draw();
+	   cFADCTrace->Modified();
+	   cFADCTrace->Update();
+
+       for(UInt_t i=0;i<vCanvasesToShow.size();i++)
+         {
+           vCanvasesToShow[i]->Draw();
+         }
+
+       for(UInt_t i=0;i<vTelParCanvases.size();i++)
+         {
+           vTelParCanvases[i]->Draw();
+         }
+
+       //hold the code;
+	   TTimer timer("gSystem->ProcessEvents();", 50, kFALSE);
+	   timer.TurnOn();
+	   TString input = Getline("Type <return> to go on: ");
+	   timer.TurnOff();
+
+    }
+
+
+}
+
 void Display::Show(int TelID = 0,int PixID = 0 )
 {
     cout<<"Showing TelID "<<TelID<<"  Pixel: "<<PixID<<endl;
@@ -143,21 +190,20 @@ void Display::Show(int TelID = 0,int PixID = 0 )
 	
 	int iNumAnalogSamples = allTelData[TelID]->iNumSamplesPerTrace;
 	{
-       //NSB Trace
-	   if(!cTraceNSB)
-		 cTraceNSB = new TCanvas("cTraceNSB","NSB Trace",500,500);
+	   if(!cTrace)
+		 cTrace = new TCanvas("cTrace","Trace",500,500);
 	   
-	   cTraceNSB->Draw();
-	   cTraceNSB->cd();
-	   if(hTraceNSB)
-		  hTraceNSB->Delete();
-       hTraceNSB = new TH1F("hTraceNSB","NSB Trace",iNumAnalogSamples,0,iNumAnalogSamples);
+	   cTrace->Draw();
+	   cTrace->cd();
+	   if(hTrace)
+		  hTrace->Delete();
+           hTrace = new TH1F("hTrace","Trace",iNumAnalogSamples,0,iNumAnalogSamples);
 	   vector<Float_t> fTraceInPixel = allTelData[TelID]->fTraceInPixel[PixID];
 	   for(int i = 0; i<iNumAnalogSamples;i++)
-		  hTraceNSB->SetBinContent(i,fTraceInPixel[i]);
-	   hTraceNSB->Draw();
-	   cTraceNSB->Modified();
-	   cTraceNSB->Update();
+		  hTrace->SetBinContent(i+1,fTraceInPixel[i]);
+	   hTrace->Draw();
+	   cTrace->Modified();
+	   cTrace->Update();
 
        for(UInt_t i=0;i<vCanvasesToShow.size();i++)
          {

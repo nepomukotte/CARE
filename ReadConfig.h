@@ -36,7 +36,7 @@ class ReadConfig
   Float_t GetDiscriminatorAttenuation(UInt_t telType){ return fDiscAttenuation[telType]; };
   Float_t GetDiscriminatorRFBConstant(UInt_t telType){ return fDiscRFBConstant[telType]; };
   Float_t GetDiscriminatorRFBDynamic(UInt_t telType){ return fDiscRFBDynamic[telType]; };
-  Float_t GetDiscriminatorConversionFactormVperPE(UInt_t telType){ return fPEtomVConversion[telType]; };
+  Float_t GetDiscriminatorConversionFactormVperPE(UInt_t telType){ return fDiscPEtomVConversion[telType]; };
   Bool_t  GetRFBUsage(UInt_t telType){ return  bDiscUseRFBCircuit[telType]; };
   Bool_t  GetCFDUsage(UInt_t telType){ return  bDiscUseCFD[telType]; };
   Bool_t  GetClippingUsage(UInt_t telType){ return bDoClipping[telType]; };
@@ -61,8 +61,8 @@ class ReadConfig
 
   Int_t   GetGroupMultiplicity(UInt_t telType){ return iGroupMultiplicity[telType]; };
   Float_t GetFWHMofSinglePEPulse(UInt_t telType){ return fFWHMofSinglePEPulse[telType]; };
-  TString  GetNameofSinglePEPulseFile(UInt_t telType){ return sSinglePEPulseShape[telType]; };
-  TString  GetNameofLowGainSinglePEPulseFile(UInt_t telType){ return sLowGainSinglePEPulseShape[telType]; };
+  TString  GetNameofHighGainPulseFile(UInt_t telType){ return sHighGainPulseShapeFile[telType]; };
+  TString  GetNameofLowGainPulseFile(UInt_t telType){ return sLowGainPulseShapeFile[telType]; };
   Float_t GetSigmaofSinglePEPulseHeightDistribution(UInt_t telType){ return fSigmaSinglePEPulseHeightDistribution[telType]; };
   Float_t GetSampleWidthAveragePulse(UInt_t telType){ return fSampleWidthAveragePulse[telType]; };
   Float_t GetNSBRate(UInt_t telType){ return fNSBRatePerPixel[telType]; };
@@ -106,7 +106,12 @@ class ReadConfig
   Float_t GetFADCDCtoPEconversionFactor(UInt_t telType){return fFADCDCtoPEconversion[telType]; };
   Float_t GetFADCHiLoGainThreshold(UInt_t telType){return fFADCHiLoGainThreshold[telType]; };
   Float_t GetFADCLowHiGainRatio(UInt_t telType){return fFADCLowHiGainRatio[telType]; };
-  Float_t GetFADCPedestal(UInt_t telType){return fFADCPedestal[telType]; };
+  Float_t GetFADCHighGainPedestal(UInt_t telType){return fFADCHighGainPedestal[telType]; };
+  Float_t GetFADCLowGainPedestal(UInt_t telType){return fFADCLowGainPedestal[telType]; };
+  Float_t GetFADCConversionFactormVperPE(UInt_t telType){ return fFADCdctomVConversion[telType]*fFADCDCtoPEconversion[telType]; };
+
+  Float_t GetPileUpWindow(UInt_t telType){ return fPileUpWindow[telType]; };
+
 
 
   vector<Float_t> GetWavelengthsOfQEValues(UInt_t telType){return wl[telType]; };
@@ -156,7 +161,8 @@ class ReadConfig
   vector<Float_t> fDiscDelay;                  //Delay of the inverted signal in the CFD
   vector<Float_t> fDiscAttenuation;            //Attenuation of the non-inverted signal in the CFD
   vector<Float_t> fDiscRFBConstant;            //The constant in the RFB feedback units pe/MHz
-  vector<Float_t> fPEtomVConversion;           //The conversion factor at the input of the Discriminator mV per pe.
+  vector<Float_t> fDiscPEtomVConversion;       //The conversion factor at the input of the Discriminator mV per pe.
+  vector<Float_t> fFADCdctomVConversion;       //The conversion factor at the input of the FADC mV per pe.
   vector<Float_t> fDiscRFBDynamic;             //The value in the RFB feedback in units pe applied as offset.
                                                //If the RFB circuit is used this is just a start value 
   vector<Bool_t>  bDiscUseCFD;                 //Do we use the CFD part of the discriminator
@@ -169,8 +175,8 @@ class ReadConfig
 
   //Trace related variables
   vector<Float_t> fFWHMofSinglePEPulse;        //The full width at hald maximum of the single pe pulse
-  vector<TString> sSinglePEPulseShape;         //name of the file that stores the single pe pulse shape
-  vector<TString> sLowGainSinglePEPulseShape;  //name of the file that stores the single pe pulse shape
+  vector<TString> sHighGainPulseShapeFile;         //name of the file that stores the single pe pulse shape
+  vector<TString> sLowGainPulseShapeFile;  //name of the file that stores the single pe pulse shape
   vector<Float_t> fSigmaSinglePEPulseHeightDistribution; //The sigma of the single PE pulse height distribution
   vector<Float_t> fSampleWidthAveragePulse;    //The sample width used in the average single pe pulse
   vector<Float_t> fNSBRatePerPixel;            //the NSB rate per pixel in the focal plane;
@@ -183,7 +189,7 @@ class ReadConfig
   vector<Float_t>         fSamplingTime;       //The sampling rate or resolution of the simulated trace
   vector<Float_t>         fTraceLength;        //the length of the simulated trace per group
   vector<Float_t>         fStartSamplingBeforeAverageTime;   //start of sampling the trace before the average photon arrival time
-
+  vector<Float_t>         fPileUpWindow;   //Half width of the window used to determine the right pulse shape
 
   //Array trigger configuration
   Int_t   iTelescopeMultiplicity;      //How many telescopes need to be in a cluster for a trigger
@@ -252,7 +258,8 @@ class ReadConfig
   vector<Float_t> fFADCTimeOffsetFromTrigger;  //The offset between the trigger time and the start of the readout window
   vector<Float_t> fFADCHiLoGainThreshold;      //The Threshold in FADC counts at which switching to the low gain is activated
   vector<Float_t> fFADCLowHiGainRatio;         //Gain ratio logain/higain
-  vector<Float_t> fFADCPedestal;               //The FADC pedestal in dc counts
+  vector<Float_t> fFADCHighGainPedestal;        //The FADC high gain pedestal in dc counts
+  vector<Float_t> fFADCLowGainPedestal;         //The FADC low gain pedestal in dc counts
 
 
   Int_t  iNumberOfTelescopes;          //The number of Telescopes in the array

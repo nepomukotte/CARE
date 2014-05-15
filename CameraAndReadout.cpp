@@ -239,7 +239,6 @@ int main( int argc, char **argv )
    ///////////////////////////////////////////////////
 
 
-   //needs to be changed for telescope types
    TraceGenerator *traceGenerator[uNumTelescopeTypes];
 
    for(UInt_t t = 0 ; t<uNumTelescopeTypes; t++)
@@ -263,7 +262,6 @@ int main( int argc, char **argv )
    ///////////////////////////////////////////////////
 
 
-   //needs to be changed for telescope types
    TriggerTelescopeNextNeighbor *Teltrigger[uNumTelescopeTypes]; 
    for(UInt_t t = 0 ; t<uNumTelescopeTypes; t++)
      {
@@ -748,7 +746,7 @@ int main( int argc, char **argv )
              telData[tel]->ResetTraces();
              traceGenerator[telType]->SetTelData(telData[tel]);
 	     traceGenerator[telType]->GenerateNSB();
-		 
+	     traceGenerator[telType]->BuildAllHighGainTraces();	 
 	     //Load event with trace from trace generator.
 	     Teltrigger[telType]->LoadEvent(telData[tel]);
 	     Teltrigger[telType]->RunTrigger();
@@ -931,6 +929,7 @@ int main( int argc, char **argv )
 
                    traceGenerator[telType]->SetTelData(telData[n]);
 	           traceGenerator[telType]->LoadCherenkovPhotons( v_f_x ,  v_f_y, v_f_time, v_f_lambda, fDelay,dGlobalPhotonEffic);	
+	           traceGenerator[telType]->BuildAllHighGainTraces();	 
 		   
 		   //   TelData->ShowTrace(0,kTRUE); 
            		   
@@ -996,18 +995,13 @@ int main( int argc, char **argv )
 			   cout<<"Array Trigger Time for this telescope: "<<arraytrigger->GetArrayTriggerTime(l)<<endl;
 			 }
 
-			  //This should only happen if something is wrong in real life with the array trigger and this telescope gets dropped
-                     if(  arraytrigger->GetArrayTriggerTime(l)>5e5 )
-                       telData[l]->bTelescopeHasTriggered = kFALSE;
-                     else
-                       telData[l]->bTelescopeHasTriggered = kTRUE;
-					  
+		     //This should only happen if something is wrong in real life with the array trigger and this telescope gets dropped
+	             //needs to change to work with option no Array trigger
+                     telData[l]->fTriggerTime = arraytrigger->GetArrayTriggerTime(l) ;
 
                     //Do this
                     Int_t telType = telData[l]->GetTelescopeType();
 	            fadc[telType]->SetDebugInfo(fPrimaryEnergy,l,0,0);
-	             //needs to change to work with option no Array trigger
-	            telData[l]->fTriggerTime = arraytrigger->GetArrayTriggerTime(l) ;
 	            fadc[telType]->RunFADC(telData[l]);
 
 			   if(DEBUG_MAIN)

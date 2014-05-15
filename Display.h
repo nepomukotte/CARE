@@ -26,6 +26,7 @@ class Display {
   Display( int argc, char **argv,ReadConfig *readConfig);
   void ShowSelectedDiscriminatorPixels();
   void Show(int TelID, int pixel  );
+  void ShowFADC(int TelID, int pixel  );
   void SetTelescopeData(TelescopeData **AllTelescopes){ allTelData = AllTelescopes;};
   void AddCanvas(TCanvas *c);
   void AddDiscriminatorTraces(int TelID, int triggerpixel,float threshold,TH1F hThresholdTrace,TH1F hCFDTrace);
@@ -39,8 +40,10 @@ class Display {
  ReadConfig *configuration;
 
  Bool_t HandleInput();
- TCanvas *cTraceNSB;
- TH1F *hTraceNSB;   //Histogram to show the NSB trace of a pixel   
+ TCanvas *cTrace;
+ TCanvas *cFADCTrace;
+ TH1F *hTrace;   //Histogram to show the trace of a pixel   
+ TH1F *hFADCTrace;   //Histogram to show the FADC trace of a pixel   
 
  TelescopeData **allTelData;
  vector<TCanvas*> vCanvasesToShow;

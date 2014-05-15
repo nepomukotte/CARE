@@ -50,12 +50,12 @@ void FADC::RunFADC(TelescopeData *TelData)
   //Check if we have all we need, e.g. that the analog trace is simulated sufficiently long and can be fully digitized
 
   //Take care of the case that the array triggers but this telescope has no Cherenkov photons in the focal plane
-  if( telData->bTelescopeHasTriggered )
+  if( telData->bCherenkovPhotonsInCamera == kTRUE )
     fTimeStartFirstSample = telData->fTriggerTime - fOffset + ( rand->Uniform() - 0.5 ) *  fFADCSamplingWidth;
-  else if( telData->bCherenkovPhotonsInCamera == kTRUE )
-    fTimeStartFirstSample = telData->fAveragePhotonArrivalTime - fOffset + ( rand->Uniform() - 0.5 ) *  fFADCSamplingWidth;
   else
     fTimeStartFirstSample = - fOffset + ( rand->Uniform() - 0.5 ) *  fFADCSamplingWidth;
+
+
 
   if(bDebug)
 	 cout<<"The time of the first sample to be readout is: "<<fTimeStartFirstSample<<endl;
@@ -69,11 +69,12 @@ void FADC::RunFADC(TelescopeData *TelData)
     
 
         DigitizePixel( g );
+        //if(telData->bInLoGain[g])
         if(bDebug)
 		  {
-			  cout<<"done pixel "<<g<<endl; 
-		      //debugDisplay->Show(telData->GetTelescopeID(),g);
-	          //ShowTraceOfPixel(g);
+		      cout<<"done pixel "<<g<<endl; 
+		      debugDisplay->Show(telData->GetTelescopeID(),g);
+		      debugDisplay->ShowFADC(telData->GetTelescopeID(),g);
 		  }
 
     }
@@ -93,7 +94,7 @@ void FADC::DigitizePixel( Int_t PixelID )
     //Check if the Lo Gain is active
     Float_t fGain = 1;
     Bool_t bLowGain = kFALSE;
-    Float_t LowGainthresholdInPE =  (fHiLoGainThreshold - fPedestal) / fDCtoPEconversion ;
+    Float_t LowGainthresholdInPE =  (fHiLoGainThreshold - fHighGainPedestal) / fDCtoPEconversion ;
 
     //At the same time do the QDC
     Float_t fQDC = 0;
@@ -132,25 +133,27 @@ void FADC::DigitizePixel( Int_t PixelID )
          fQDC += telData->fTraceInPixel[PixelID][iPositionInAnalogTrace];
       }
 
-    fQDC*=-1*fTraceSamplingTime*fDCtoPEconversion*tracegenerator->GetAreaToPeakConversion();
+    fQDC*=-1*fTraceSamplingTime*fDCtoPEconversion*tracegenerator->GetHighGainAreaToPeak(0);
 
-    telData->iQDCInPixel[PixelID] = (Int_t)(fQDC+fPedestal);
+    telData->iQDCInPixel[PixelID] = (Int_t)(fQDC+fHighGainPedestal);
 
     if(bDebug)
 	  cout<<"QDC: "<<fQDC<<" before pedestal additio,n "<<telData->iQDCInPixel[PixelID]<<" after pedestal addition"<<endl;
 
     //Get the right trace
+    Float_t fPedestal = fHighGainPedestal; 
     vector<Float_t> trace;
     if(bLowGain)
       {
+        fPedestal = fLowGainPedestal;
         tracegenerator->SetTelData(telData);
-        trace = tracegenerator->GetLowGainTrace(PixelID);
+        tracegenerator->BuildLowGainTrace(PixelID);        
       }
-    else 
-      trace = telData->fTraceInPixel[PixelID];
+
+    trace = telData->fTraceInPixel[PixelID];
 
     //Write the FADC trace
-    Float_t fConversionFactor = fGain * fDCtoPEconversion  ;
+    Float_t fConversionFactor = -1*fGain * fDCtoPEconversion  ;
     bool outofbound = false;
     for(int i =0;i<iFADCSamples;i++)
       {
@@ -159,8 +162,8 @@ void FADC::DigitizePixel( Int_t PixelID )
 	      ( ( fTimeStartFirstSample +  i * fFADCSamplingWidth -(telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime) ) 
 	      / fTraceSamplingTime);
 
-        //Float_t fAnalogValue = iPositionInAnalogTrace >= (Int_t)telData->fTraceInPixel[PixelID].size() ? 0 : trace[iPositionInAnalogTrace];   
-	   if(iPositionInAnalogTrace >= (Int_t)telData->fTraceInPixel[PixelID].size())
+        //Float_t fAnalogValue = iPositionInAnalogTrace >= (Int_t)telData->trace.size() ? 0 : trace[iPositionInAnalogTrace];   
+	   if(iPositionInAnalogTrace >= (Int_t)trace.size())
 		  {
                        if(! outofbound && PixelID==1)
                           {
@@ -173,7 +176,7 @@ void FADC::DigitizePixel( Int_t PixelID )
 			    cout<<"I am going back to the very beginning of the trace and record from there"<<endl;
                             cout<<"Lets hope that there are no Cherenkov photons"<<endl;
                           }
-                          iPositionInAnalogTrace = iPositionInAnalogTrace  % (Int_t)telData->fTraceInPixel[PixelID].size();
+                          iPositionInAnalogTrace = iPositionInAnalogTrace  % (Int_t)trace.size();
 		  }
              else if(iPositionInAnalogTrace<0)
                {
@@ -184,11 +187,12 @@ void FADC::DigitizePixel( Int_t PixelID )
                        cout<<endl<<"The readout start before sample 0. Wanted position in analog trace is "<<iPositionInAnalogTrace<<endl;
                        cout<<"I go to the end of the trace and load the part of the trace there, hopefully there is only noise"<<endl;
 		       cout<<"E: "<<fenergy<<" Tel "<<ftelid<<" Zenith "<<fzenith<<" Az  "<<fazimuth<<endl<<endl;
+                       cout<< "teltriggered "<<telData->bTelescopeHasTriggered <<"  "<<fTimeStartFirstSample<<"  "<< fFADCSamplingWidth<<"  "<<telData->fAveragePhotonArrivalTime<<"  "<<fStartSamplingBeforeAverageTime<<"  "<< fTraceSamplingTime<<endl;
                      }
-                  iPositionInAnalogTrace = abs((Int_t)telData->fTraceInPixel[PixelID].size()-iPositionInAnalogTrace) % (Int_t)telData->fTraceInPixel[PixelID].size() ;                  
+                  iPositionInAnalogTrace = abs((Int_t)trace.size()-iPositionInAnalogTrace) % (Int_t)trace.size() ;                  
                }
 	 
-	   Float_t fDigitizedValue =  -1 * trace[iPositionInAnalogTrace] * fConversionFactor + fPedestal;
+	   Float_t fDigitizedValue =  trace[iPositionInAnalogTrace] * fConversionFactor + fPedestal;
 
 	    if(bDebug)
 	       cout<<i<<"  "<<iPositionInAnalogTrace<<"  "<<trace[iPositionInAnalogTrace]<<"  "<<fDigitizedValue;
@@ -203,59 +207,8 @@ void FADC::DigitizePixel( Int_t PixelID )
 	    telData->iFADCTraceInPixel[PixelID][i] = (Int_t)fDigitizedValue;
 
       }
-//if(bLowGain) ShowTraceOfPixel(PixelID);
 }
 
-//////////////////////////////////////////////////////
-//
-// Show the digitized trace of one pixel
-TH1F FADC::GetTraceHistogram(Int_t PixNum){
-
-  TString title;
-  title.Form("Trace in pixel %i",PixNum);
-  TH1F hTrace ("hTrace",title,
-	       iFADCSamples,-0.5,iFADCSamples-0.5);
-  hTrace.GetXaxis()->SetTitle("Sample Number");
-  hTrace.GetYaxis()->SetTitle("Digitized Amplitude [dc]");
-  
-  for(Int_t i = 0; i<iFADCSamples; i++)
-    {
-   
-      hTrace.SetBinContent(i+1,telData->iFADCTraceInPixel[PixNum][i]);
-      cout<<telData->iFADCTraceInPixel[PixNum][i]<<endl;
-    }
-  
- return  hTrace;
- 
-}
-
-
-
-//////////////////////////////////////////////////////
-//
-// Show the digitized trace of one pixel
-void FADC::ShowTraceOfPixel(Int_t PixNum){
-
-  cout<<"Outputing FADC trace for pixel "<<PixNum<<endl;
-
-  TCanvas cTraceTriggeredGroup("cTraceTriggeredGroup","Digitized Trace in pixel",700,500);
-  cTraceTriggeredGroup.cd();
-  gPad->SetGrid();
- 
-  TH1F hTrace = GetTraceHistogram(PixNum);
-  
-  hTrace.Draw();
-  
-  TTimer timer("gSystem->ProcessEvents();", 50, kFALSE);
-  
-  //
-  // While reading the input process gui events asynchronously
-  //
-  timer.TurnOn();
-  TString input = Getline("Type <return> to go on: ");
-  timer.TurnOff();  
-
-}
 
 //----------------------------------------------------------------------------------------
 //  Prints how often the trace was too short
@@ -283,7 +236,8 @@ void  FADC::SetParametersFromConfigFile( ReadConfig *readConfig ){
    fDCtoPEconversion=-1;
    fHiLoGainThreshold=-1;
    fLowHiGainRatio=-1;
-   fPedestal=-1;      
+   fHighGainPedestal=-1;      
+   fLowGainPedestal=-1;      
 
    //Length of the trace
    fTraceLength = readConfig->GetTraceLength(iTelType);
@@ -316,7 +270,8 @@ void  FADC::SetParametersFromConfigFile( ReadConfig *readConfig ){
    fLowHiGainRatio = readConfig->GetFADCLowHiGainRatio(iTelType);
 
    //the FADC pedestal 
-   fPedestal = readConfig->GetFADCPedestal(iTelType);
+   fHighGainPedestal = readConfig->GetFADCHighGainPedestal(iTelType);
+   fLowGainPedestal = readConfig->GetFADCLowGainPedestal(iTelType);
 
     cout<<endl<<"FADC settings"<<endl;
     cout<<"-------------"<<endl;
@@ -330,7 +285,8 @@ void  FADC::SetParametersFromConfigFile( ReadConfig *readConfig ){
 	cout<<"The DC to PE conversion factor is: "<<fDCtoPEconversion<<endl;
 	cout<<"The Low gain is activated at [dc]: "<<fHiLoGainThreshold<<endl;
 	cout<<"The gain ratio of the low gain channel to the high gain channel is: "<<fLowHiGainRatio<<endl;
-	cout<<"The FADC pedestal is [dc]: "<<fPedestal<<endl<<endl;;      
+	cout<<"The FADC high gain pedestal is [dc]: "<<fHighGainPedestal<<endl;      
+	cout<<"The FADC low gain pedestal is [dc] : "<<fLowGainPedestal<<endl<<endl;      
 }
 
 void FADC::SetDebugInfo(Float_t energy, Int_t telid, Float_t zenith, Float_t azimuth){
