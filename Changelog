@@ -16,6 +16,11 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
+  2014/08/02 Nepomuk Otte
+   This Version is tagged 1.5.1
+   * CameraAndReadout.cpp
+   - When enabled traces, were not written into the root file.
+
   2013/12/11 Nepomuk Otte
    This Version is tagged 1.5
    * ReadConfig, TraceGenerator, TelescopeData, FADC, Display

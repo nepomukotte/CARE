@@ -504,8 +504,12 @@ int main( int argc, char **argv )
            tout[i]->Branch("fZnTel", &(vZnTel[i]));
            if(bWriteTracesToRootFile)
               {
-               tout[i]->Branch("vFADCTraces", telData[i]->iFADCTraceInPixel);
                tout[i]->Branch("vHiLoGainBit", &(telData[i]->bInLoGain));
+               for(int g=0;g<telData[i]->iNumPixels;g++)
+                 {
+                  name.Form("vFADCTraces%i",g);
+                  tout[i]->Branch(name,&(telData[i]->iFADCTraceInPixel[g]));
+                 }
               }
 	 }
 
