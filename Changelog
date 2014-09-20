@@ -16,6 +16,14 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
+  2014/09/19 Nepomuk Otte
+  This Version is tagged 1.5.2
+  * ArrayTrigger.cpp, CameraReadout.cpp
+  -Fixed bug determining the triggertime for telescopes that are not triggered
+  * TraceGenerator.cpp
+  -Disabling the interpolation of attenuation between pulse shapes
+
+
   2014/08/02 Nepomuk Otte
    This Version is tagged 1.5.1
    * CameraAndReadout.cpp

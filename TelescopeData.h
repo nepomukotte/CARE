@@ -101,6 +101,7 @@ class TelescopeData {
   Float_t fTelescopeTriggerTime;                        //The time when the telescope triggered
   Int_t iNumTriggeredGroups;                            //holds the number of triggered groups
 
+  Bool_t bArrayTriggered;                               //If telescope has been triggered by the array trigger
   Bool_t bTelescopeHasTriggered;                        //If telescope has triggered
   vector<int> vTriggerCluster;                           //the IDs of the groups that are in the triggered cluster
 

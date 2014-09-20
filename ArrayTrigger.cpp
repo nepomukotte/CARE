@@ -30,6 +30,7 @@ ArrayTrigger::ArrayTrigger(ReadConfig *readConfig,Bool_t debug)
   fEarliestTriggerTime = -1;
 
   SetParametersFromConfigFile( readConfig );
+  bTelArrayTriggerBits.assign(iNumTel,0);  
   vTelTransitTimes.assign(iNumTel,0.0);
 }
 
@@ -109,6 +110,8 @@ bool ArrayTrigger::RunTrigger()
 
   bool ArrayHasTriggered = false;
 
+  bTelArrayTriggerBits.assign(iNumTel,0);
+
   Int_t iRefTelescope = 0;
   while(!bTelTriggerBit[iRefTelescope] &&  iRefTelescope<iNumTel-1)
     iRefTelescope++;
@@ -138,8 +141,9 @@ bool ArrayTrigger::RunTrigger()
 		  {
 			if(bDebug)
 				cout<<"Telescope "<<i<<" triggered at time "<<fTelTriggerTimes[i]<<endl;
-	        vTelTriggerTimesAfterArrayTrigger[i]= fTelTriggerTimes[i];
+	                vTelTriggerTimesAfterArrayTrigger[i]= fTelTriggerTimes[i];
 			ArrayHasTriggered = true;
+                        bTelArrayTriggerBits[i] = true;
 		  }
        }
 
@@ -212,6 +216,7 @@ bool ArrayTrigger::RunTrigger()
 	{
 	  if( bTelTriggerBit[i] && fabs(fTelTriggerTimes[i]-fArrayTriggerTime)<fCoincidence && fTelTriggerTimes[i]-fArrayTriggerTime > -1e-9)
 	    {
+                bTelArrayTriggerBits[i]=1;
                 iNumTriggeredTelescopesInWindow++;
                 fAverageTriggerTime+=fTelTriggerTimes[i];
             }
@@ -349,6 +354,7 @@ bool ArrayTrigger::RunTriggerWithNextNeighborRequirement()
 
              if(fDeltaT<fCoincidence)
 	       {
+                 bTelArrayTriggerBits[i]=1;
                  bArrayHasTriggered = true;
 	         fDeltaTL3 = fDeltaT;
                  //Set the trigger/readout times of the non L2 triggered telescopes to the average trigger time
@@ -388,7 +394,10 @@ bool ArrayTrigger::RunTriggerWithNextNeighborRequirement()
                      if( bTelTriggerBit[GroupIDNeighbor] && fabs(fTelTriggerTimes[GroupIDNeighbor]-fTriggerTimesInGroup[ index[iFirstToTest]])<fCoincidence && fTelTriggerTimes[GroupIDNeighbor]-fTriggerTimesInGroup[ index[iFirstToTest]] > -1e-9)
                         vTelTriggerTimesAfterArrayTrigger[ GroupIDNeighbor]=fTelTriggerTimes[ GroupIDNeighbor];
                      else
+                       {
                         vTelTriggerTimesAfterArrayTrigger[ GroupIDNeighbor]=fAverageTriggerTime < vTelTriggerTimesAfterArrayTrigger[ GroupIDNeighbor] ? fAverageTriggerTime : vTelTriggerTimesAfterArrayTrigger[ GroupIDNeighbor] ;    
+                       bTelArrayTriggerBits[ GroupIDNeighbor ]=1;
+                      }
                   }
 
     	         if(bDebug)

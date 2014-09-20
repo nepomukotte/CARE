@@ -809,7 +809,8 @@ void TraceGenerator::BuildTrace(Int_t PixelID,Bool_t bLowGain){
         //2. Get the expected amplitude in mV at the FADC if everything is perfectly linear
         Float_t fLinAmplitude = fPileUpAmplitude*fLinearGainmVPerPE;
 
-        if(bDebug)
+        //if(bDebug)
+        if(bLowGain)
         cout<<"time (samples): "<<time/fSamplingTime<<" signal [pe]: "<<telData->fAmplitudesInPixel[PixelID][g]<<" fPileUpAmplitude "<<fPileUpAmplitude<<" fLinAmplitude "<<fLinAmplitude<<endl;
 
         //3. loop over pulse shapes until we get the one that is closest to the expected amplitude
@@ -819,23 +820,29 @@ void TraceGenerator::BuildTrace(Int_t PixelID,Bool_t bLowGain){
         if(uPulseShape>0 && uPulseShape!=vPulse->size()-1 )
          {
            //get the nonlinearity factor
-           fNonLinearity = vNonLinearityFactor->at(uPulseShape-1)+
-                                 (fLinAmplitude-vLinearAmplitude->at(uPulseShape-1))/
-                                 (vLinearAmplitude->at(uPulseShape)-vLinearAmplitude->at(uPulseShape-1))
-                                 *(vNonLinearityFactor->at(uPulseShape)-vNonLinearityFactor->at(uPulseShape-1));
+           //fNonLinearity = vNonLinearityFactor->at(uPulseShape-1)+
+           //                      (fLinAmplitude-vLinearAmplitude->at(uPulseShape-1))/
+           //                      (vLinearAmplitude->at(uPulseShape)-vLinearAmplitude->at(uPulseShape-1))
+           //                      *(vNonLinearityFactor->at(uPulseShape)-vNonLinearityFactor->at(uPulseShape-1));
+         
            //find out which is the better fit, this one or the previous pulse shape
            if((fLinAmplitude - vLinearAmplitude->at(uPulseShape-1))/
               (vLinearAmplitude->at(uPulseShape)-vLinearAmplitude->at(uPulseShape-1)) < 0.5)
            uPulseShape--;
-           //fNonLinearity = vNonLinearityFactor->at(uPulseShape);
+           //Go back to pulse number one if you get the linear pulse shape in the above lines. This is because the linear amplitude given for the first pulse shape gives
+           //the upper boundary of the linear regime. For all the other pulse shapes the linear amplitude gives the value for which the pulse shape was recorded.    
+           if(uPulseShape==0)
+               uPulseShape++;
+           fNonLinearity = vNonLinearityFactor->at(uPulseShape);
          }
-        if(uPulseShape==vPulse->size()-1)
-         {
-           fNonLinearity = vNonLinearityFactor->at(uPulseShape); 
-         }
+        //if(uPulseShape==vPulse->size()-1)
+        // {
+        //   fNonLinearity = vNonLinearityFactor->at(uPulseShape); 
+        // }
        }
 
-      if(bDebug)
+      //if(bDebug)
+      if(bLowGain)
       cout<<"Use pulse number: "<<uPulseShape<<" non linearity "<<fNonLinearity<<endl;       
 
       //figure out where we start filling the signal into the Trace

@@ -53,7 +53,7 @@ void FADC::RunFADC(TelescopeData *TelData)
   if( telData->bCherenkovPhotonsInCamera == kTRUE )
     fTimeStartFirstSample = telData->fTriggerTime - fOffset + ( rand->Uniform() - 0.5 ) *  fFADCSamplingWidth;
   else
-    fTimeStartFirstSample = - fOffset + ( rand->Uniform() - 0.5 ) *  fFADCSamplingWidth;
+    fTimeStartFirstSample = ( rand->Uniform() - 0.5 ) *  fFADCSamplingWidth - fOffset;
 
 
 
@@ -174,7 +174,8 @@ void FADC::DigitizePixel( Int_t PixelID )
 			        <<", time of first sample  "<<fTimeStartFirstSample<<", average photon arrival time "<<telData->fAveragePhotonArrivalTime<<endl;
 			    cout<<"E: "<<fenergy<<" Tel "<<ftelid<<" Zenith "<<fzenith<<" Az  "<<fazimuth<<endl<<endl;
 			    cout<<"I am going back to the very beginning of the trace and record from there"<<endl;
-                            cout<<"Lets hope that there are no Cherenkov photons"<<endl;
+                            cout<<"Lets hope that there are no Cherenkov photons: "<<telData->bCherenkovPhotonsInCamera<<endl;
+                            cout<<"Tel trigger time "<<telData->fTriggerTime<<" offset "<<fOffset<<endl;
                           }
                           iPositionInAnalogTrace = iPositionInAnalogTrace  % (Int_t)trace.size();
 		  }

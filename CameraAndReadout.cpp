@@ -1002,11 +1002,17 @@ int main( int argc, char **argv )
 		     //This should only happen if something is wrong in real life with the array trigger and this telescope gets dropped
 	             //needs to change to work with option no Array trigger
                      telData[l]->fTriggerTime = arraytrigger->GetArrayTriggerTime(l) ;
-
+                     telData[l]->bArrayTriggered = arraytrigger->GetArrayTriggerBitForTelescope(l) ;
+                     
                     //Do this
-                    Int_t telType = telData[l]->GetTelescopeType();
-	            fadc[telType]->SetDebugInfo(fPrimaryEnergy,l,0,0);
-	            fadc[telType]->RunFADC(telData[l]);
+                    if(telData[l]->bArrayTriggered)
+                      {
+		        if(DEBUG_MAIN)
+				 cout<<"Readout Telescope"<<endl;
+                        Int_t telType = telData[l]->GetTelescopeType();
+	                fadc[telType]->SetDebugInfo(fPrimaryEnergy,l,0,0);
+	                fadc[telType]->RunFADC(telData[l]);
+                      }
 
 			   if(DEBUG_MAIN)
 				 cout<<"FADC completed"<<endl;

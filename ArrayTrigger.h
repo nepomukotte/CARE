@@ -15,6 +15,7 @@ class ArrayTrigger {
   bool RunTrigger();
  
   Float_t GetL3DeltaT(){ return fDeltaTL3; };
+  Bool_t GetArrayTriggerBitForTelescope(int TelID){ return bTelArrayTriggerBits[TelID]; };
   Float_t GetArrayTriggerTime(int TelID){ return vTelTriggerTimesAfterArrayTrigger[TelID]; };
   Float_t GetEarliestArrayTriggerTime(){ return fEarliestTriggerTime; };
 
@@ -26,6 +27,7 @@ class ArrayTrigger {
 
   Bool_t bDebug;
 
+  vector<Bool_t>       bTelArrayTriggerBits;              //stores the information whether a Telescope has been triggered by the array or not
   vector<Bool_t>       bTelTriggerBit;                    //stores the information whether a Telescope has triggered or not
   vector<Float_t>      fTelTriggerTimes;                  //stores the trigger times of each telescope
   Int_t                *iClusterID;                       //Helper variable that assigns a cluster ID to each triggered telescope

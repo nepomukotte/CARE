@@ -5,8 +5,8 @@
 
 int iYrows = 15; //module rows in the camera
 int iModulesInRow[] = {5, 9, 11, 13, 13, 15, 15, 15, 15, 15, 13, 13, 11, 9, 5};  //number of modules in each row
-float fModulePitch = 5.2; //cm //pitch of modules
-float fPixelPitch = 0.6125;   //pitch of pixels within module
+float fModulePitch = 5.4; //cm //pitch of modules
+float fPixelPitch = 0.6506;   //pitch of pixels within module
 int iNPixelsInRow = 8;   //number of pixels in one row in a module (number of pixel is this number squared
 
 int iNSummedPixel = 4; //number of pixel that get summed to one group
@@ -107,11 +107,25 @@ TGeoTranslation *tr = new TGeoTranslation(xPixelCoord,yPixelCoord, 0.);
 
 ///   gGeoManager->SetTopVisible();
    top->Draw();
+   
+   //Write the SiPM pixel parameters
+   UInt_t uPixID = 0;
+   for(UInt_t m=0; m<vYCoordModule.size();m++)
+   {
+     for(UInt_t p=0; p<vYCoordPixelInModule.size();p++)
+	 {
+		 *fConfigFile <<"* SIPMPARS "<<iTelID<<"  "<<uPixID<<" 3464 0.4"<<endl;
+		uPixID++;
+	 }
+
+   }
+
+   *fConfigFile<<endl<<endl;
 
 
    //Write the list with the pixel coordinates
    //   * PMPIX 1  1  0.000000  0.000000 1 14.8 1 1 1 
-   UInt_t uPixID = 0;
+   uPixID = 0;
    vector<float> vXCoordPixel;
    vector<float> vYCoordPixel;
 
