@@ -17,6 +17,11 @@ _
 
                                                      -*-*- END OF LINE -*-*-
   2014/09/19 Nepomuk Otte
+  This Version is tagged 1.5.3
+  * TraceGenerator.cpp
+  -Removed debug statement in output about low gian pulses
+
+  2014/09/19 Nepomuk Otte
   This Version is tagged 1.5.2
   * ArrayTrigger.cpp, CameraReadout.cpp
   -Fixed bug determining the triggertime for telescopes that are not triggered

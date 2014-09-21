@@ -809,8 +809,7 @@ void TraceGenerator::BuildTrace(Int_t PixelID,Bool_t bLowGain){
         //2. Get the expected amplitude in mV at the FADC if everything is perfectly linear
         Float_t fLinAmplitude = fPileUpAmplitude*fLinearGainmVPerPE;
 
-        //if(bDebug)
-        if(bLowGain)
+        if(bDebug)
         cout<<"time (samples): "<<time/fSamplingTime<<" signal [pe]: "<<telData->fAmplitudesInPixel[PixelID][g]<<" fPileUpAmplitude "<<fPileUpAmplitude<<" fLinAmplitude "<<fLinAmplitude<<endl;
 
         //3. loop over pulse shapes until we get the one that is closest to the expected amplitude
@@ -841,8 +840,7 @@ void TraceGenerator::BuildTrace(Int_t PixelID,Bool_t bLowGain){
         // }
        }
 
-      //if(bDebug)
-      if(bLowGain)
+      if(bDebug)
       cout<<"Use pulse number: "<<uPulseShape<<" non linearity "<<fNonLinearity<<endl;       
 
       //figure out where we start filling the signal into the Trace
