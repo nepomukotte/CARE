@@ -765,7 +765,7 @@ void TraceGenerator::BuildTrace(Int_t PixelID,Bool_t bLowGain){
 
   //get vectors to low gain or high gain pulses and information respectively
   vector< vector<Float_t> > *vPulse; 
-  vector<Float_t> *vAreaToPeakConversion;
+  //vector<Float_t> *vAreaToPeakConversion;
   vector<Float_t> *vStartTime;
   vector<Float_t> *vStopTime;
   vector<Float_t> *vLinearAmplitude;
@@ -774,7 +774,7 @@ void TraceGenerator::BuildTrace(Int_t PixelID,Bool_t bLowGain){
   if(bLowGain)
    {
     vPulse = &fLowGainPulse; 
-    vAreaToPeakConversion = &fLowGainAreaToPeakConversion;
+    //vAreaToPeakConversion = &fLowGainAreaToPeakConversion;
     vStartTime = &fLowGainStartTime;
     vStopTime = &fLowGainStopTime;
     vLinearAmplitude = &fLowGainLinearAmplitude;
@@ -783,7 +783,7 @@ void TraceGenerator::BuildTrace(Int_t PixelID,Bool_t bLowGain){
   else
    {
     vPulse = &fHighGainPulse;    
-    vAreaToPeakConversion = &fHighGainAreaToPeakConversion;
+    //vAreaToPeakConversion = &fHighGainAreaToPeakConversion;
     vStartTime = &fHighGainStartTime;
     vStopTime = &fHighGainStopTime;
     vLinearAmplitude = &fHighGainLinearAmplitude;

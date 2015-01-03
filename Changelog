@@ -16,6 +16,15 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
+  2015/01/03 Nepomuk Otte
+  This Version is tagged 1.5.4
+  * TraceGenerator.cpp
+  -removed unused variable that causes a warning at compilation time
+  * CameraAndReadout.cpp
+  -added pointer to random number generator in constructor of TelescopeData
+  objects 
+  These two changes do not affect the outcome of the simulations
+
   2014/09/19 Nepomuk Otte
   This Version is tagged 1.5.3
   * TraceGenerator.cpp

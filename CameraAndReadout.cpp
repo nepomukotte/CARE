@@ -310,7 +310,7 @@ int main( int argc, char **argv )
     {
       cout<<endl<<"creating Telescope Data container for telescope id: "<<t<<endl;
       //Note that argument contains telescope type and number pixels. Needs to be done cleaner with config reader
-      telData[t] = new TelescopeData(readConfig,t,DEBUG_TELESCOPEDATA);
+      telData[t] = new TelescopeData(readConfig,t,rand,DEBUG_TELESCOPEDATA);
     }
 	//Setting the telescope data for the debug display
    
