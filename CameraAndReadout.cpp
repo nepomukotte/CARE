@@ -562,6 +562,15 @@ int main( int argc, char **argv )
         cout<<"Global Photon Efficiency "<<dGlobalPhotonEffic<<endl;
         cout<<"File header "<<fileheader->c_str()<<endl; 
 
+        //Getting the CORSIKA runnumber from the simulation header
+        UInt_t iCorsikaRunNumber ; 
+        std::size_t found = fileheader->find("HEADER (START)");
+        found = fileheader->find("RUN",found+4);
+        string strRunNumber = fileheader->substr(found+4);
+        istringstream streamRunNumber(strRunNumber);
+        streamRunNumber>>iCorsikaRunNumber;  
+        cout<<"The CORSIKA runnumber is: "<<iCorsikaRunNumber<<endl; 
+
         if((unsigned)readConfig->GetNumberOfTelescopes() > telIDVector->size())
 		{
 			cout<<"The number of telescopes in the input file is larger than the number of telescopes in the configuration file"<<endl;
@@ -621,6 +630,9 @@ int main( int argc, char **argv )
        float fZnPrim = 0.;
        float fAzTel = 0.;
        float fZnTel = 0.;
+       float fFirstIntHgt = 0.;
+       float fFirstIntDpt = 0.;
+       UInt_t iShowerID = 0;
        std::vector< float > *v_f_x = 0;
        std::vector< float > *v_f_y = 0;
        std::vector< float > *v_f_time = 0;
@@ -687,9 +699,8 @@ int main( int argc, char **argv )
 	   sSimInfoForHeader.append(*fileheader); 
 
        cout<<"Dumping the header written into the VBF file"<<endl;
-       cout<<sSimInfoForHeader.c_str()<<endl;
+       //cout<<sSimInfoForHeader.c_str()<<endl;
 
-	   //VBFwrite->makeSimulationHeader( sConfigFileName,
 	   VBFwrite->makeSimulationHeader( sSimInfoForHeader,
 					   simulator,
 					   dObsHeight,
@@ -861,7 +872,10 @@ int main( int argc, char **argv )
 	       t[n]->SetBranchAddress("Ycos", &fYcos );
 	       t[n]->SetBranchAddress("Xsource", &fXsource );
 	       t[n]->SetBranchAddress("Ysource", &fYsource );
-       	       t[n]->GetEntry( i );
+	       t[n]->SetBranchAddress("ShowerID", &iShowerID );
+	       t[n]->SetBranchAddress("FirstIntDpt", &fFirstIntDpt );
+	       t[n]->SetBranchAddress("FirstIntHgt", &fFirstIntHgt );
+               t[n]->GetEntry( i );
                //        cout<<i<<": a "<<sqrt((fAzTel-fAzPrim)*(fAzTel-fAzPrim)+(fZnTel-fZnPrim)*(fZnTel-fZnPrim))<<endl;
 
 	       //General things we want to have in the root output file characterizing the event
@@ -1052,9 +1066,13 @@ int main( int argc, char **argv )
 					      fZnPrim, //primary zenith angle fix
 					      fAzPrim, //primary az angle
 					      fXcore, //x:primary core east
-					      -fYcore,//y : primary core south  //N.O. removed minus
+					      -fYcore,//y : primary core south 
 					      dObsHeight, //observatory altitude
-					      iPrimaryType);
+                                              fFirstIntHgt, 
+                                              fFirstIntDpt,
+					      iPrimaryType,
+                                              iCorsikaRunNumber,
+                                              iShowerID);
 
 		 // if no array trigger, that is all we need to write to the VBF file, 
 		 // needs to change if there is no array trigger used

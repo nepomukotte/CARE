@@ -23,6 +23,7 @@ class  VArrayEvent;
 class  VEvent;
 class  VArrayTrigger;
 struct VSimulationData;
+class  VCorsikaSimulationData;
 
 class TRandom3;  //!< forward declaration of random number generator
 
@@ -102,6 +103,7 @@ class VG_writeVBF {
   std::vector<VEvent*> events;  //!< vector of pointers to VEvent class
   VArrayTrigger *at;  //!< pointer to vbf arraytrigger class
   VSimulationData *simu_data; //!< pointer to vbf simul.data class
+  VCorsikaSimulationData * cors_data;
 
   /*! Used internally in converting kascade id to Corsika id
    */
@@ -270,7 +272,12 @@ bool makeSimulationHeader(std::string &configFilePlus,
                           const float &primaryCoreEastM=0.0,
                           const float &primaryCoreSouthM=0.0,
                           const float &primaryCoreElevMASL=0.0,
-                          const u_int32_t &corsikaParticleID=1);
+                          const float &firstInteractionHeight=0.0, 
+                          const float &firstInteractionDepth=0.0, 
+                          const u_int32_t &corsikaParticleID=1,
+                          const u_int32_t &corsikaRunNumber = 0,
+                          const u_int32_t &fShowerID = 0
+);
   
  /*! make a VArrayTrigger class, get triggering information 
    \param localTriggerV  vector of local trigger 0/1 for each telescope

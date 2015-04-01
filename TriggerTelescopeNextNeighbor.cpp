@@ -390,7 +390,7 @@ Bool_t  TriggerTelescopeNextNeighbor::RunL2Patch(Int_t PatchNumber,Float_t *fPat
   Float_t fPatchTriggerTime = 1e6;
   Int_t t = 0;
   Int_t tmin = 0;
-  while(iNumGroupsInCluster[index[t]]>=iMultiplicity)
+  while(iNumGroupsInCluster[index[t]]>=iMultiplicity )
     {
       Int_t igroups = iNumGroupsInCluster[index[t]];
 
@@ -406,11 +406,9 @@ Bool_t  TriggerTelescopeNextNeighbor::RunL2Patch(Int_t PatchNumber,Float_t *fPat
            cout<<"triggered group in cluster "<<vGroupsInCluster->at(index[t])[i]<<" t: "<<times[i]<<endl;
 	  }
       // cout<<endl;
-		   
       //sort the times in increasing order
       Int_t* indext = new Int_t[ igroups  ];
       TMath::Sort(igroups,times,indext,kFALSE);
-    
       //Trigger time is determined by the /pixel summed group that triggered last (iMultiplicity-1) 
       Float_t triggertime = times[ indext[iMultiplicity-1] ];
       if(triggertime<fPatchTriggerTime)
@@ -419,12 +417,14 @@ Bool_t  TriggerTelescopeNextNeighbor::RunL2Patch(Int_t PatchNumber,Float_t *fPat
 	       tmin=t;
 	    }
        t++;
-       
+
        delete [] times;
        delete [] indext;
 
-    }
+       if(t==iNumSumPixGroups)
+          break;
 
+    }
   fPatchTriggerTime+= telData->fAveragePhotonArrivalTime;
   
   fPatchTriggerTimes[PatchNumber] = fPatchTriggerTime;

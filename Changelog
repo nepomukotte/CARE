@@ -16,6 +16,17 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
+  2015/03/31 Nepomuk Otte
+  This Version is tagged 1.5.5
+  * TelescopeTriggerNextNeighbor.cpp
+  - Fixed bug that crashed CARE if a multiplicity trigger of one is requested
+  at telescope level
+
+  2015/03/06 Nepomuk Otte
+  * CameraAndReadout.cpp, VG_writeVBF.cpp, VG_writeVBF.h
+  -Piped the CORSIKA runnumber and Shower ID into the VBF output. 
+  -Latest untagged master VBF as per 3/6/15 is required for CARE to work now.
+
   2015/01/03 Nepomuk Otte
   This Version is tagged 1.5.4
   * TraceGenerator.cpp

@@ -5,6 +5,7 @@
 #include "VBF/VEventType.h"
 #include "VBF/VSimulationHeader.h"
 #include "VBF/VSimulationData.h"
+#include "VBF/VCorsikaSimulationData.h"
 
 #include "VBF/VConfigMaskUtil.h"
 #include "VATime.h"
@@ -118,6 +119,7 @@ void VG_writeVBF::initialize() {
   event = 0;
   at = 0;
   simu_data = 0;
+  cors_data = 0;
   
   fEvType = new VEventType();
   fEvType->setNewStyleCode(1);
@@ -643,7 +645,12 @@ bool VG_writeVBF::makeVSimulationData1() {
                           const float &primaryCoreEastM,
                           const float &primaryCoreSouthM,
                           const float &primaryCoreElevMASL,
-                                          const uint32_t &corsikaParticleID) {
+                          const float &firstInteractionHeight, 
+                          const float &firstInteractionDepth, 
+                          const uint32_t &corsikaParticleID,
+                          const u_int32_t &corsikaRunNumber,
+ 			  const u_int32_t &fShowerID) {
+
   float fEnergyGeV;             // parameters for VSimulationData
   float fObservationZenithDeg;
   float fObservationAzimuthDeg;
@@ -652,15 +659,26 @@ bool VG_writeVBF::makeVSimulationData1() {
   float fCoreEastM;
   float fCoreSouthM;
   float fCoreElevationMASL;
+  float fFirstInteractionHeight;
+  float fFirstInteractionDepth;
   uword32 fCORSIKAParticleID;
+  u_int32_t uShowerID;
+  u_int32_t uCorsikaRunNumber; 
 
-  fEnergyGeV         = energyGeV;             // 0.0 default
-  fPrimaryZenithDeg  = primaryZenithAngleDeg; // 0.0 default
-  fPrimaryAzimuthDeg = primaryAzimuthDeg;     // 0.0 default
-  fCoreEastM         = primaryCoreEastM;      // 0.0 default
-  fCoreSouthM        = primaryCoreSouthM;     // 0.0 default
-  fCoreElevationMASL = primaryCoreElevMASL;   // 0.0 default
-  fCORSIKAParticleID = corsikaParticleID;     // 1   default
+
+  fEnergyGeV              = energyGeV;              // 0.0 default
+  fPrimaryZenithDeg       = primaryZenithAngleDeg;  // 0.0 default
+  fPrimaryAzimuthDeg      = primaryAzimuthDeg;      // 0.0 default
+  fCoreEastM              = primaryCoreEastM;       // 0.0 default
+  fCoreSouthM             = primaryCoreSouthM;      // 0.0 default
+  fCoreElevationMASL      = primaryCoreElevMASL;    // 0.0 default
+  fFirstInteractionHeight = firstInteractionHeight; // 0.0 default
+  fFirstInteractionDepth  = firstInteractionDepth;  // 0.0 default
+  fCORSIKAParticleID      = corsikaParticleID;      // 1   default
+  uShowerID               = fShowerID;              // 0   default
+  uCorsikaRunNumber       = corsikaRunNumber;       // 0   default
+
+
 
   // if fCoreElevationMASL < 0.0, set to observatory height
   if (fCoreElevationMASL < 0.0) {
@@ -687,7 +705,8 @@ bool VG_writeVBF::makeVSimulationData1() {
     DEBUG(fRefZenithDeg);  DEBUG(fRefAzimuthDeg);
     DEBUG(fRefPositionAngleDeg);  DEBUG(fCoreEastM);
     DEBUG(fCoreSouthM);  DEBUG(fCoreElevationMASL);
-
+    DEBUG(fFirstInteractionHeight); DEBUG(fFirstInteractionDepth);
+    DEBUG(uShowerID); DEBUG(uCorsikaRunNumber);
   }
  
   simu_data = new VSimulationData(fCORSIKAParticleID,fEnergyGeV,
@@ -698,6 +717,12 @@ bool VG_writeVBF::makeVSimulationData1() {
 				  fCoreEastM,fCoreSouthM,fCoreElevationMASL);
 
   packet->putSimulationData(simu_data);
+
+
+  cors_data = new VCorsikaSimulationData( fFirstInteractionHeight, fFirstInteractionDepth, uCorsikaRunNumber, uShowerID );
+
+  packet->putCorsikaSimulationData( cors_data );
+
 
   if (!packet->has(VGetSimulationDataBankName()) ) {
     showXErrorVbfWriter(" packet has no simulation_data_bank as it should ");
