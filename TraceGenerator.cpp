@@ -750,7 +750,7 @@ void TraceGenerator::BuildTrace(Int_t PixelID,Bool_t bLowGain){
     }//end building the fPileUpAmplitudeForPhoton array
 
    //add electronic noise to the high gain trace
-   if(telData->fSigmaElectronicNoise>0)
+   if(telData->fSigmaElectronicNoise>0 && !bLowGain)
      {
        for(Int_t i=0; i<telData->iNumSamplesPerTrace;i++)
          {

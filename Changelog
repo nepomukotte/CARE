@@ -16,7 +16,13 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
-  2015/03/31 Nepomuk Otte
+  2015/05/12 Nepomuk Otte
+  This Version is tagged 1.5.6
+  * TraceGenerator.cpp
+  - Made sure that electronic noise is only added to high gain trace and not
+  for low gain trace
+
+ 2015/03/31 Nepomuk Otte
   This Version is tagged 1.5.5
   * TelescopeTriggerNextNeighbor.cpp
   - Fixed bug that crashed CARE if a multiplicity trigger of one is requested
