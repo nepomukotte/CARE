@@ -16,7 +16,14 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
-  2015/05/12 Nepomuk Otte
+  2015/06/04 Nepomuk Otte
+  This Version is tagged 1.6.1
+  * CameraAndReadout.cpp, TraceGenerator.cpp, TelescopeDate.[h,cpp]
+    - Added the the variable vSumTimeInPixel in the root file. It gives the
+    sum of all the times of the Cherenkov photons in one pixel. t=0 is the
+    average arrival time of the photons per camera
+
+  2015/06/03 Nepomuk Otte
   This Version is tagged 1.6.0
   * TraceGenerator.cpp
   -The position of a single pe signal in the trace is now given by where t=0

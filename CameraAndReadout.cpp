@@ -497,6 +497,7 @@ int main( int argc, char **argv )
            title.Form("Tree that holds all the data of telescope %i",i);
            tout[i] = new TTree(name,title);
            tout[i]->Branch("vGroupsInTriggerCluster",&(telData[i]->vTriggerCluster));
+           tout[i]->Branch("vSumTimeInPixel", &(telData[i]->fSumTimeInPixel));
            tout[i]->Branch("vPEInPixel", &(telData[i]->iPEInPixel));
            tout[i]->Branch("vQDCValue", &(telData[i]->iQDCInPixel));
            tout[i]->Branch("iPhotonsInFocalPlane", &(telData[i]->iNumPhotonsInFocalPlane));

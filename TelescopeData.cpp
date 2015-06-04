@@ -122,6 +122,7 @@ void TelescopeData::ResetTraces()
   bCherenkovPhotonsInCamera = kFALSE;
   iNumPhotonsInFocalPlane = 0;
   iQDCInPixel.assign(iNumPixels,0);
+  fSumTimeInPixel.assign(iNumPixels,0.0);
   iPEInPixel.assign(iNumPixels,0);
   bInLoGain.assign(iNumPixels,kFALSE);
   bTelescopeHasTriggered = kFALSE;

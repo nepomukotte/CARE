@@ -93,6 +93,8 @@ class TelescopeData {
 
   vector<Int_t>   iPEInPixel;                          //the number of Cherenkov photoelectrons in each pixel
 
+  vector<Float_t>   fSumTimeInPixel;              //the sum of all the Cherenkov photoelectrons arrival times in each pixel
+
   //Trigger related numbers
   Float_t         fDiscriminatorThreshold;              
   Float_t         fTriggerTime;    
