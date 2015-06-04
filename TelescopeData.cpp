@@ -125,7 +125,8 @@ void TelescopeData::ResetTraces()
   iPEInPixel.assign(iNumPixels,0);
   bInLoGain.assign(iNumPixels,kFALSE);
   bTelescopeHasTriggered = kFALSE;
-
+  vTriggerCluster.resize(0);
+ 
   //Clear the trace arrays
   for(Int_t g=0;g<iNumPixels;g++)
     {

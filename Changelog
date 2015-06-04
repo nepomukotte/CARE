@@ -17,6 +17,22 @@ _
 
                                                      -*-*- END OF LINE -*-*-
   2015/05/12 Nepomuk Otte
+  This Version is tagged 1.6.0
+  * TraceGenerator.cpp
+  -The position of a single pe signal in the trace is now given by where t=0
+  for the input pulse and not where its minimum is. This avoids problems where
+  input pulses are affected by nonlinearities in the signal chain that make
+  the pulse extend to longer times and the peak appear later than for pulses
+  in the linear range
+  * TelescopeData.cpp, TriggerTelescopeNextNeighbor.cpp
+  - reset  vTriggerCluster.resize(0) explicitly in the TelescopeData class.
+  The Vector did not clear reliably from event to event and untriggered
+  telescope had pixels that were marked as triggered in the root output file 
+ 
+ Made sure that electronic noise is only added to high gain trace and not
+  for low gain trace
+
+  2015/05/12 Nepomuk Otte
   This Version is tagged 1.5.6
   * TraceGenerator.cpp
   - Made sure that electronic noise is only added to high gain trace and not

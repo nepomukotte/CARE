@@ -568,7 +568,7 @@ void   TraceGenerator::SetPulseShapesFromFile(TString sfilename,Bool_t bLowGain=
 
     cout<<"Pulse Number "<<iPulseNumber<<", amplitude if linear: "<<fLinearAmplitude<<" [mV], "<<" non-linearity: "<<fNonLinearityFactor<<endl;
 
-    //loop over rest of lines to recover pulse. The end of the pulse shape is marked with a *
+    //loop over rest of lines to read in the pulse. The end of the pulse shape is marked with a *
     getline( PulseShapefile, iline );
     while( (iline.substr( 0, 1 ) != "*") && PulseShapefile.good() ){
 
@@ -580,8 +580,9 @@ void   TraceGenerator::SetPulseShapesFromFile(TString sfilename,Bool_t bLowGain=
       getline( PulseShapefile, iline );
     }
 
-    //process the pulse shape by normalizing it and filling it into the telescope data container
+    //process the pulse shape by normalizing it to the minimum amplitude (assuming negative pulse shape) and filling it into the telescope data container
     Int_t imin = 0;
+    Int_t itzero = 0;
     Double_t dmin = 1e9;
     Double_t integral = 0;
     for(UInt_t i = 1;i<ts.size()-1;i++)
@@ -592,6 +593,11 @@ void   TraceGenerator::SetPulseShapesFromFile(TString sfilename,Bool_t bLowGain=
 	  imin=i;
 	  dmin=y[i];
 	}
+        if(ts[i+1]>0 && ts[i-1]<0)
+	 {
+	  itzero=i;
+	}
+
     }
 
   Float_t fAreaToPeakConversion = dmin/(integral) ;
@@ -602,8 +608,8 @@ void   TraceGenerator::SetPulseShapesFromFile(TString sfilename,Bool_t bLowGain=
   cout<<"Found that the amplitude is minimal at time: "<<imin<<" =  "<<ts[imin]<<". The amplitude is: "<<y[imin]<<endl;
  
   cout<<"Number of samples in the sample pulse: "<<ts.size()<<endl;
-  Float_t fStartTime=fabs(ts[imin]-ts[0]);
-  Float_t fStopTime=ts[ts.size()-2]-ts[imin];
+  Float_t fStartTime=fabs(ts[itzero]-ts[0]);
+  Float_t fStopTime=ts[ts.size()-2]-ts[itzero];
 
   cout<<"Start of sample pulse shape: "<<fStartTime<<endl;
   cout<<"Stop  of sample pulse shape: "<<fStopTime<<endl;
@@ -618,12 +624,13 @@ void   TraceGenerator::SetPulseShapesFromFile(TString sfilename,Bool_t bLowGain=
       Float_t t = -1*Int_t(fStartTime/fSamplingTimeAveragePulse)+i;
       t*=fSamplingTimeAveragePulse;
 
+      //find the sample of the raw pulse shape that is the next one after time t
       unsigned d=0;
-      while(ts[d]-ts[imin]<t+1e-6 && d<ts.size()-1)
+      while(ts[d]-ts[itzero]<t+1e-6 && d<ts.size()-1)
 	d++;
 
       //average between two samples
-      Double_t amplitude = y[d-1] + (t- (ts[d-1]-ts[imin]) ) * (y[d]-y[d-1])/(ts[d]-ts[d-1]);
+      Double_t amplitude = y[d-1] + (t- (ts[d-1]-ts[itzero]) ) * (y[d]-y[d-1])/(ts[d]-ts[d-1]);
       //normalizing so the peak is one
       amplitude = amplitude / dmin ; 
 
@@ -656,7 +663,7 @@ void   TraceGenerator::SetPulseShapesFromFile(TString sfilename,Bool_t bLowGain=
 
   if(bDebug)
    {
-//     ShowPulseShape(iPulseNumber);
+     //ShowPulseShape(iPulseNumber);
    }
 
 

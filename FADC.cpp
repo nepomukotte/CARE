@@ -69,7 +69,7 @@ void FADC::RunFADC(TelescopeData *TelData)
     
 
         DigitizePixel( g );
-        //if(telData->bInLoGain[g])
+        //if(telData->bInLoGain[g] && telData->iFADCTraceInPixel[g][6]>100  )
         if(bDebug)
 		  {
 		      cout<<"done pixel "<<g<<endl; 
