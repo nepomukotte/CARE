@@ -430,7 +430,7 @@ int main( int argc, char **argv )
    //////////////////////////////////////////////////////////////////////////////
 
 
-   if(readConfig->GetLoopOverEventsBit())
+   if(readConfig->GetLoopOverEventsBit() || readConfig->GetNumberOfPedestalEvents()>0)
      {
 
        
@@ -842,7 +842,9 @@ int main( int argc, char **argv )
        ///////////////////////////////////////////////////////////////////////////////////////////
 
        //Going into the events
-       for( int i = 0; i < t[0]->GetEntries() ; i++ )
+      if(readConfig->GetLoopOverEventsBit())
+        {
+        for( int i = 0; i < t[0]->GetEntries() ; i++ )
 	 {
 	   if(DEBUG_MAIN)
 	   cout<<endl<<endl<<endl<<"Event "<<i<<endl;
@@ -1149,10 +1151,10 @@ int main( int argc, char **argv )
 	       }                                                   
 	     //Finished writing the event into the VBF file
 	 
-      if(DEBUG_MAIN)
+            if(DEBUG_MAIN)
 		    cout<<"Event finished going into next event"<<endl;
 	 }//Loop over to the next event
-
+       }//closing if statement asking if we want to simulate shower events
 
 
        //write and close the root file 

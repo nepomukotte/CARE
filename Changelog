@@ -16,6 +16,13 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
+  2015/12/01 Nepomuk Otte
+  This Version is tagged 1.6.2
+  * CameraAndReadout.cppi
+    -Included functionality to only simulate pedestal events. Requires that
+    CARE still gets a valid GrOptics file to not break initializing the VBF
+    file. Should be cleaned up in a future version
+
   2015/06/04 Nepomuk Otte
   This Version is tagged 1.6.1
   * CameraAndReadout.cpp, TraceGenerator.cpp, TelescopeDate.[h,cpp]
