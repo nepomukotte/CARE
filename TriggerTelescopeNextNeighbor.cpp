@@ -181,6 +181,9 @@ void  TriggerTelescopeNextNeighbor::LoadEvent(TelescopeData *TelData)
 
  telData->fDiscriminatorTime.assign(iNumSumPixGroups,-1e6);
 
+ //can be removed is only needed to check the Time over threshold of all pixels in a trigger.
+ telData->fTimeOverThreshold.assign(iNumSumPixGroups,0);
+
  //The start sample for the delayed trace;
  Int_t iStartSample = (int)(fDiscDelay/fSamplingTime)+1;
 
@@ -237,13 +240,15 @@ Bool_t  TriggerTelescopeNextNeighbor::RunTrigger()
     lZeroCrossings += GetNumZeroCrossings();
     lNumEvents++;
 
-//    cout<<"Have done the zerocrossings "<<lZeroCrossings<<endl;
+    //    cout<<"Have done the zerocrossings "<<lZeroCrossings<<endl;
 
     //Set the updated RFB feedback
     if(bDiscRFBUsage)
       {
-	if(bDebug)
-	  cout<<lNumEvents<<" RFB dynamic value  "<<fDiscRFBConstant * lZeroCrossings /(lNumEvents* (fTraceLength-fDiscDelay)*1e-3*iNumSumPixGroups)<<endl;
+
+	   if(bDebug)
+	     cout<<lNumEvents<<" RFB dynamic value  "<<fDiscRFBConstant * lZeroCrossings /(lNumEvents* (fTraceLength-fDiscDelay)*1e-3*iNumSumPixGroups)<<endl;
+
        SetDiscriminatorRFBDynamic(fDiscRFBConstant * lZeroCrossings /(lNumEvents* (fTraceLength-fDiscDelay)*1e-3*iNumSumPixGroups));
       }
 
@@ -252,7 +257,7 @@ Bool_t  TriggerTelescopeNextNeighbor::RunTrigger()
    for(Int_t i=0;i<iNumSumPixGroups;i++)
     {
       if(RunDiscriminator(i))
-	telData->iNumTriggeredGroups++;
+	     telData->iNumTriggeredGroups++;
     }
 
   //  cout<<"Done with the CFD"<<endl<<endl;
@@ -263,6 +268,7 @@ Bool_t  TriggerTelescopeNextNeighbor::RunTrigger()
      {
       if(bDebug)
        cout<<"Not using trigger patches in the simulation"<<endl;
+
       iPixelTriggeredInPatch.resize(1);
       telData->bTelescopeHasTriggered =  RunL2Patch(0,&(telData->fTelescopeTriggerTime));//important, first argument has to be 0
       telData->vTriggerCluster = iPixelTriggeredInPatch[0];
@@ -271,16 +277,17 @@ Bool_t  TriggerTelescopeNextNeighbor::RunTrigger()
      {
       if(bDebug)
        cout<<"Using trigger patches in the simulation"<<endl;
-       iPixelTriggeredInPatch.resize(vPatch.size());
- telData->bTelescopeHasTriggered = RunL2WithPatches();
-}
+	   
+      iPixelTriggeredInPatch.resize(vPatch.size());
+      telData->bTelescopeHasTriggered = RunL2WithPatches();
+     }
 
    
-  if(telData->bTelescopeHasTriggered && bDebug)
-    {
-      cout<<"Event triggered telescope"<<endl; 
-      cout<<"at time "<< telData->fTelescopeTriggerTime<<endl;
-    }
+   if(telData->bTelescopeHasTriggered && bDebug)
+     {
+       cout<<"Event triggered telescope"<<endl; 
+       cout<<"at time "<< telData->fTelescopeTriggerTime<<endl;
+     }
   
   return telData->bTelescopeHasTriggered;
 }
@@ -295,6 +302,7 @@ Bool_t  TriggerTelescopeNextNeighbor::RunL2WithPatches()
   //Go over all patches and find those which would fullfil the trigger conditions
   vector< Bool_t > bPatchTrigger(vPatch.size(),kFALSE);
   Float_t *fPatchTriggertimes = new Float_t[vPatch.size()];
+
   for(UInt_t p=0;p<vPatch.size();p++)
     {
       bPatchTrigger[p] = RunL2Patch(p,fPatchTriggertimes);
@@ -304,8 +312,6 @@ Bool_t  TriggerTelescopeNextNeighbor::RunL2WithPatches()
   Int_t* indext = new Int_t[ vPatch.size()  ];
   TMath::Sort((Int_t)vPatch.size(),fPatchTriggertimes,indext,kFALSE);
   telData->fTelescopeTriggerTime = fPatchTriggertimes[ indext[0] ];
-
-
 
   delete [] fPatchTriggertimes;
                          
@@ -318,8 +324,8 @@ Bool_t  TriggerTelescopeNextNeighbor::RunL2WithPatches()
       telData->vTriggerCluster = iPixelTriggeredInPatch[ indext[0] ];
       if(bDebug)
        {
-	cout<<"we triggered: "<<triggered<<"; Patch that triggered: "<<indext[0]<<"  out of a total of "<<vPatch.size()<<" Patches"<<endl;
-	cout<<"Trigger time: "<<telData->fTelescopeTriggerTime<<"; Patch that triggered: "<<indext[0]<<"  out of a total of "<<vPatch.size()<<" Patches"<<endl;
+         cout<<"we triggered: "<<triggered<<"; Patch that triggered: "<<indext[0]<<"  out of a total of "<<vPatch.size()<<" Patches"<<endl;
+	     cout<<"Trigger time: "<<telData->fTelescopeTriggerTime<<"; Patch that triggered: "<<indext[0]<<"  out of a total of "<<vPatch.size()<<" Patches"<<endl;
        }
    }
 
@@ -519,13 +525,24 @@ Bool_t TriggerTelescopeNextNeighbor::RunDiscriminator(Int_t GroupID)
       if(bDiscCFDUsage) bCFDOut=fTracesInSumGroupsConstantFraction[GroupID][i]>=0 ? kTRUE : kFALSE;
 	
 	  //In case both discriminators are firing we have a trigger
-	   if( bCFDOut && fsignal<=fDiscThreshold &&  telData->bTriggeredGroups[GroupID] == kFALSE ) 
-             {
+	  if( bCFDOut && fsignal<=fDiscThreshold &&  telData->bTriggeredGroups[GroupID] == kFALSE ) 
+        {
 	      telData->fDiscriminatorTime[GroupID] = i*fSamplingTime-fStartSamplingBeforeAverageTime;
 	      telData->bTriggeredGroups[GroupID] = kTRUE;
 
-	    }
+		  //loop over the rest of the trace to find out how long the discriminator is above threshold
+		  //this can be deactivated because it is only used in simulation studies done for the 1m sst.
+		  Int_t iToT=0;
+		  while(fsignal<=fDiscThreshold && i<telData->iNumSamplesPerTrace-1)
+			{
+			  iToT++;
 
+			  i++;
+			  fsignal = fTracesInSumGroups[GroupID][i];
+			}
+          telData->fTimeOverThreshold[GroupID] = iToT*fSamplingTime;
+		  break; //exit loop because we triggered the trace and we are only interested in the first trigger, saves some compute time
+	    }
     }
 
 
@@ -578,7 +595,7 @@ Int_t TriggerTelescopeNextNeighbor::CalcCluster(Int_t GroupID, Int_t ClusterID, 
       if (telData->bTriggeredGroups[GroupIDNeighbor] 
            && fabs(telData->fDiscriminatorTime[ClusterID]-telData->fDiscriminatorTime[GroupIDNeighbor])<fWidthDiscriminator 
            && GroupInPatch(GroupIDNeighbor,PatchID))
-	NumGroupsInCluster += CalcCluster(GroupIDNeighbor,ClusterID,PatchID);
+	    NumGroupsInCluster += CalcCluster(GroupIDNeighbor,ClusterID,PatchID);
     }
  // return the number of groups in this cluster
   return NumGroupsInCluster;
@@ -603,7 +620,6 @@ Bool_t TriggerTelescopeNextNeighbor::GroupInPatch(Int_t GroupID,Int_t PatchID)
 
   return kFALSE;
 }
-
 
 
 //-----------------------------------------------------------------------------------------

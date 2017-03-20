@@ -16,16 +16,25 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
+  2017/03/17 Nepomuk Otte
+  This Version is tagged 1.6.3
+  * TriggerTelescopeNeighbor.cpp
+    -made a loop exit faster after the first time is found the discrimantor
+	fires.
+  * TriggerTelescopeNeighbor.cpp, TelescopeData.h  
+    -write out the time a triggered pixel is above threshold into the root
+	file. The variable name is vTimeOverThreshold and is a float vector
+
   2015/12/01 Nepomuk Otte
   This Version is tagged 1.6.2
-  * CameraAndReadout.cppi
+  * CameraAndReadout.cpp
     -Included functionality to only simulate pedestal events. Requires that
     CARE still gets a valid GrOptics file to not break initializing the VBF
     file. Should be cleaned up in a future version
 
   2015/06/04 Nepomuk Otte
   This Version is tagged 1.6.1
-  * CameraAndReadout.cpp, TraceGenerator.cpp, TelescopeDate.[h,cpp]
+  * CameraAndReadout.cpp, TraceGenerator.cpp, TelescopeData.[h,cpp]
     - Added the the variable vSumTimeInPixel in the root file. It gives the
     sum of all the times of the Cherenkov photons in one pixel. t=0 is the
     average arrival time of the photons per camera

@@ -497,6 +497,7 @@ int main( int argc, char **argv )
            title.Form("Tree that holds all the data of telescope %i",i);
            tout[i] = new TTree(name,title);
            tout[i]->Branch("vGroupsInTriggerCluster",&(telData[i]->vTriggerCluster));
+           tout[i]->Branch("vTimeOverThreshold",&(telData[i]->fTimeOverThreshold));
            tout[i]->Branch("vSumTimeInPixel", &(telData[i]->fSumTimeInPixel));
            tout[i]->Branch("vPEInPixel", &(telData[i]->iPEInPixel));
            tout[i]->Branch("vQDCValue", &(telData[i]->iQDCInPixel));
@@ -552,10 +553,10 @@ int main( int argc, char **argv )
 
         tGeneralInfo->SetBranchAddress("telIDVector",&telIDVector,&b_telIDVector);
         tGeneralInfo->SetBranchAddress("telLocXVector",&telLocXGCVector,&b_telLocXGCVector);
-	tGeneralInfo->SetBranchAddress("telLocYVector",&telLocYGCVector,&b_telLocYGCVector);
-	tGeneralInfo->SetBranchAddress("telLocZVector",&telLocZGCVector,&b_telLocZGCVector);
-	tGeneralInfo->SetBranchAddress("transitTimeVector",&transitTimeVector,&b_transitTimeVector);
-	tGeneralInfo->SetBranchAddress("obsHgt", &dObsHeight );
+	    tGeneralInfo->SetBranchAddress("telLocYVector",&telLocYGCVector,&b_telLocYGCVector);
+	    tGeneralInfo->SetBranchAddress("telLocZVector",&telLocZGCVector,&b_telLocZGCVector);
+	    tGeneralInfo->SetBranchAddress("transitTimeVector",&transitTimeVector,&b_transitTimeVector);
+	    tGeneralInfo->SetBranchAddress("obsHgt", &dObsHeight );
         tGeneralInfo->SetBranchAddress("globalEffic", &dGlobalPhotonEffic );
         tGeneralInfo->SetBranchAddress("fileHeader", &fileheader,&b_fileheader );
         tGeneralInfo->GetEntry( 0 );
@@ -862,13 +863,14 @@ int main( int argc, char **argv )
 	     {   
 	       if(DEBUG_MAIN)
 	       cout<<"Telescope "<<n<<endl;
+
 	       t[n]->SetBranchAddress("time", &v_f_time, &b_v_f_time );
 	       t[n]->SetBranchAddress("eventNumber", &fEventNumber );
 	       t[n]->SetBranchAddress("primaryEnergy", &fPrimaryEnergy ); 
-               t[n]->SetBranchAddress("AzTel", &fAzTel );
-               t[n]->SetBranchAddress("ZnTel", &fZnTel );
-               t[n]->SetBranchAddress("AzPrim", &fAzPrim );
-               t[n]->SetBranchAddress("ZnPrim", &fZnPrim );
+           t[n]->SetBranchAddress("AzTel", &fAzTel );
+           t[n]->SetBranchAddress("ZnTel", &fZnTel );
+           t[n]->SetBranchAddress("AzPrim", &fAzPrim );
+           t[n]->SetBranchAddress("ZnPrim", &fZnPrim );
 	       t[n]->SetBranchAddress("Xcore", &fXcore );
 	       t[n]->SetBranchAddress("Ycore", &fYcore );
 	       t[n]->SetBranchAddress("Xcos", &fXcos );
@@ -878,28 +880,28 @@ int main( int argc, char **argv )
 	       t[n]->SetBranchAddress("ShowerID", &iShowerID );
 	       t[n]->SetBranchAddress("FirstIntDpt", &fFirstIntDpt );
 	       t[n]->SetBranchAddress("FirstIntHgt", &fFirstIntHgt );
-               t[n]->GetEntry( i );
+           t[n]->GetEntry( i );
                //        cout<<i<<": a "<<sqrt((fAzTel-fAzPrim)*(fAzTel-fAzPrim)+(fZnTel-fZnPrim)*(fZnTel-fZnPrim))<<endl;
 
 	       //General things we want to have in the root output file characterizing the event
 	       //why not pipe this directly into the root file and not use these variables
-               energy = fPrimaryEnergy;
+           energy = fPrimaryEnergy;
 	       eventNumber = fEventNumber;
 	       xcore = fXcore;
 	       ycore = fYcore;
-               vZnTel[n] = fZnTel;
-               vAzTel[n] = fAzTel;
-               azPrim = fAzPrim;
-               znPrim = fZnPrim;
+           vZnTel[n] = fZnTel;
+           vAzTel[n] = fAzTel;
+           azPrim = fAzPrim;
+           znPrim = fZnPrim;
 
-               Int_t telType = telData[n]->GetTelescopeType();
+           Int_t telType = telData[n]->GetTelescopeType();
 
-               telData[n]->ResetTraces();
+           telData[n]->ResetTraces();
                
-               telData[n]->iNumPhotonsInFocalPlane=v_f_time->size();
+           telData[n]->iNumPhotonsInFocalPlane=v_f_time->size();
 
 	       if(v_f_time->size()>=readConfig->GetRequestedMinNumberOfPhotonsInCamera(telType))
-		 bSkipEvent = kFALSE;
+		     bSkipEvent = kFALSE;
 
 	       if(n == 0 && DEBUG_MAIN )
 		 {
@@ -921,81 +923,80 @@ int main( int argc, char **argv )
 	     }
 	   else
 	     {
-               if(DEBUG_TELTRIGGER)
-               display->ResetTriggerTraces();
+           if(DEBUG_TELTRIGGER)
+             display->ResetTriggerTraces();
 	       //Loop over the telescopes and see if they have triggered
 	       for(UInt_t n = 0; n<uNumTelescopes; n++)
-		 {   
+		    {   
 	       
-		   if(DEBUG_MAIN)
-		     cout<<"Telescope "<<n<<endl;
+		     if(DEBUG_MAIN)
+		      cout<<"Telescope "<<n<<endl;
 
-		   t[n]->SetBranchAddress("eventNumber", &fEventNumber );
-		   t[n]->SetBranchAddress("primaryEnergy", &fPrimaryEnergy );
-		   t[n]->SetBranchAddress("primaryType", &iPrimaryType );
-		   t[n]->SetBranchAddress("delay", &fDelay );
-		   t[n]->SetBranchAddress("photonX", &v_f_x, &b_v_f_x ); 
-		   t[n]->SetBranchAddress("photonY", &v_f_y, &b_v_f_y ); 
-		   t[n]->SetBranchAddress("time", &v_f_time, &b_v_f_time );
-		   t[n]->SetBranchAddress("wavelength", &v_f_lambda, &b_v_f_lambda );
-		   t[n]->GetEntry( i );
+		     t[n]->SetBranchAddress("eventNumber", &fEventNumber );
+		     t[n]->SetBranchAddress("primaryEnergy", &fPrimaryEnergy );
+		     t[n]->SetBranchAddress("primaryType", &iPrimaryType );
+		     t[n]->SetBranchAddress("delay", &fDelay );
+		     t[n]->SetBranchAddress("photonX", &v_f_x, &b_v_f_x ); 
+		     t[n]->SetBranchAddress("photonY", &v_f_y, &b_v_f_y ); 
+		     t[n]->SetBranchAddress("time", &v_f_time, &b_v_f_time );
+		     t[n]->SetBranchAddress("wavelength", &v_f_lambda, &b_v_f_lambda );
+		     t[n]->GetEntry( i );
 		
-		   if( v_f_time->size() != v_f_x->size() )
-		     {
+		     if( v_f_time->size() != v_f_x->size() )
+		      {
 		       cout<<"Vectors do not have the same size, should never happen, isn't it?"<<endl;
-		     }
+		      }
 
-                   //generate traces with trace generator
-                   Int_t telType = telData[n]->GetTelescopeType();
-
-                   traceGenerator[telType]->SetTelData(telData[n]);
-	           traceGenerator[telType]->LoadCherenkovPhotons( v_f_x ,  v_f_y, v_f_time, v_f_lambda, fDelay,dGlobalPhotonEffic);	
-	           traceGenerator[telType]->BuildAllHighGainTraces();	 
+             //generate traces with trace generator
+             Int_t telType = telData[n]->GetTelescopeType();
+             traceGenerator[telType]->SetTelData(telData[n]);
+	         traceGenerator[telType]->LoadCherenkovPhotons( v_f_x ,  v_f_y, v_f_time, v_f_lambda, fDelay,dGlobalPhotonEffic);	
+	         traceGenerator[telType]->BuildAllHighGainTraces();	 
 		   
-		   //   TelData->ShowTrace(0,kTRUE); 
+		     //   TelData->ShowTrace(0,kTRUE); 
            		   
-		   //run the telescope trigger
-	           if(DEBUG_MAIN)
+		     //run the telescope trigger
+	         if(DEBUG_MAIN)
 		     cout<<"Load the traces into trigger"<<endl;
                    Teltrigger[telType]->LoadEvent(telData[n]);
  
-	           if(DEBUG_MAIN)
+	         if(DEBUG_MAIN)
 		     cout<<"run trigger"<<endl;
                    Teltrigger[telType]->RunTrigger();
            
-		   // Teltrigger->ShowTrace(0,0);
+		     // Teltrigger->ShowTrace(0,0);
 
-	           if(DEBUG_MAIN)
-		    cout<<"done trigger, RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
+	         if(DEBUG_MAIN)
+		       cout<<"done trigger, RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
 
-                   fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
-	           GroupTriggerBits[n] =  telData[n]->GetTriggeredGroups();
-	           vTelescopeTriggerBits[n]=telData[n]->GetTelescopeTrigger();
+             fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
+	         GroupTriggerBits[n] =  telData[n]->GetTriggeredGroups();
+	         vTelescopeTriggerBits[n]=telData[n]->GetTelescopeTrigger();
 
-	         } //end looping over telescopes doing trigger
+	        } //end looping over telescopes doing trigger
        
      
 	        //Go into the array trigger                       
 	        if(DEBUG_MAIN)
-		 {
-		   cout<<endl<<"Event trigger status"<<endl;
-		   cout<<"Telescope trigger bits: "<<vTelescopeTriggerBits[0]<<vTelescopeTriggerBits[1]<<vTelescopeTriggerBits[2]<<vTelescopeTriggerBits[3]<<endl;
-		   cout<<"Telescope trigger times: "<<fTelTriggerTimes[0]<<"  "<<fTelTriggerTimes[1]<<"  "<<fTelTriggerTimes[2]<<"  "<<fTelTriggerTimes[3]<<"  "<<endl;
-		 }
+		      {
+		        cout<<endl<<"Event trigger status"<<endl;
+		        cout<<"Telescope trigger bits: "<<vTelescopeTriggerBits[0]<<vTelescopeTriggerBits[1]<<vTelescopeTriggerBits[2]<<vTelescopeTriggerBits[3]<<endl;
+		        cout<<"Telescope trigger times: "<<fTelTriggerTimes[0]<<"  "<<fTelTriggerTimes[1]<<"  "<<fTelTriggerTimes[2]<<"  "<<fTelTriggerTimes[3]<<"  "<<endl;
+		      }
 	   
 	        arraytrigger->SetTelescopeTriggerBitsAndTimes(vTelescopeTriggerBits,fTelTriggerTimes);
 	        isArrayTriggered = arraytrigger->RunTrigger(); //think of changing this if no array trigger is used
 	        arrayTriggerBit = 0;
 	        DeltaTL3=1e6;
 
-		   //Run FADC
+		    //Run FADC
 	        if(isArrayTriggered)
-		 {
-		   NumTriggeredEvents++;
-		   arrayTriggerBit = 1;
-		   DeltaTL3 = arraytrigger->GetL3DeltaT();
+		     {
+		       NumTriggeredEvents++;
+		       arrayTriggerBit = 1;
+		       DeltaTL3 = arraytrigger->GetL3DeltaT();
 		   
-		   if(DEBUG_MAIN)
+		    if(DEBUG_MAIN)
 		     cout<<"Array triggered"<<endl<<endl;
 	
                    if(DEBUG_TELTRIGGER)
@@ -1004,32 +1005,34 @@ int main( int argc, char **argv )
                     }
                    
 	   
-		   //Readout Telescopes
-		   for(UInt_t l =0 ; l<uNumTelescopes; l++)
+		    //Readout Telescopes
+		    for(UInt_t l =0 ; l<uNumTelescopes; l++)
 		     {
 		       
 		       if(DEBUG_MAIN)
-			 {
-			   cout<<"Telescope "<<l<<endl;
-			   cout<<"Average arrival time of photons: "<<telData[l]->GetAverageArrivalTime()<<endl;
-			   cout<<"Telescope trigger time: "<<fTelTriggerTimes[l]<<endl;
-			   cout<<"Array Trigger Time for this telescope: "<<arraytrigger->GetArrayTriggerTime(l)<<endl;
-			 }
+			    { 
+			     cout<<"Telescope "<<l<<endl;
+			     cout<<"Average arrival time of photons: "<<telData[l]->GetAverageArrivalTime()<<endl;
+			     cout<<"Telescope trigger time: "<<fTelTriggerTimes[l]<<endl;
+			     cout<<"Array Trigger Time for this telescope: "<<arraytrigger->GetArrayTriggerTime(l)<<endl;
+			    }
 
-		     //This should only happen if something is wrong in real life with the array trigger and this telescope gets dropped
-	             //needs to change to work with option no Array trigger
-                     telData[l]->fTriggerTime = arraytrigger->GetArrayTriggerTime(l) ;
-                     telData[l]->bArrayTriggered = arraytrigger->GetArrayTriggerBitForTelescope(l) ;
+		       //This should only happen if something is wrong in real life with the array trigger and this telescope gets dropped
+	           //needs to change to work with option no Array trigger
+               telData[l]->fTriggerTime = arraytrigger->GetArrayTriggerTime(l) ;
+               telData[l]->bArrayTriggered = arraytrigger->GetArrayTriggerBitForTelescope(l) ;
                      
-                    //Do this
-                    if(telData[l]->bArrayTriggered)
-                      {
-		        if(DEBUG_MAIN)
-				 cout<<"Readout Telescope"<<endl;
-                        Int_t telType = telData[l]->GetTelescopeType();
-	                fadc[telType]->SetDebugInfo(fPrimaryEnergy,l,0,0);
-	                fadc[telType]->RunFADC(telData[l]);
-                      }
+               //Do this
+               if(telData[l]->bArrayTriggered)
+                  {
+
+		           if(DEBUG_MAIN)
+				     cout<<"Readout Telescope"<<endl;
+
+                   Int_t telType = telData[l]->GetTelescopeType();
+	               fadc[telType]->SetDebugInfo(fPrimaryEnergy,l,0,0);
+	               fadc[telType]->RunFADC(telData[l]);
+                  }
 
 			   if(DEBUG_MAIN)
 				 cout<<"FADC completed"<<endl;

@@ -98,14 +98,15 @@ class TelescopeData {
   //Trigger related numbers
   Float_t         fDiscriminatorThreshold;              
   Float_t         fTriggerTime;    
-  vector<Bool_t> bTriggeredGroups;                      //holds the information whether a group has triggered or not;
+  vector<Float_t> fTimeOverThreshold;                   //TimerOverThreshold for each pixel that triggered;
+  vector<Bool_t>  bTriggeredGroups;                     //holds the information whether a group has triggered or not;
   vector<Float_t> fDiscriminatorTime;                   //holds the time when the group has triggered;
-  Float_t fTelescopeTriggerTime;                        //The time when the telescope triggered
-  Int_t iNumTriggeredGroups;                            //holds the number of triggered groups
+  Float_t         fTelescopeTriggerTime;                //The time when the telescope triggered
+  Int_t           iNumTriggeredGroups;                  //holds the number of triggered groups
 
   Bool_t bArrayTriggered;                               //If telescope has been triggered by the array trigger
   Bool_t bTelescopeHasTriggered;                        //If telescope has triggered
-  vector<int> vTriggerCluster;                           //the IDs of the groups that are in the triggered cluster
+  vector<int> vTriggerCluster;                          //the IDs of the groups that are in the triggered cluster
 
   //Pixel related variables
   vector< Float_t > fRelQE;
