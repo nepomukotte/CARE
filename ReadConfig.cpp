@@ -543,7 +543,7 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
     i_stream >> i_telType;
 	i_stream >>  fGainSigma[i_telType] ;
 	
-	cout<<"Telescope type "<<i_telType<<" The sigma of the gain distribution is: "<<fQESigma[i_telType]<<endl;
+	cout<<"Telescope type "<<i_telType<<" The sigma of the gain distribution is: "<<fGainSigma[i_telType]<<endl;
       }
     
 	
