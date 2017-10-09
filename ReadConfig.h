@@ -134,6 +134,7 @@ class ReadConfig
   Float_t GetSigmaElectronicNoise(UInt_t telID){ return fSigmaElectronicNoise[telID]; };
   Bool_t  GetOpticalPSFBlurBit(UInt_t telID){return bBlurPSF[telID];};
   Float_t GetOpticalPSFBlurSigma(UInt_t telID){return fBlurSigma[telID];};
+  Float_t GetTransitTimeSpread(UInt_t telID){return fTransitTimeSpread[telID];};
 
 
 
@@ -232,6 +233,9 @@ class ReadConfig
   //Optical PSF bluring 
   vector< Bool_t >  bBlurPSF;
   vector<Float_t> fBlurSigma;                    //sigma in mm by which the optical PSF is blured furthery of the Winstoncone
+
+  //PMT/SiPM Transit time spread
+  vector<Float_t> fTransitTimeSpread;           //time spread of the photelectrons making it through the sensor. RMS in ns.
  
   
   vector< Bool_t >  bCrosstalk;                     //Use crosstalk between pixel

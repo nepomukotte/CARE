@@ -116,6 +116,8 @@ class TelescopeData {
   Float_t fRelativeTelescopeGain;                       //the relative gain of the telescope
 
   Float_t fSigmaElectronicNoise;                        //the sigma of the electronic noise
+  
+  Float_t fTransitTimeSpread;                         //Transit time spread of the photoelectron making it to the output of the photo sensor (RMS) nanoseconds
 
   //Blur optical PSF and optical efficieny
   Float_t fWinstonConeEfficiency;                       //The efficiency of the Winstoncone

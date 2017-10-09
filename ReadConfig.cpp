@@ -146,6 +146,8 @@ void ReadConfig::resetTelTypeVectors()
                                        //Fit function exp(a+b*x), where a=constant b=slope
   fAfterPulsingSlope.assign( iNumberOfTelescopeTypes, 0 );          //Slope of a fit to the rate vs. threshold curve of a single pe
                                        //Fit function exp(a+b*x), where a=constant b=slope
+  fTransitTimeSpread.assign( iNumberOfTelescopeTypes, 0 );       //Transit time spread
+
   fSamplingTime.assign( iNumberOfTelescopeTypes, 0 );       //The sampling rate or resolution of the simulated trace
   fTraceLength.assign( iNumberOfTelescopeTypes, 0 );        //the length of the simulated trace per group
   fStartSamplingBeforeAverageTime.assign( iNumberOfTelescopeTypes, 0 );    //Start sampling before the average photon arrival time
@@ -511,6 +513,20 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
                 <<fAfterPulsingSlope[i_telType]<<endl;
       }
 
+    //If we want to use a transit time spread for the photo sensors
+     if( iline.find( "TRANSITTIMESPREAD " ) < iline.size() )
+      {
+	i_stream >> i_char; i_stream >> i_char; 
+    i_stream >> i_telType;
+	i_stream >>  fTransitTimeSpread[i_telType];
+	if(fTransitTimeSpread[i_telType] < 0)
+         {
+           cout<<"Telescope type "<<i_telType<<" TraceGenerator: fTransitTimeSpread set to a value <0, bad!"<<endl;
+           exit(1);
+         }	
+	cout<<"Telescope type "<<i_telType<<" Transit time spread (RMS) [ns] = "
+                <<fTransitTimeSpread[i_telType]<<endl;
+      }
 
      if( iline.find( "QESIGMA " ) < iline.size() )
       {

@@ -115,6 +115,8 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
   Float_t fMaxPhotonArrivalTime = -1e6;
   for(UInt_t p=0; p<v_f_time->size(); p++)
     {
+	  //add transit time spread
+	  v_f_time->at(p)+=rand->Gaus(0.0,telData->fTransitTimeSpread);
       telData->fAveragePhotonArrivalTime+=v_f_time->at(p);
       fMinPhotonArrivalTime = fMinPhotonArrivalTime > v_f_time->at(p) ? v_f_time->at(p) : fMinPhotonArrivalTime;
       fMaxPhotonArrivalTime = fMaxPhotonArrivalTime < v_f_time->at(p) ? v_f_time->at(p) : fMaxPhotonArrivalTime;

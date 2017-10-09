@@ -16,6 +16,15 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
+  2017/10/09 Nepomuk Otte
+  This Version is tagged 1.6.4
+  * TraceGenerator.cpp, ReadConfig.[cpp,h],TelescopeData.[cpp,h]
+    -added option to simulate transit time spread 
+     #Transit time spread (RMS) of the photoelectrons making it through the
+	   PMT/SiPM in ns 
+	  * TRANSITTIMESPREAD 0 0
+
+
   2017/03/17 Nepomuk Otte
   This Version is tagged 1.6.3
   * TriggerTelescopeNeighbor.cpp

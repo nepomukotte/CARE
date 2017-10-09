@@ -195,6 +195,10 @@ void   TelescopeData::SetParametersFromConfigFile( ReadConfig *readConfig ){
 
    fSigmaElectronicNoise = readConfig->GetSigmaElectronicNoise(iTelID);
 
+   fTransitTimeSpread = readConfig->GetTransitTimeSpread(iTelID); //the transit time spreads introduced in the pmts   
+   cout<<"Transit time spread: "<<fTransitTimeSpread<<endl;
+
+
    fWinstonConeEfficiency = readConfig->GetWinstonConeEfficiency(iTelID);   //The efficiency of the Winstoncone
    cout<<"Winstoncone efficiency: "<<fWinstonConeEfficiency<<endl;
    //add the WinstonConeQE to the rel QE
