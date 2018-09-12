@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "TriggerTelescopeCameraSnapshot.h"
-#include "TriggerTelescopeNextNeighbor.h"
 #include "ArrayTrigger.h"
 #include "ReadConfig.h"
 #include "TraceGenerator.h"
@@ -404,7 +403,7 @@ int main( int argc, char **argv )
      }
 
       UInt_t TelType = readConfig->GetTelescopeType(TelID); //need to get this out of the configuration file if there are more than one telescope type
-      TriggerTelescopeCameraSnapshot * SnapshotTrigger = dynamic_cast<TriggerTelescopeCameraSnapshot*>(Teltrigger[TelType]);
+      TriggerTelescopeCameraSnapshot * SnapshotTrigger = (TriggerTelescopeCameraSnapshot*)(Teltrigger[TelType]);
 
       traceGenerator[TelType]->SetTelData(telData[TelID]);
       //	  Teltrigger[TelType]->LoadEvent(telData[TelID]); //necessary in order to pass the telData container
@@ -539,26 +538,26 @@ int main( int argc, char **argv )
            tout[i]->Branch("fAzTel", &(vAzTel[i]));
            tout[i]->Branch("fZnTel", &(vZnTel[i]));
            if(bWriteTracesToRootFile)
-              {
+	     {
                tout[i]->Branch("vHiLoGainBit", &(telData[i]->bInLoGain));
                for(int g=0;g<telData[i]->iNumPixels;g++)
                  {
-                  name.Form("vFADCTraces%i",g);
-                  tout[i]->Branch(name,&(telData[i]->iFADCTraceInPixel[g]));
+		   name.Form("vFADCTraces%i",g);
+		   tout[i]->Branch(name,&(telData[i]->iFADCTraceInPixel[g]));
                  }
-              }
-	 }
-       if (readConfig->GetCameraSnapshotUsage(i))
-	 {
-	   tout[i]->Branch("uSnapshots", &(telData[i]->iSnapshots));
-	   TString snap_name;
-	   for(int s=0; s<telData[i]->iSnapshots; s++)
-	     {
-	       snap_name.Form("iTriggerClusterSnapshot%i",s);
-	       tout[i]->Branch(snap_name, &(telData[i]->iSnapshotsDiscriminatedGroups[s]));
 	     }
-	 }
-	  
+	   
+	   if (readConfig->GetCameraSnapshotUsage(i))
+	     {
+	       tout[i]->Branch("uSnapshots", &(telData[i]->iSnapshots));
+	       TString snap_name;
+	       for(int s=0; s<telData[i]->iSnapshots; s++)
+		 {
+		   snap_name.Form("iTriggerClusterSnapshot%i",s);
+		   tout[i]->Branch(snap_name, &(telData[i]->iSnapshotsDiscriminatedGroups[s]));
+		 }
+	     }
+	 } 
        //Open the photon input file
        TFile *fO = new TFile( fInputFileName.c_str(), "READ" );
        if( fO->IsZombie() )
@@ -800,7 +799,7 @@ int main( int argc, char **argv )
 	       
 	       //generate traces with trace generator
 	       Int_t telType = telData[tel]->GetTelescopeType();
-	       TriggerTelescopeCameraSnapshot * SnapshotTrigger = dynamic_cast<TriggerTelescopeCameraSnapshot*>(Teltrigger[telType]);
+	       TriggerTelescopeCameraSnapshot * SnapshotTrigger = (TriggerTelescopeCameraSnapshot*)(Teltrigger[telType]);
 	       if (SnapshotTrigger)
 		 {
 		   if(p%100==0 || p == readConfig->GetNumberOfPedestalEventsToStabilize())
@@ -1009,7 +1008,7 @@ int main( int argc, char **argv )
 
 		     //generate traces with trace generator
 		     Int_t telType = telData[n]->GetTelescopeType();
-		     TriggerTelescopeCameraSnapshot * SnapshotTrigger = dynamic_cast<TriggerTelescopeCameraSnapshot*>(Teltrigger[telType]);
+		     TriggerTelescopeCameraSnapshot * SnapshotTrigger = (TriggerTelescopeCameraSnapshot*)(Teltrigger[telType]);
 		     traceGenerator[telType]->SetTelData(telData[n]);
 		     traceGenerator[telType]->LoadCherenkovPhotons( v_f_x ,  v_f_y, v_f_time, v_f_lambda, fDelay,dGlobalPhotonEffic);	
 		     traceGenerator[telType]->BuildAllHighGainTraces();	 

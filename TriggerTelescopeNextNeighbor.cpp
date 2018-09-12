@@ -185,7 +185,7 @@ void  TriggerTelescopeNextNeighbor::LoadEvent(TelescopeData *TelData)
  telData->fTimeOverThreshold.assign(iNumSumPixGroups,0);
 
  //The start sample for the delayed trace;
- Int_t iStartSample = (int)(fDiscDelay/fSamplingTime)+1;
+ Int_t iStartSample = bDiscCFDUsage ? (int)(fDiscDelay/fSamplingTime)+1 : 0;
 
  if(bDebug)
      {
@@ -816,111 +816,127 @@ void TriggerTelescopeNextNeighbor::SetDiscriminatorDelayAndAttenuation(Float_t d
 
 }
 
-
 //Reads in  the config file and sets all variables
-void   TriggerTelescopeNextNeighbor::SetParametersFromConfigFile(ReadConfig *readConfig ){
+void   TriggerTelescopeNextNeighbor::SetParametersFromConfigFile(ReadConfig *readConfig, bool print_info )
+{
+  
+  if (print_info)
+    cout <<endl<< "TriggerTelescopeNextNeighbor::SetParametersFromConfigFile " << endl;
 
-   cout <<endl<< "TriggerTelescopeNextNeighbor::SetParametersFromConfigFile " << endl;
-
-   //Trace length in ns
-   fTraceLength = readConfig->GetTraceLength(iTelType);
-   cout<<"The analog trace is "<<fTraceLength<<" ns long"<<endl;
-
-   //Offset from average photon arrival time
-   fStartSamplingBeforeAverageTime = readConfig->GetStartSamplingTimeOffsetFromAveragePhotonTime(iTelType);
-   cout<<"The analog trace starts to be sampled "<<fStartSamplingBeforeAverageTime<<" ns before the average photon arrival time"<<endl; 
-
-   //Width of one sample  of the trace
-   fSamplingTime = readConfig->GetSamplingTime(iTelType);
-   cout<<"The sampling time of the analog trace is "<<fSamplingTime<<" ns"<<endl;
- 
-   //The threshold of the discriminator
-   fDiscThreshold = readConfig->GetDiscriminatorThreshold(iTelType);   
-   cout<<"The Threshold of the discriminator in mV "<<fDiscThreshold<<endl;
-   
-   //The width of the output signal of the discriminator
-   fWidthDiscriminator = readConfig->GetDiscriminatorOutputWidth(iTelType);
-   cout<<"The width of the discriminator output signal in ns "<<fWidthDiscriminator<<endl;
-
-   //The delay of the inverted signal in the CFD
-   fDiscDelay = readConfig->GetDiscriminatorDelay(iTelType);
-   cout<<"The delay of the inverted signal in the CFD in ns "<<fDiscDelay<<endl;
-
-   //The attenuation of the non-inverted signal in the CFD
-   fDiscConstantFractionAttenuation = readConfig->GetDiscriminatorAttenuation(iTelType);
-   cout<<"The attenuation of the non-inverted signal in the CFD "<<fDiscConstantFractionAttenuation<<endl;
-    
-   //Do we use the RFB circuit?
-   bDiscRFBUsage = readConfig->GetRFBUsage(iTelType);
-   cout<<"Do we use the RFB circuit: "<<bDiscRFBUsage<<endl;
-
-   //Do we use the CFD part of the discriminator?
-   bDiscCFDUsage = readConfig->GetCFDUsage(iTelType);
-   cout<<"Do we use the CFD circuit: "<<bDiscCFDUsage<<endl;
-
-   //The Constant Value in the RFB in the discriminator
-   fDiscRFBConstant = readConfig->GetDiscriminatorRFBConstant(iTelType);
-   cout<<"If the RFB circuit is used this is the magnitude of the rate dependend feedback  in mV/MHz "<<fDiscRFBConstant<<endl;
-       
-   //The dyamic value in the RFB in the discriminator
-   fDiscRFBDynamic = readConfig->GetDiscriminatorRFBDynamic(iTelType);
-   cout<<"The initial dynamic value in the RFB in mV (will be mulitplied with 0.18 in the sims). If RFB circuit is not used this is not used "<<fDiscRFBDynamic<<endl;
-     
-   //How many goups need to be in a cluster for a telescope trigger
-   iMultiplicity = readConfig->GetGroupMultiplicity(iTelType);
-   cout<<"The multiplicity requirement for a telescope trigger is "<<iMultiplicity<<endl;
-
-   //The conversion factor at the input of the discriminator in units of  mV / pe peak ampltude
-   fPEtomVConversion = readConfig->GetDiscriminatorConversionFactormVperPE(iTelType);
-   cout<<"The conversion factor from pe to mV is (Amplitude) [mV/pe]: "<<fPEtomVConversion<<endl;
-
-   //Do we want to use the Patches 
-   bUsePatches = readConfig->GetTriggerPatchUsage(iTelType);
-   cout<<"Will use patches : "<<bUsePatches<<endl;
- 
-   //Patches
-   vPatch = readConfig->GetTriggerPatches(iTelType);
-
-   //Do we clip?
-   bDoClipping = readConfig->GetClippingUsage(iTelType);
-   cout<<"Will use clipping: "<<bDoClipping<<endl;
-
-   //the clipping level in mV
-   fClippingLevel = readConfig->GetClippingLevel(iTelType);
-   cout<<"the clipping level in mV is: "<<fClippingLevel<<endl;
-
-   if(readConfig->GetUseSumTrigger(iTelType))
-     {
-         cout<<"Will simulate a sumtrigger"<<endl;
-        iNumSumPixGroups = readConfig->GetNumberGroups(iTelType);
-        iSumGroupNeighbors = readConfig->GetNeighborsOfGroup(iTelType);
-        iSumGroupMembers = readConfig->GetMembersOfGroups(iTelType);
-        if(iNumSumPixGroups <=0)
-          {
-             cout<<"The sumtrigger simulation was turned on but the number of summed groups has been put to "<<iNumSumPixGroups<<endl;
-             cout<<"do something about it!!"<<endl;
-             exit(1);
-          }
-     }
-   else //If no sumtrigger is used
-     {
-        cout<<"This simulation does not use a sumtrigger"<<endl;
-		iNumSumPixGroups= readConfig->GetNumberPixels(iTelType);
-		iSumGroupNeighbors = readConfig->GetNeighbors(iTelType);
-		vector<int> vmembers;
-        for(int i = 0; i<iNumSumPixGroups; i++)
-         {
-			iSumGroupMembers.push_back(vmembers);
-            iSumGroupMembers[i].assign(1,i);
-         }
-      }
-      
-   SetDiscriminatorThresholdAndWidth(fDiscThreshold,fWidthDiscriminator);
-   SetDiscriminatorDelayAndAttenuation(fDiscDelay, fDiscConstantFractionAttenuation);
-   SetDiscriminatorRFBConstant(fDiscRFBConstant);
-   SetDiscriminatorRFBDynamic(fDiscRFBDynamic);
+  //Set configuration commond to any trigger logic
+  SetCommonSettings(readConfig);
+  
+  //Set specific configuration for the trigger logic: new trigger logic (= child of this class) might require it's own SetTriggerSettings
+  SetTriggerLogicSettings(readConfig);
 
   //Create the traces for the summed pixels
   CreateTraces();
 }
+
+void   TriggerTelescopeNextNeighbor::SetCommonSettings(ReadConfig *readConfig)
+{
+  // == Signal configuration ==
+  //Trace length in ns
+  fTraceLength = readConfig->GetTraceLength(iTelType);
+  cout<<"The analog trace is "<<fTraceLength<<" ns long"<<endl;
+  
+  //Offset from average photon arrival time
+  fStartSamplingBeforeAverageTime = readConfig->GetStartSamplingTimeOffsetFromAveragePhotonTime(iTelType);
+  cout<<"The analog trace starts to be sampled "<<fStartSamplingBeforeAverageTime<<" ns before the average photon arrival time"<<endl; 
+  
+  //Width of one sample  of the trace
+  fSamplingTime = readConfig->GetSamplingTime(iTelType);
+  cout<<"The sampling time of the analog trace is "<<fSamplingTime<<" ns"<<endl;
+  
+  //Do we clip?
+  bDoClipping = readConfig->GetClippingUsage(iTelType);
+  cout<<"Will use clipping: "<<bDoClipping<<endl;
+  
+  //the clipping level in mV
+  fClippingLevel = readConfig->GetClippingLevel(iTelType);
+  cout<<"the clipping level in mV is: "<<fClippingLevel<<endl;
+
+  //Do we want to use the Patches 
+  bUsePatches = readConfig->GetTriggerPatchUsage(iTelType);
+  cout<<"Will use patches : "<<bUsePatches<<endl;
+  
+  //Patches
+  vPatch = readConfig->GetTriggerPatches(iTelType);
+  
+  if(readConfig->GetUseSumTrigger(iTelType))
+    {
+      cout<<"Will simulate a sumtrigger"<<endl;
+      iNumSumPixGroups = readConfig->GetNumberGroups(iTelType);
+      iSumGroupNeighbors = readConfig->GetNeighborsOfGroup(iTelType);
+      iSumGroupMembers = readConfig->GetMembersOfGroups(iTelType);
+      if(iNumSumPixGroups <=0)
+	{
+	  cout<<"The sumtrigger simulation was turned on but the number of summed groups has been put to "<<iNumSumPixGroups<<endl;
+	  cout<<"do something about it!!"<<endl;
+	  exit(1);
+	}
+    }
+  else //If no sumtrigger is used
+    {
+      cout<<"This simulation does not use a sumtrigger"<<endl;
+      iNumSumPixGroups= readConfig->GetNumberPixels(iTelType);
+      iSumGroupNeighbors = readConfig->GetNeighbors(iTelType);
+      vector<int> vmembers;
+      for(int i = 0; i<iNumSumPixGroups; i++)
+	{
+	  iSumGroupMembers.push_back(vmembers);
+	  iSumGroupMembers[i].assign(1,i);
+	}
+    }
+}
+
+void   TriggerTelescopeNextNeighbor::SetTriggerLogicSettings(ReadConfig *readConfig)
+{
+  //The threshold of the discriminator
+  fDiscThreshold = readConfig->GetDiscriminatorThreshold(iTelType);   
+  cout<<"The Threshold of the discriminator in mV "<<fDiscThreshold<<endl;
+  
+  //The width of the output signal of the discriminator
+  fWidthDiscriminator = readConfig->GetDiscriminatorOutputWidth(iTelType);
+  cout<<"The width of the discriminator output signal in ns "<<fWidthDiscriminator<<endl;
+  
+  //The delay of the inverted signal in the CFD
+  fDiscDelay = readConfig->GetDiscriminatorDelay(iTelType);
+  cout<<"The delay of the inverted signal in the CFD in ns "<<fDiscDelay<<endl;
+  
+  //The attenuation of the non-inverted signal in the CFD
+  fDiscConstantFractionAttenuation = readConfig->GetDiscriminatorAttenuation(iTelType);
+  cout<<"The attenuation of the non-inverted signal in the CFD "<<fDiscConstantFractionAttenuation<<endl;
+  
+  //Do we use the RFB circuit?
+  bDiscRFBUsage = readConfig->GetRFBUsage(iTelType);
+  cout<<"Do we use the RFB circuit: "<<bDiscRFBUsage<<endl;
+  
+  //Do we use the CFD part of the discriminator?
+  bDiscCFDUsage = readConfig->GetCFDUsage(iTelType);
+  cout<<"Do we use the CFD circuit: "<<bDiscCFDUsage<<endl;
+  
+  //The Constant Value in the RFB in the discriminator
+  fDiscRFBConstant = readConfig->GetDiscriminatorRFBConstant(iTelType);
+  cout<<"If the RFB circuit is used this is the magnitude of the rate dependend feedback  in mV/MHz "<<fDiscRFBConstant<<endl;
+  
+  //The dyamic value in the RFB in the discriminator
+  fDiscRFBDynamic = readConfig->GetDiscriminatorRFBDynamic(iTelType);
+  cout<<"The initial dynamic value in the RFB in mV (will be mulitplied with 0.18 in the sims). If RFB circuit is not used this is not used "<<fDiscRFBDynamic<<endl;
+  
+  //How many goups need to be in a cluster for a telescope trigger
+  iMultiplicity = readConfig->GetGroupMultiplicity(iTelType);
+  cout<<"The multiplicity requirement for a telescope trigger is "<<iMultiplicity<<endl;
+  
+  //The conversion factor at the input of the discriminator in units of  mV / pe peak ampltude
+  fPEtomVConversion = readConfig->GetDiscriminatorConversionFactormVperPE(iTelType);
+  cout<<"The conversion factor from pe to mV is (Amplitude) [mV/pe]: "<<fPEtomVConversion<<endl;
+  
+  SetDiscriminatorThresholdAndWidth(fDiscThreshold,fWidthDiscriminator);
+  SetDiscriminatorDelayAndAttenuation(fDiscDelay, fDiscConstantFractionAttenuation);
+  SetDiscriminatorRFBConstant(fDiscRFBConstant);
+  SetDiscriminatorRFBDynamic(fDiscRFBDynamic);
+  
+}
+
 

@@ -49,12 +49,14 @@ class TriggerTelescopeNextNeighbor {
   TH1F GetTraceHistogramCFD(int GroupID);
   TH1F GetTraceHistogramThreshold(int GroupID);
 
-  virtual ~TriggerTelescopeNextNeighbor() {};
+  //virtual ~TriggerTelescopeNextNeighbor() {};
   
  protected:
 
   void  SetParametersFromConfigFile(ReadConfig *readConfig, bool print_info=true );
-  
+  void  SetCommonSettings(ReadConfig *readConfig);
+  void  SetTriggerLogicSettings(ReadConfig *readConfig);
+
   void CreateTraces();
 
   Int_t CalcCluster(Int_t GroupID, Int_t ClusterID, Int_t PatchID = -1);

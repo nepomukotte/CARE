@@ -109,6 +109,7 @@ class TelescopeData {
 
   Bool_t bArrayTriggered;                               //If telescope has been triggered by the array trigger
   Bool_t bTelescopeHasTriggered;                        //If telescope has triggered
+  Int_t  iSnapshots;                                      //Number of snapshots (if CameraSnapshot is not used, it is set to -1)
   vector<int> vTriggerCluster;                          //the IDs of the groups that are in the triggered cluster
   vector<Int_t> *iSnapshotsDiscriminatedGroups;         //the IDs of the groups that are in discriminated clusters, snapshot by snapshot (for CameraSnapshot logic)
   vector <vector<vector<Int_t>>>   vSnapshotsDiscriminatedClusters;   //the IDs of the groups that are discriminated, clusters by cluster, snapshot by snapshot (for CameraSnapshot logic)
