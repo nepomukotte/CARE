@@ -53,6 +53,9 @@ class TelescopeData {
   Bool_t           GetGroupTrigger(Int_t iGroupID){return  bTriggeredGroups[iGroupID]; };
                    //Returns a vector with a list of Groups that are in the Trigger cluster
   vector<int>      GetTriggerCluster(){ return vTriggerCluster; };
+                   //Returns a list of snapshots containing a list of groups that are part of discriminated clusters
+  vector<Int_t>    GetSnapshotsDiscriminatedGroups(Int_t nSnapshot){ return iSnapshotsDiscriminatedGroups[nSnapshot]; };
+                   //Returns a list of snapshots containing a list of discriminated clusters (containeing its list of groups)
 
   //general functions to maintain object
   void ResetTraces(); //Sets all vectors and numbers to initial values.
@@ -107,6 +110,8 @@ class TelescopeData {
   Bool_t bArrayTriggered;                               //If telescope has been triggered by the array trigger
   Bool_t bTelescopeHasTriggered;                        //If telescope has triggered
   vector<int> vTriggerCluster;                          //the IDs of the groups that are in the triggered cluster
+  vector<Int_t> *iSnapshotsDiscriminatedGroups;         //the IDs of the groups that are in discriminated clusters, snapshot by snapshot (for CameraSnapshot logic)
+  vector <vector<vector<Int_t>>>   vSnapshotsDiscriminatedClusters;   //the IDs of the groups that are discriminated, clusters by cluster, snapshot by snapshot (for CameraSnapshot logic)
 
   //Pixel related variables
   vector< Float_t > fRelQE;

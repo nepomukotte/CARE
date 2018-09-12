@@ -138,7 +138,7 @@ void FADC::DigitizePixel( Int_t PixelID )
     telData->iQDCInPixel[PixelID] = (Int_t)(fQDC+fHighGainPedestal);
 
     if(bDebug)
-	  cout<<"QDC: "<<fQDC<<" before pedestal additio,n "<<telData->iQDCInPixel[PixelID]<<" after pedestal addition"<<endl;
+	  cout<<"QDC: "<<fQDC<<" before pedestal addition, "<<telData->iQDCInPixel[PixelID]<<" after pedestal addition"<<endl;
 
     //Get the right trace
     Float_t fPedestal = fHighGainPedestal; 
@@ -274,7 +274,7 @@ void  FADC::SetParametersFromConfigFile( ReadConfig *readConfig ){
    fHighGainPedestal = readConfig->GetFADCHighGainPedestal(iTelType);
    fLowGainPedestal = readConfig->GetFADCLowGainPedestal(iTelType);
 
-    cout<<endl<<"FADC settings"<<endl;
+    cout<<endl<<"FADC settings for telescopetype "<<iTelType<<endl;
     cout<<"-------------"<<endl;
 	cout<<"Trace length in ns set to "<<fTraceLength<<endl;
         cout<<"The analog trace starts to be sampled "<<fStartSamplingBeforeAverageTime<<" ns before the average photon arrival time"<<endl;

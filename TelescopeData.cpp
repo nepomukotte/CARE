@@ -48,6 +48,8 @@ TelescopeData::TelescopeData( ReadConfig *readConfig, Int_t telID, TRandom3 *gen
   fSigmaElectronicNoise = 0;
 
   vTriggerCluster.resize(0);
+  iSnapshots = -1;
+  iSnapshotsDiscriminatedGroups = NULL;//.resize(0);
 
   bTelescopeHasTriggered = kFALSE;                        //If telescope has triggered
 
@@ -100,9 +102,17 @@ void   TelescopeData::SetupArrays(){
     delete []  iFADCTraceInPixel;
     }
   //create the array with all the vectors, one vector for each pixel
-      iFADCTraceInPixel = new vector<Int_t>[iNumPixels];
+  iFADCTraceInPixel = new vector<Int_t>[iNumPixels];
 
- 
+   if(iSnapshotsDiscriminatedGroups)
+    {
+      delete [] iSnapshotsDiscriminatedGroups;
+    }
+  if(iSnapshots>0)
+    {
+      iSnapshotsDiscriminatedGroups = new vector<Int_t>[iSnapshots];
+    }
+  
    ResetTraces();
 
 }
@@ -127,7 +137,8 @@ void TelescopeData::ResetTraces()
   bInLoGain.assign(iNumPixels,kFALSE);
   bTelescopeHasTriggered = kFALSE;
   vTriggerCluster.resize(0);
- 
+  vSnapshotsDiscriminatedClusters.resize(0);
+  
   //Clear the trace arrays
   for(Int_t g=0;g<iNumPixels;g++)
     {
@@ -183,6 +194,18 @@ void   TelescopeData::SetParametersFromConfigFile( ReadConfig *readConfig ){
    iNumSamplesPerTrace =  int(fTraceLength/fSamplingTime);
    cout<<"The number of samples in one trace: "<<iNumSamplesPerTrace<<endl; 
 
+   if (readConfig->GetCameraSnapshotUsage(iTelType))
+     {
+       Float_t fFADCSamplingWidth = readConfig->GetFADCSampleTime(iTelType);
+       iSnapshots = (Int_t)(fTraceLength/fFADCSamplingWidth);
+       Float_t rest = fTraceLength-fFADCSamplingWidth*iSnapshots;
+       if ( rest!=0 )
+	 {
+	   iSnapshots++; 
+	 }
+       cout<<"Number of snapshots due the trace length: "<<iSnapshots<<endl;
+     }
+   
    //the number of sample in a FADC trace
    iNumFADCSamples = readConfig->GetFADCSamples(iTelType);
    

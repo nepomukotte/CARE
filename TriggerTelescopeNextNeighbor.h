@@ -49,9 +49,11 @@ class TriggerTelescopeNextNeighbor {
   TH1F GetTraceHistogramCFD(int GroupID);
   TH1F GetTraceHistogramThreshold(int GroupID);
 
+  virtual ~TriggerTelescopeNextNeighbor() {};
+  
  protected:
 
-  void  SetParametersFromConfigFile(ReadConfig *readConfig );
+  void  SetParametersFromConfigFile(ReadConfig *readConfig, bool print_info=true );
   
   void CreateTraces();
 
@@ -98,6 +100,7 @@ class TriggerTelescopeNextNeighbor {
   Float_t fDiscRFBConstant;            //RFB of the discriminator in pe/MHz
   Float_t fDiscRFBDynamic;             //The dynamic value of the RFB feedback in pe
   Bool_t  bDiscCFDUsage;
+  Bool_t  bUseGainDrop;
   Bool_t  bDiscRFBUsage;
   Float_t fDiscDelay;                  //internal delay of the inverted signal in the disc. in ns
   Float_t fDiscConstantFractionAttenuation;       //constant fraction of the discriminator

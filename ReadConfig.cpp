@@ -109,6 +109,14 @@ void ReadConfig::resetTelTypeVectors()
   bUseSumTrigger.assign( iNumberOfTelescopeTypes, 0 );              //Sum pixels before discriminator
   fClippingLevel.assign( iNumberOfTelescopeTypes, 0 );              //The level in mV at which the signals are clipped 
   bDoClipping.assign( iNumberOfTelescopeTypes, 0 );                 //Do we clip the signals before summing
+    bCameraSnapshot.assign( iNumberOfTelescopeTypes, 0 );             //Use the camera snapshot logic (SST-1M)
+  iSnapshotBits.assign( iNumberOfTelescopeTypes, 0 );               //Number of bit resolution for the camera snapshot (SST-1M)
+  iSnapshotScalingDivisor.assign( iNumberOfTelescopeTypes, 0 );     //Value of the divisor to scale the group digitization for the camera snapshot trigger (SST-1M)
+  iSnapshotFADCOffset.assign( iNumberOfTelescopeTypes, 0 );         //Offset (pedestal) to be added to the group digitization for the camera snapshot trigger (SST-1M)
+  iSnapshotCircle.assign( iNumberOfTelescopeTypes, 0 );             //Number of circles to form the hexagonal pattern for the camera snapshot (SST-1M)
+  iSnapshotNeighbors.assign( iNumberOfTelescopeTypes, 0 );          //Number of neighbors to be checked to build the pattern for the camera snapshot (SST-1M)
+  iSnapshotComboMode.assign( iNumberOfTelescopeTypes, 0 );          //Number of neighbors to be checked to build the pattern for the camera snapshot (SST-1M)
+  iSnapshotSamplingWindow.assign( iNumberOfTelescopeTypes, 0 );     //Number of neighbors to be checked to build the pattern for the camera snapshot (SST-1M)
   fDiscThreshold.assign( iNumberOfTelescopeTypes, 0 );              //Discriminator threshold of pixel
   fDiscWidth.assign( iNumberOfTelescopeTypes, 0 );                  //Width of Discriminator output
   fDiscDelay.assign( iNumberOfTelescopeTypes, 0 );                  //Delay of the inverted signal in the CFD
@@ -599,7 +607,92 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
 	cout<<"Telescope type "<<i_telType<<" Signal level in mV at which signals will be clipped before summing "<<fClippingLevel[i_telType]<<endl;
       }
 
+     
+     /* SST-1M DEV PART */
+     //Enable/Disable the camera snapshot logic
+     if( iline.find( "USETRIGGERCAMERASNAPSHOT " ) < iline.size() )
+       {
+	 i_stream >> i_char; i_stream >> i_char; 
+	 i_stream >> i_telType;
+	 int tmp;
+	 i_stream >> tmp;
+	 bCameraSnapshot[i_telType] = (Bool_t)tmp;
+	 cout<<"Telescope type "<<i_telType<<" Do we want to use the 'camera snapshot' logic for the telescope trigger: "<<bCameraSnapshot[i_telType]<<endl;
+       }
+  
+     //Resoution in bits of the dynamic range of the digitization of a group for the camera snapshot logic
+     if( iline.find( "SNAPSHOTRESOLUTION " ) < iline.size() )
+       {
+	 i_stream >> i_char; i_stream >> i_char; 
+	 i_stream >> i_telType;
+	 i_stream >> iSnapshotBits[i_telType];
+	 cout<<"Telescope type "<<i_telType<<" The resolution in bits for the 'camera snapshot' logic is "<<iSnapshotBits[i_telType]<<endl;
+       }
+  
+     //Scaling divisor to reduce the digitization of a group for the camera snapshot logic (hint: values are usually powers of 2)
+     if( iline.find( "SNAPSHOTSCALINGDIVISOR " ) < iline.size() )
+       {
+	 i_stream >> i_char; i_stream >> i_char; 
+	 i_stream >> i_telType;
+	 i_stream >> iSnapshotScalingDivisor[i_telType];
+	 cout<<"Telescope type "<<i_telType<<" The scaling divisor (values are usually powers of 2) for the 'camera snapshot' logic is "<<iSnapshotScalingDivisor[i_telType]<<endl;
+       }
 
+     //Offset (pedestal), in DC, to be summed up to the digitization of a group for the camera snapshot logic
+     if( iline.find( "SNAPSHOTFADCOFFSET " ) < iline.size() )
+       {
+	 i_stream >> i_char; i_stream >> i_char; 
+	 i_stream >> i_telType;
+	 i_stream >> iSnapshotFADCOffset[i_telType];
+	 cout<<"Telescope type "<<i_telType<<" The offset (pedestal) in DC of the digitization for the 'camera snapshot' logic is "<<iSnapshotFADCOffset[i_telType]<<endl;
+       }
+
+
+     //Number of circles surrounding the centeral group
+     if( iline.find( "SNAPSHOTPATCHCIRCLES " ) < iline.size() )
+       {
+	 i_stream >> i_char; i_stream >> i_char; 
+	 i_stream >> i_telType;
+	 i_stream >> iSnapshotCircle[i_telType];
+	 cout<<"Telescope type "<<i_telType<<" The number of circles to find the patterns for the 'camera snapshot' logic is "<<iSnapshotCircle[i_telType]<<endl;
+       }
+  
+     //How many neighbors are surrounding a group to form a pattern?
+     if( iline.find( "SNAPSHOTSURROUNDINGNEIGHBORS " ) < iline.size() )
+       {
+	 i_stream >> i_char; i_stream >> i_char;
+	 i_stream >> i_telType;
+	 i_stream >> iSnapshotNeighbors[i_telType];
+	 cout<<"Telescope type "<<i_telType<<" The number of neighbors to let a group to form a pattern for the 'camera snapshot' logic is "<<iSnapshotNeighbors[i_telType]<<endl;
+       }
+
+     //Which mode of the combination of the snapshosts is used and its samplings window lenght 
+     if( iline.find( "SNAPSHOTSCOMBINATION" ) < iline.size() )
+       {
+	 i_stream >> i_char; i_stream >> i_char; 
+	 i_stream >> i_telType;
+	 i_stream >> iSnapshotComboMode[i_telType];
+	 i_stream >> iSnapshotSamplingWindow[i_telType];
+	 cout<<"Telescope type "<<i_telType<<" The snapshots combination mode is "<<iSnapshotComboMode[i_telType];
+	 switch ( iSnapshotComboMode[i_telType] )
+	   {
+	   case (0):
+	     cout << "the Blind mode: sequential samplings (";
+	     break;
+	   case (1):
+	     cout << "the Edge mode: contained edges of samplings windows (";
+	     break;
+	   case (2):
+	     cout << "the Level mode: ... (";
+	     break;
+	   default:
+	     cout << "unknown: forced to Blind mode! (";
+	     iSnapshotComboMode[i_telType] = 0;
+	   }
+	 cout <<iSnapshotComboMode[i_telType]<<") with a sampling window of "<<iSnapshotSamplingWindow[i_telType]<<endl;
+       }
+     /* END SST-1M DEV PART */
+  
      //Clipping the signal before summing
      if( iline.find( "USEDISCCLIPPING " ) < iline.size() )
       {

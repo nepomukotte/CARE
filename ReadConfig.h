@@ -30,6 +30,16 @@ class ReadConfig
   Float_t GetSamplingTime(UInt_t telType){ return fSamplingTime[telType]; };
 
   Bool_t  GetUseSumTrigger(UInt_t telType){ return bUseSumTrigger[telType]; };
+  /* SST-1M PART */
+  Bool_t  GetCameraSnapshotUsage(UInt_t telType){ return bCameraSnapshot[telType]; };
+  Int_t   GetSnapshotBitsResolution(UInt_t telType){ return iSnapshotBits[telType]; };
+  Int_t   GetSnapshotScalingDivisor(UInt_t telType){ return iSnapshotScalingDivisor[telType]; };
+  Int_t   GetSnapshotFADCOffset(UInt_t telType){ return iSnapshotFADCOffset[telType]; };
+  Int_t   GetSnapshotCircle(UInt_t telType){ return iSnapshotCircle[telType]; }; 
+  Int_t   GetSnapshotNeighbors(UInt_t telType){ return iSnapshotNeighbors[telType]; }; 
+  Int_t   GetSnapshotComboMode(UInt_t telType){ return iSnapshotComboMode[telType]; }; 
+  Int_t   GetSnapshotSamplingWindow(UInt_t telType){ return iSnapshotSamplingWindow[telType]; }; 
+  /* END SST-1M PART */
   Float_t GetDiscriminatorThreshold(UInt_t telType){ return fDiscThreshold[telType]; };
   Float_t GetDiscriminatorOutputWidth(UInt_t telType){ return fDiscWidth[telType]; };
   Float_t GetDiscriminatorDelay(UInt_t telType){ return fDiscDelay[telType]; };
@@ -67,6 +77,7 @@ class ReadConfig
   Float_t GetSampleWidthAveragePulse(UInt_t telType){ return fSampleWidthAveragePulse[telType]; };
   Float_t GetNSBRate(UInt_t telType){ return fNSBRatePerPixel[telType]; };
   Bool_t  GetNSBUsage(){ return bUseNSB; };
+  Bool_t  GetGainDropUsage(){ return bUseGainDrop; };
   Bool_t  GetAfterPulsingUsage(UInt_t telType){ return  bUseAfterPulsing[telType]; };
   Float_t GetAfterPulsingConstant(UInt_t telType){ return  fAfterPulsingConstant[telType]; };
   Float_t GetAfterPulsingSlope(UInt_t telType){ return  fAfterPulsingSlope[telType]; };
@@ -157,6 +168,16 @@ class ReadConfig
   vector<Bool_t>  bUseSumTrigger;              //Sum pixels before discriminator
   vector<Float_t> fClippingLevel;              //The level in mV at which the signals are clipped 
   vector<Bool_t>  bDoClipping;                 //Do we clip the signals before summing
+  /* SST-1M PART */
+  vector<Bool_t>  bCameraSnapshot;             //Use the camera snapshot trigger logic (SST-1M DigiCam typology)
+  vector<Int_t>   iSnapshotBits;               //Number of bits for the resolution for the camera snapshot trigger (SST-1M DigiCam typology)
+  vector<Int_t>   iSnapshotScalingDivisor;     //Value of the divisor to scale the group digitization for the camera snapshot trigger (SST-1M DigiCam typology) 
+  vector<Int_t>   iSnapshotFADCOffset;         //Offset (pedestal), in DC, to be added to the group digitization for the camera snapshot trigger (SST-1M DigiCam typology) 
+  vector<Int_t>   iSnapshotCircle;             //Number of circles to form the hexagonal pattern for the camera snapshot trigger (SST-1M DigiCam typology)
+  vector<Int_t>   iSnapshotNeighbors;          //Number of neighbors required to check if a group can form a pattern (SST-1M DigiCam typology)
+  vector<Int_t>   iSnapshotComboMode;          //Samplings combination type: see comments in config file (SST-1M DigiCam typology)
+  vector<Int_t>   iSnapshotSamplingWindow;     //Sampling window;
+  /* END SST-1M PART */
   vector<Float_t> fDiscThreshold;              //Discriminator threshold of pixel
   vector<Float_t> fDiscWidth;                  //Width of Discriminator output
   vector<Float_t> fDiscDelay;                  //Delay of the inverted signal in the CFD
@@ -182,6 +203,7 @@ class ReadConfig
   vector<Float_t> fSampleWidthAveragePulse;    //The sample width used in the average single pe pulse
   vector<Float_t> fNSBRatePerPixel;            //the NSB rate per pixel in the focal plane;
   Bool_t  bUseNSB;                     //set to true if we want to use NSB in the simulation
+  Bool_t  bUseGainDrop;                 //set to true if we want to use Gain drop as a function of NSB in the simulation
   vector<Bool_t>  bUseAfterPulsing;            //Do we simulate Afterpulsing: true yes false else
   vector<Float_t> fAfterPulsingConstant;       //Constant of a fit to the rate vs. threshold curve of a single pe
                                        //Fit function exp(a+b*x), where a=constant b=slope

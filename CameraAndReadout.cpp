@@ -3,12 +3,15 @@
     \Main program of CARE a camera simulation for Cherenkov telescopes
 
     \author Nepomuk Otte
+    \ SST-1M adaptation by Alessio Porcelli (Snapshot trigger v1)
+    \ SST-1M adaptation by Imen Al Samarai (Snapshot trigger v2)
 */
 
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include "TriggerTelescopeCameraSnapshot.h"
 #include "TriggerTelescopeNextNeighbor.h"
 #include "ArrayTrigger.h"
 #include "ReadConfig.h"
@@ -33,6 +36,9 @@ enum SimulationPackageCodes   {KNOWNNOT,LEEDS,GRISU,KASCADE,CORSIKA,UCLA};
 #include "TTree.h"
 #include "TTimer.h"
 #include "TMath.h"
+#include "TSystem.h"
+#include "TInterpreter.h"
+#include <TRint.h>
 
 using namespace std;
 
@@ -67,6 +73,7 @@ void help()
 
 int main( int argc, char **argv )
 {
+   TApplication *app = new TRint("app",0,0,0);
    //Options you can send on command line  
    UInt_t uSeed = 0;
    string sConfigFileName = ""; 
@@ -261,15 +268,19 @@ int main( int argc, char **argv )
    //
    ///////////////////////////////////////////////////
 
-
-   TriggerTelescopeNextNeighbor *Teltrigger[uNumTelescopeTypes]; 
+   vector<TriggerTelescopeNextNeighbor*> Teltrigger;
+   Teltrigger.assign( uNumTelescopeTypes, nullptr );
+   
    for(UInt_t t = 0 ; t<uNumTelescopeTypes; t++)
      {
-	 
        cout<<endl<<"Starting Trigger for telescopetype"<<t<<endl;
-       Teltrigger[t] = new TriggerTelescopeNextNeighbor(readConfig, t, rand, DEBUG_TELTRIGGER, display ); 
-       
-       cout<<"Telescope trigger is initialized"<<endl;
+       if (readConfig->GetCameraSnapshotUsage(t)) {
+	 Teltrigger[t] = new TriggerTelescopeCameraSnapshot(readConfig, t, rand, DEBUG_TELTRIGGER, display );
+       }
+       else {
+	 Teltrigger[t] = new TriggerTelescopeNextNeighbor(readConfig, t, rand, DEBUG_TELTRIGGER, display );
+       }
+       cout<<"Telescope trigger is initialized"<<endl<<endl;
      }
 
    ////////////////////////////////////////////////////
@@ -393,11 +404,22 @@ int main( int argc, char **argv )
      }
 
       UInt_t TelType = readConfig->GetTelescopeType(TelID); //need to get this out of the configuration file if there are more than one telescope type
+      TriggerTelescopeCameraSnapshot * SnapshotTrigger = dynamic_cast<TriggerTelescopeCameraSnapshot*>(Teltrigger[TelType]);
 
-	  traceGenerator[TelType]->SetTelData(telData[TelID]);
-//	  Teltrigger[TelType]->LoadEvent(telData[TelID]); //necessary in order to pass the telData container
-      Teltrigger[TelType]->RunBiasCurve(trials,start,stop,step,traceGenerator[TelType],telData[TelID]); 
-
+      traceGenerator[TelType]->SetTelData(telData[TelID]);
+      //	  Teltrigger[TelType]->LoadEvent(telData[TelID]); //necessary in order to pass the telData container
+      if (SnapshotTrigger)
+  	{
+  	  SnapshotTrigger->RunBiasCurve(trials,start,stop,step,traceGenerator[TelType],telData[TelID]);
+  	  SnapshotTrigger->SetDiscriminatorThresholdAndWidth(readConfig->GetDiscriminatorThreshold(TelType),
+							     readConfig->GetDiscriminatorOutputWidth(TelType));
+  	}
+      else
+  	{
+  	  Teltrigger[TelType]->RunBiasCurve(trials,start,stop,step,traceGenerator[TelType],telData[TelID]);
+  	  Teltrigger[TelType]->SetDiscriminatorThresholdAndWidth(readConfig->GetDiscriminatorThreshold(TelType),
+  								 readConfig->GetDiscriminatorOutputWidth(TelType));
+  	}
 
       //reset discriminator values to the ones in the config file for going over the events
       Teltrigger[TelType]->SetDiscriminatorThresholdAndWidth(readConfig->GetDiscriminatorThreshold(TelType),
@@ -407,11 +429,23 @@ int main( int argc, char **argv )
        fOut->mkdir("BiasCurve");
        fOut->cd("BiasCurve");
 
-       Teltrigger[TelType]->GetBiasCurve().Write("TVecBiasCurve");
-       Teltrigger[TelType]->GetBiasCurveError().Write("TVecBiasCurveError");
-       Teltrigger[TelType]->GetBiasCurveScanPoints().Write("TVecBiasCurveScanPoints");
-       Teltrigger[TelType]->GetGroupRateVsThresholdError().Write("TVecGroupRateVsThresholdError");
-       Teltrigger[TelType]->GetGroupRateVsThreshold().Write("TVecGroupRateVsThreshold");
+       if (SnapshotTrigger)
+	 {
+	   SnapshotTrigger->GetBiasCurve().Write("TVecBiasCurve");
+	   SnapshotTrigger->GetBiasCurveError().Write("TVecBiasCurveError");
+	   SnapshotTrigger->GetBiasCurveScanPoints().Write("TVecBiasCurveScanPoints");
+	   SnapshotTrigger->GetGroupRateVsThresholdError().Write("TVecGroupRateVsThresholdError");
+	   SnapshotTrigger->GetGroupRateVsThreshold().Write("TVecGroupRateVsThreshold");
+	 }
+       else
+	 {
+	   Teltrigger[TelType]->GetBiasCurve().Write("TVecBiasCurve");
+	   Teltrigger[TelType]->GetBiasCurveError().Write("TVecBiasCurveError");
+	   Teltrigger[TelType]->GetBiasCurveScanPoints().Write("TVecBiasCurveScanPoints");
+	   Teltrigger[TelType]->GetGroupRateVsThresholdError().Write("TVecGroupRateVsThresholdError");
+	   Teltrigger[TelType]->GetGroupRateVsThreshold().Write("TVecGroupRateVsThreshold");
+	 }
+
        TVectorF NumTelescopes(1);
        NumTelescopes[0]= uNumTelescopes;
        NumTelescopes.Write("TVecNumTelescopes");
@@ -430,7 +464,7 @@ int main( int argc, char **argv )
    //////////////////////////////////////////////////////////////////////////////
 
 
-   if(readConfig->GetLoopOverEventsBit() || readConfig->GetNumberOfPedestalEvents()>0)
+   if(readConfig->GetLoopOverEventsBit())// || readConfig->GetNumberOfPedestalEvents()>0)
      {
 
        
@@ -514,7 +548,17 @@ int main( int argc, char **argv )
                  }
               }
 	 }
-
+       if (readConfig->GetCameraSnapshotUsage(i))
+	 {
+	   tout[i]->Branch("uSnapshots", &(telData[i]->iSnapshots));
+	   TString snap_name;
+	   for(int s=0; s<telData[i]->iSnapshots; s++)
+	     {
+	       snap_name.Form("iTriggerClusterSnapshot%i",s);
+	       tout[i]->Branch(snap_name, &(telData[i]->iSnapshotsDiscriminatedGroups[s]));
+	     }
+	 }
+	  
        //Open the photon input file
        TFile *fO = new TFile( fInputFileName.c_str(), "READ" );
        if( fO->IsZombie() )
@@ -753,20 +797,36 @@ int main( int argc, char **argv )
 
 	   for (UInt_t tel=0;tel<uNumTelescopes;tel++)
              {
-		 
-	     //generate traces with trace generator
-             Int_t telType = telData[tel]->GetTelescopeType();
+	       
+	       //generate traces with trace generator
+	       Int_t telType = telData[tel]->GetTelescopeType();
+	       TriggerTelescopeCameraSnapshot * SnapshotTrigger = dynamic_cast<TriggerTelescopeCameraSnapshot*>(Teltrigger[telType]);
+	       if (SnapshotTrigger)
+		 {
+		   if(p%100==0 || p == readConfig->GetNumberOfPedestalEventsToStabilize())
+		     cout<<"RFB:"<<SnapshotTrigger->GetDiscRFBDynamicValue()<<endl;
+		 }
+	       else
+		 {
+		   if(p%100==0 || p == readConfig->GetNumberOfPedestalEventsToStabilize())
+		     cout<<"RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
+		 }
 
-	     if(p%100==0 || p == readConfig->GetNumberOfPedestalEventsToStabilize())
-	            cout<<"RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
-
-             telData[tel]->ResetTraces();
+	     telData[tel]->ResetTraces();
              traceGenerator[telType]->SetTelData(telData[tel]);
 	     traceGenerator[telType]->GenerateNSB();
 	     traceGenerator[telType]->BuildAllHighGainTraces();	 
 	     //Load event with trace from trace generator.
-	     Teltrigger[telType]->LoadEvent(telData[tel]);
-	     Teltrigger[telType]->RunTrigger();
+	     if (SnapshotTrigger)
+	       {
+		 SnapshotTrigger->LoadEvent(telData[tel]);
+		 SnapshotTrigger->RunTrigger();
+	       }
+	     else
+	       {
+		 Teltrigger[telType]->LoadEvent(telData[tel]);
+		 Teltrigger[telType]->RunTrigger();
+	       }
          
 	     //Running the FADC
 	     telData[tel]->fTriggerTime = telData[tel]->fAveragePhotonArrivalTime ;
@@ -947,22 +1007,43 @@ int main( int argc, char **argv )
 		       cout<<"Vectors do not have the same size, should never happen, isn't it?"<<endl;
 		      }
 
-             //generate traces with trace generator
-             Int_t telType = telData[n]->GetTelescopeType();
-             traceGenerator[telType]->SetTelData(telData[n]);
-	         traceGenerator[telType]->LoadCherenkovPhotons( v_f_x ,  v_f_y, v_f_time, v_f_lambda, fDelay,dGlobalPhotonEffic);	
-	         traceGenerator[telType]->BuildAllHighGainTraces();	 
+		     //generate traces with trace generator
+		     Int_t telType = telData[n]->GetTelescopeType();
+		     TriggerTelescopeCameraSnapshot * SnapshotTrigger = dynamic_cast<TriggerTelescopeCameraSnapshot*>(Teltrigger[telType]);
+		     traceGenerator[telType]->SetTelData(telData[n]);
+		     traceGenerator[telType]->LoadCherenkovPhotons( v_f_x ,  v_f_y, v_f_time, v_f_lambda, fDelay,dGlobalPhotonEffic);	
+		     traceGenerator[telType]->BuildAllHighGainTraces();	 
 		   
 		     //   TelData->ShowTrace(0,kTRUE); 
            		   
 		     //run the telescope trigger
-	         if(DEBUG_MAIN)
-		     cout<<"Load the traces into trigger"<<endl;
-                   Teltrigger[telType]->LoadEvent(telData[n]);
+		     if(DEBUG_MAIN)
+		       cout<<"Load the traces into trigger"<<endl;
+		     if (SnapshotTrigger)
+		       {
+			 SnapshotTrigger->LoadEvent(telData[n]);
+		       }
+		     else
+		       {
+			 Teltrigger[telType]->LoadEvent(telData[n]);
+		       }
  
-	         if(DEBUG_MAIN)
-		     cout<<"run trigger"<<endl;
-                   Teltrigger[telType]->RunTrigger();
+		     if(DEBUG_MAIN)
+		       cout<<"run trigger"<<endl;
+		     if (SnapshotTrigger)
+		       {
+			 SnapshotTrigger->RunTrigger();
+			 // SnapshotTrigger->ShowTrace(0,0);
+			 if(DEBUG_MAIN)
+			   cout<<"done trigger, RFB:"<<SnapshotTrigger->GetDiscRFBDynamicValue()<<endl;
+		       }
+		     else
+		       {
+			 Teltrigger[telType]->RunTrigger();
+			 // Teltrigger[telType]->ShowTrace(0,0);
+			 if(DEBUG_MAIN)
+			   cout<<"done trigger, RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
+		       }
            
 		     // Teltrigger->ShowTrace(0,0);
 
