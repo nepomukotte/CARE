@@ -20,7 +20,7 @@ class ReadConfig
 {
 
  public:
-
+         
   ReadConfig(TRandom3 *random);
   ~ReadConfig() {};
   Bool_t  ReadConfigFile( string iFile );
@@ -30,16 +30,6 @@ class ReadConfig
   Float_t GetSamplingTime(UInt_t telType){ return fSamplingTime[telType]; };
 
   Bool_t  GetUseSumTrigger(UInt_t telType){ return bUseSumTrigger[telType]; };
-  /* DEV PART */
-  Bool_t  GetCameraSnapshotUsage(UInt_t telType){ return bCameraSnapshot[telType]; };
-  Int_t   GetSnapshotBitsResolution(UInt_t telType){ return iSnapshotBits[telType]; };
-  Int_t   GetSnapshotScalingDivisor(UInt_t telType){ return iSnapshotScalingDivisor[telType]; };
-  Int_t   GetSnapshotFADCOffset(UInt_t telType){ return iSnapshotFADCOffset[telType]; };
-  Int_t   GetSnapshotCircle(UInt_t telType){ return iSnapshotCircle[telType]; };
-  Int_t   GetSnapshotNeighbors(UInt_t telType){ return iSnapshotNeighbors[telType]; };
-  Int_t   GetSnapshotComboMode(UInt_t telType){ return iSnapshotComboMode[telType]; };
-  Int_t   GetSnapshotSamplingWindow(UInt_t telType){ return iSnapshotSamplingWindow[telType]; };
-  /* END DEV PART */
   Float_t GetDiscriminatorThreshold(UInt_t telType){ return fDiscThreshold[telType]; };
   Float_t GetDiscriminatorOutputWidth(UInt_t telType){ return fDiscWidth[telType]; };
   Float_t GetDiscriminatorDelay(UInt_t telType){ return fDiscDelay[telType]; };
@@ -53,13 +43,13 @@ class ReadConfig
   Float_t GetClippingLevel(UInt_t telType){ return fClippingLevel[telType]; };
   Bool_t  GetTriggerPatchUsage(UInt_t telType){ return bUsePatches[telType]; };
   vector< vector<int> > GetTriggerPatches(UInt_t telType){ return vPatch[telType]; };        // pattern trigger patches
-
+  
   //Camera configuration
-  vector< vector<int> > GetNeighbors(UInt_t telType){ return fNeighbour[telType]; };
-  UInt_t GetNumberPixels(UInt_t telType){ return fCNChannels[telType]; };
+  vector< vector<int> > GetNeighbors(UInt_t telType){ return fNeighbour[telType]; }; 
+  UInt_t GetNumberPixels(UInt_t telType){ return fCNChannels[telType]; }; 
   UInt_t GetNumberGroups(UInt_t telType){ return iNumberGroups[telType]; };
-  vector< vector<int> > GetNeighborsOfGroup(UInt_t telType){ return fNeighbourGroups[telType]; };
-  vector< vector<int> > GetMembersOfGroups(UInt_t telType){ return fPixelInGroup[telType]; };
+  vector< vector<int> > GetNeighborsOfGroup(UInt_t telType){ return fNeighbourGroups[telType]; }; 
+  vector< vector<int> > GetMembersOfGroups(UInt_t telType){ return fPixelInGroup[telType]; }; 
   vector<float>         GetXUnrotated(UInt_t telType) const { return fXTube[telType];}   //!< get x-position of tube for current telescop
   vector<float>         GetYUnrotated(UInt_t telType) const { return fYTube[telType];}    //!< get y-position of tube f
   const vector<double>         GetXMM(UInt_t telType) const { return fXTubeMM[telType];}   //!< get x-position of tube for current telescop
@@ -77,7 +67,6 @@ class ReadConfig
   Float_t GetSampleWidthAveragePulse(UInt_t telType){ return fSampleWidthAveragePulse[telType]; };
   Float_t GetNSBRate(UInt_t telType){ return fNSBRatePerPixel[telType]; };
   Bool_t  GetNSBUsage(){ return bUseNSB; };
-  Bool_t  GetGainDropUsage(){ return bUseGainDrop; };
   Bool_t  GetAfterPulsingUsage(UInt_t telType){ return  bUseAfterPulsing[telType]; };
   Float_t GetAfterPulsingConstant(UInt_t telType){ return  fAfterPulsingConstant[telType]; };
   Float_t GetAfterPulsingSlope(UInt_t telType){ return  fAfterPulsingSlope[telType]; };
@@ -99,7 +88,7 @@ class ReadConfig
   Float_t GetBiasCurveStartScanRange(){ return fBiasCurveStart; };
   Float_t GetBiasCurveStopScanRange(){ return fBiasCurveStop; };
   Float_t GetBiasCurveStep(){ return fBiasCurveStep; };
-  Int_t   GetBiasCurveTelescopeID(){ return iBiasCurveTelescopeID; };
+  Int_t   GetBiasCurveTelescopeID(){ return iBiasCurveTelescopeID; };  
 
   Bool_t  GetLoopOverEventsBit(){ return bLoopOverEvents; };
   TString GetSimulatorName(){return sSimulatorName; };
@@ -107,7 +96,7 @@ class ReadConfig
   TString GetDayOfSimulatedEvents(){return sDayOfSimulatedEvents; };
   Int_t   GetNumberOfPedestalEvents(){return iNumberPedestalEvents; };
   Int_t   GetNumberOfPedestalEventsToStabilize(){return iNumberPedestalEventsToStabilize; };
-  Bool_t  GetVBFwriteBit(){return bWriteVFB; };
+  Bool_t  GetVBFwriteBit(){return bWriteVFB; };          
 
 
   Int_t   GetFADCSamples(UInt_t telType){return iFADCSamples[telType]; };
@@ -134,7 +123,7 @@ class ReadConfig
 
 
   Bool_t            GetCrosstalkUsage(UInt_t telType){return bCrosstalk[telType]; };                     //Use crosstalk between pixel
-  Float_t           GetCrosstalkValue(UInt_t telType){return fCrosstalkValue[telType]; };
+  Float_t           GetCrosstalkValue(UInt_t telType){return fCrosstalkValue[telType]; };  
 
   Int_t   GetNumberOfTelescopes(){return iNumberOfTelescopes; };
   Int_t   GetNumberOfTelescopeTypes(){return iNumberOfTelescopeTypes; };
@@ -145,6 +134,7 @@ class ReadConfig
   Float_t GetSigmaElectronicNoise(UInt_t telID){ return fSigmaElectronicNoise[telID]; };
   Bool_t  GetOpticalPSFBlurBit(UInt_t telID){return bBlurPSF[telID];};
   Float_t GetOpticalPSFBlurSigma(UInt_t telID){return fBlurSigma[telID];};
+  Float_t GetTransitTimeSpread(UInt_t telID){return fTransitTimeSpread[telID];};
 
 
 
@@ -154,7 +144,7 @@ class ReadConfig
   void resetNeighbourGroupLists();
   void resetTelVectors();
   void resetTelTypeVectors();
-
+ 
   void convertMMtoDeg();
 
   void ReadLine(string iline, std::ifstream *inFileStream);
@@ -165,18 +155,8 @@ class ReadConfig
 
   //Telescope trigger configuration
   vector<Bool_t>  bUseSumTrigger;              //Sum pixels before discriminator
-  vector<Float_t> fClippingLevel;              //The level in mV at which the signals are clipped
+  vector<Float_t> fClippingLevel;              //The level in mV at which the signals are clipped 
   vector<Bool_t>  bDoClipping;                 //Do we clip the signals before summing
-  /* DEV PART */
-  vector<Bool_t>  bCameraSnapshot;             //Use the camera snapshot trigger logic (SST-1M DigiCam typology)
-  vector<Int_t>   iSnapshotBits;               //Number of bits for the resolution for the camera snapshot trigger (SST-1M DigiCam typology)
-  vector<Int_t>   iSnapshotScalingDivisor;     //Value of the divisor to scale the group digitization for the camera snapshot trigger (SST-1M DigiCam typology)
-  vector<Int_t>   iSnapshotFADCOffset;         //Offset (pedestal), in DC, to be added to the group digitization for the camera snapshot trigger (SST-1M DigiCam typology)
-  vector<Int_t>   iSnapshotCircle;             //Number of circles to form the hexagonal pattern for the camera snapshot trigger (SST-1M DigiCam typology)
-  vector<Int_t>   iSnapshotNeighbors;          //Number of neighbors required to check if a group can form a pattern (SST-1M DigiCam typology)
-  vector<Int_t>   iSnapshotComboMode;          //Samplings combination type: see comments in config file (SST-1M DigiCam typology)
-  vector<Int_t>   iSnapshotSamplingWindow;     //Sampling window;
-  /* END DEV PART */
   vector<Float_t> fDiscThreshold;              //Discriminator threshold of pixel
   vector<Float_t> fDiscWidth;                  //Width of Discriminator output
   vector<Float_t> fDiscDelay;                  //Delay of the inverted signal in the CFD
@@ -185,10 +165,10 @@ class ReadConfig
   vector<Float_t> fDiscPEtomVConversion;       //The conversion factor at the input of the Discriminator mV per pe.
   vector<Float_t> fFADCdctomVConversion;       //The conversion factor at the input of the FADC mV per pe.
   vector<Float_t> fDiscRFBDynamic;             //The value in the RFB feedback in units pe applied as offset.
-                                               //If the RFB circuit is used this is just a start value
+                                               //If the RFB circuit is used this is just a start value 
   vector<Bool_t>  bDiscUseCFD;                 //Do we use the CFD part of the discriminator
   vector<Bool_t>  bDiscUseRFBCircuit;          //Do we use the RFB circuit
-  vector<Int_t>   iGroupMultiplicity;          //How many groups need to be in a cluster for a trigger
+  vector<Int_t>   iGroupMultiplicity;          //How many groups need to be in a cluster for a trigger  
 
   vector<Bool_t>  bUsePatches;                 //Is the trigger topology divided into patches
   vector<vector< vector<int> > > vPatch;        // pattern trigger patches
@@ -202,7 +182,6 @@ class ReadConfig
   vector<Float_t> fSampleWidthAveragePulse;    //The sample width used in the average single pe pulse
   vector<Float_t> fNSBRatePerPixel;            //the NSB rate per pixel in the focal plane;
   Bool_t  bUseNSB;                     //set to true if we want to use NSB in the simulation
-  Bool_t  bUseGainDrop;                 //set to true if we want to use Gain drop as a function of NSB in the simulation
   vector<Bool_t>  bUseAfterPulsing;            //Do we simulate Afterpulsing: true yes false else
   vector<Float_t> fAfterPulsingConstant;       //Constant of a fit to the rate vs. threshold curve of a single pe
                                        //Fit function exp(a+b*x), where a=constant b=slope
@@ -215,7 +194,7 @@ class ReadConfig
 
   //Array trigger configuration
   Int_t   iTelescopeMultiplicity;      //How many telescopes need to be in a cluster for a trigger
-  Bool_t  bArrayTriggerRequiresNextNeighbor;  //Does the array trigger require next neighbor coincidence
+  Bool_t  bArrayTriggerRequiresNextNeighbor;  //Does the array trigger require next neighbor coincidence 
   Float_t fArrayCoincidence;           //Coincidence window on array trigger level
   vector< vector< int >  >   vTelescopeNeighbors; //Has the neighbors of each telescope which are considered in an array trigger
 
@@ -251,20 +230,23 @@ class ReadConfig
   vector< UInt_t >  uMinNumPhotonsRequired;
 
 
-  //Optical PSF bluring
+  //Optical PSF bluring 
   vector< Bool_t >  bBlurPSF;
   vector<Float_t> fBlurSigma;                    //sigma in mm by which the optical PSF is blured furthery of the Winstoncone
 
-
+  //PMT/SiPM Transit time spread
+  vector<Float_t> fTransitTimeSpread;           //time spread of the photelectrons making it through the sensor. RMS in ns.
+ 
+  
   vector< Bool_t >  bCrosstalk;                     //Use crosstalk between pixel
-  vector< Float_t > fCrosstalkValue;
+  vector< Float_t > fCrosstalkValue;  
 
 
   //SiPM related variables
   vector< Bool_t > bSiPM;                                    //flag to figure out if we use SiPMs
   vector< vector<Int_t> > vNumCellsPerSIPM;                  //the number of cells in one SiPM
   vector< vector<Float_t > > vSiPMOpticalCrosstalk;          //the optical crosstalk of the SiPM
-
+ 
 
   //VBF related variables and configs
   Bool_t  bWriteVFB;                   //Is a VBF file written
@@ -287,15 +269,15 @@ class ReadConfig
   Int_t  iNumberOfTelescopes;          //The number of Telescopes in the array
   Int_t  iNumberOfTelescopeTypes;      //The number of different Telescope types in the array
 
-  //Camera configuration
+  //Camera configuration 
   vector< unsigned int > fCNChannels;               //!< number of channels
   vector< unsigned int > iNumberGroups;             //the number of groups of summed pixel
   vector<float> fMirFocalLength;                    //the focal length of the mirror in m
-
+  
   vector< vector<float> > fXTube;                   //!< x-position of tube in [deg] (in camera coordinates)
   vector< vector<float> > fYTube;                   //!< y-position of tube in [deg] (in camera coordiantes)
   vector< vector<float> > fSizeTube;                //!< tube radius in [deg]
-
+ 
   vector< vector<double> > fXTubeMM;                 //!< x-position of tube in [mm]
   vector< vector<double> > fYTubeMM;                 //!< y-position of tube in [mm]
   vector< vector<double> > fSizeTubeMM;              //!< tube radius in [mm]
@@ -310,5 +292,5 @@ class ReadConfig
   vector< int > iTelType;
 
 };
-
+    
 #endif
