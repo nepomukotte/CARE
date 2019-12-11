@@ -17,6 +17,12 @@ _
 
                                                      -*-*- END OF LINE -*-*-
   2019/12/11 Nepomuk Otte
+  This Version is tagged 1.7.1
+  * ReadConfig.[cpp,h]
+    -Fixed variable initialization in constructor. Apparently not standard
+    according to codacity
+
+  2019/12/11 Nepomuk Otte
   This Version is tagged 1.7
   * TraceGenerator.cpp, ReadConfig.[cpp,h],TelescopeData.[cpp,h]
     -added functionality to simulate more than one PMT/SiPM type per camera.

@@ -1,11 +1,14 @@
 #include "ReadConfig.h"
 #include <TMath.h>
 
-ReadConfig::ReadConfig(TRandom3 *random)
-{
+ReadConfig::ReadConfig(TRandom3 *random) : fDebug(kTRUE),
+ bUseNSB(0), iTelescopeMultiplicity(-1), bArrayTriggerRequiresNextNeighbor(0), fArrayCoincidence(-1),bMakeBiasCurve(0), uBiasCurveTrials(-1), fBiasCurveStart(-1),fBiasCurveStop(-1), fBiasCurveStep(-1), 
+bLoopOverEvents(0), bWriteVFB(0),  iNumberOfTelescopes(-1),iNumberOfTelescopeTypes(-1), iNumberOfPMTTypes(1) 
+  {
 
   rand = random;
 
+/*
   fDebug = kTRUE;
   bUseNSB=0;                      //set to true if we want to use NSB in the simulation
   iTelescopeMultiplicity=-1;      //How many telescopes need to be in a cluster for a trigger
@@ -23,8 +26,7 @@ ReadConfig::ReadConfig(TRandom3 *random)
 
   iNumberOfTelescopes = -1;          //The number of Telescopes in the array
   iNumberOfTelescopeTypes = -1; 
-  iNumberOfPMTTypes = 1;            //The number of PMT/SiPM tupes in the array
-
+*/
 
 }
 
