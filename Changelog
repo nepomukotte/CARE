@@ -16,6 +16,70 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
+  2019/12/11 Nepomuk Otte
+  This Version is tagged 1.7
+  * TraceGenerator.cpp, ReadConfig.[cpp,h],TelescopeData.[cpp,h]
+    -added functionality to simulate more than one PMT/SiPM type per camera.
+    Instructions on how to modify and setup the configuration file
+    1. In the beginning of the configuration files four different parameters are
+    needed in the following order
+    #1. Number ot PMT/SiPM types
+     * NBRPMTTYPES 2 
+
+    #2. The Number of telescope types
+     * NBRTELTYPES 1
+
+    #3. Number of telescope (NBRTL)
+     * NBRTL 4
+
+    #4.  Camera configuration
+    #   -telescope type
+    #   -the number of phototubes.
+    #   -the number of groups of summed pixel
+    # IMPORTANT: the telescope types have to be listed in increasing order
+    * CAMRA 0 499  0
+
+   The NSB is now given for each PMT type and each telescope type separately
+   The example specifies the NSB for telescope type 0, PMT/SiPM type 0 is set to
+   300 MHz per pixel and PMT/SiPM type 1 is set to 100 MHz per pixel
+   #the NSB rate in MHz per pmt/SiPM type and telescope type
+   # telescope type | PMT type | NSB rate in MHZ
+   * NSBRATEPERPIXEL 0 0 300
+   * NSBRATEPERPIXEL 0 1 100
+
+   Afterpulsing (constant and slope) is now specified per PMT/SiPM type and not for each telescope
+   type
+
+   The QE/PDE has to be specified for each PMT/SiPM type
+   #QUEFF [PMT type] [number of lines following]
+   #PMT type 0
+   * QUEFF 0 51
+   100 0.0
+   200 0.09494
+   ...
+   #PMT type 1
+   * QUEFF 1 28
+   100 0.0
+   200 0.09494
+
+   For each pixel the type of PMT/SiPM has to be specified using the PMPIX
+   configuration. The second parameter gives the PMT/SiPM type
+   #Pixel configuration, last three numbers are not used
+   # teltype| PMT/SiPM type | what kind of pixel 1=square, 0=hexagonal| pixel id| x[mm]| y[mm] | pixel radius [mm] (distance from center to farthest corner) | roation angle
+   * PMPIX 0 1 0     0           0.00            0.00 18.1 0.0
+   * PMPIX 0 1 0     1          31.40           -0.00 18.1 0.0
+
+
+
+    added option to simulate transit time spread 
+     #Transit time spread (RMS) of the photoelectrons making it through the
+	   PMT/SiPM in ns 
+	  * TRANSITTIMESPREAD 0 0
+  * ReadConfig.cpp
+    -fixed bug that did not output the gain sigma value to the stdout while
+	reading in the configuration file
+
+
   2017/10/09 Nepomuk Otte
   This Version is tagged 1.6.4
   * TraceGenerator.cpp, ReadConfig.[cpp,h],TelescopeData.[cpp,h]

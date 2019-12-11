@@ -61,16 +61,12 @@ class TraceGenerator {
   void     SetSigmaofSinglePEPulseHeightDistribution(Float_t sigma);
   void     SetSinglePESamlingWidth(Float_t width);
   void     SetTraceSampleWidthAndLength(Float_t t,Float_t length=100,Float_t=30);
- 
-  
-            //Sets the NSB rate per pixel, units kHz  
-  void     SetNSBRatePerPixel(Float_t rate){ fNSBRatePerPixel = rate; };
 
            //Use NSB 
   void     SetNSBUsage(Bool_t use){ bUseNSB = use;};
 
            //Defines if afterpulsing is used in the simulations, Fit function exp(a+b*x), where a=constant b=slope
-  void     SetAfterPulsing(Bool_t afterpulsing, Float_t constant = -1, Float_t slope = -1);
+  void     SetAfterPulsing(Bool_t afterpulsing, vector<Float_t> constant, vector<Float_t> slope);
 
            //Sets the Factor by which the Cherenkov Photons need to be scaled down
   void     SetWinstonConeEfficiency(Float_t CherenkovPhotonScaling);
@@ -140,9 +136,9 @@ class TraceGenerator {
   Float_t         fStartSamplingBeforeAverageTime;         //The offset from the average photon arrival time, when the trace gets sampled
 
   //Afterpulsing
-  Float_t fAPconstant;                             // values for afterpulsing from rate vs. threshold curve
+  vector<Float_t> vAPconstant;                             // values for afterpulsing from rate vs. threshold curve
                                                    //Fit function exp(a+b*x), where a=constant b=slope
-  Float_t fAPslope;
+  vector<Float_t> vAPslope;
   Bool_t  bAfterPulsing;                           //Do we simulate Afterpulsing
  
   //Crosstalk between camera pixel
@@ -154,12 +150,13 @@ class TraceGenerator {
   Int_t iNumPixels;                    //Number of pixels in the camera 
   vector<vector<int> > vNeighbors;     //neighbors of each pixel 
 
-  vector<Float_t> qe;                  //holds the QE values. the index number of each entry gives the wavlength, 
-                                       //i.e. qe[400] is the qe at 400 nm
+  vector<vector<Float_t> > qe;         //holds the QE values. the index number of each entry gives the wavlength, 
+                                       //i.e. qe[i][400] is the qe at 400 nm for
+                                       //the ith PMT type
 
 
   //NSB
-  Float_t fNSBRatePerPixel;                        //the NSB rate kHz per mm squared in the focal plane;
+  vector<Float_t> vNSBRatePerPixel;                        //the NSB rate in kHz for each PMT/SiPM type;
   Bool_t  bUseNSB;
 
   //Shower photons
@@ -173,6 +170,7 @@ class TraceGenerator {
   vector<double>  fSizeTubeMM;
   vector<double>  fRotAngle;
   vector<int>     iTubeSides;
+  vector<int>     iTubeType;            //type of PMT/SiPM used by that pixel
 
 
 

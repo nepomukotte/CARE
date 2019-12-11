@@ -340,8 +340,10 @@ Bool_t  TriggerTelescopeNextNeighbor::RunL2WithPatches()
 // An L2 trigger that does care about patches
 Bool_t  TriggerTelescopeNextNeighbor::RunL2Patch(Int_t PatchNumber,Float_t *fPatchTriggerTimes)
 {
- if(bDebug)
-  cout<<"Running L2 Patch "<<PatchNumber<<endl;
+  if(bDebug)
+   {
+     cout<<"Running L2 Patch "<<PatchNumber<<endl;
+   }
 
   if(iClusterID)
     delete [] iClusterID;

@@ -44,7 +44,6 @@ TraceGenerator::TraceGenerator( ReadConfig *readConfig , int telType, TRandom3 *
   
   fSamplingTime = -1;
   fSamplingTimeAveragePulse = -1; //sampling time of the average PE pulse
-  fNSBRatePerPixel = -1; 
   fTraceLength = 100; //Length of simulated trace in ns
   fStartSamplingBeforeAverageTime=30;
   bAfterPulsing = kFALSE;
@@ -82,7 +81,6 @@ telData = TelData;
 
 //-----------------------------------------------------------------------------------------------------------------------
 //Loads the PEs into the pixels. If UseNSB is set true NSB is added to the trace
-//which requires that SetNSBRatePerPixel(Float_t rate) has been set before
 void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vector< float > *v_f_Y,std::vector< float > *v_f_time,std::vector< float > *v_f_lambda, Float_t delay, Double_t dEfficiencyFactor)
 {
    
@@ -100,8 +98,9 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
     }
 
   if(bDebug)
+   {
     cout<<"Camera has "<<iNumPixels<<" pixel"<<endl;
-
+   }
 
     //Load the NSB into the Traces, will be skipped in function if no NSB generation is wanted
     GenerateNSB();
@@ -187,9 +186,9 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
            //Lets see if the Photon will be detected after the Winston cone and the PMT
            //QE includes the winston cone and the cherenkov scaling factor, see function that
            //writes qe[]
-           Float_t eff = qe[lambda]*telData->fRelQEwWC[pixID]/dEfficiencyFactor;
+           Float_t eff = qe[iTubeType[pixID]][lambda]*telData->fRelQEwWC[pixID]/dEfficiencyFactor;
            if(bDebug)
- 	   cout<<"eff: "<<eff<<" lambda "<<lambda<<"  qe[lambda] "<<qe[lambda]<<" telData->fRelQEwWC[pixID] "<<telData->fRelQEwWC[pixID]<<" efficiency factor: "<<dEfficiencyFactor<<endl;
+ 	   cout<<"eff: "<<eff<<" lambda "<<lambda<<" pixel "<<pixID<<"  qe[iTubeType[pixID][lambda] "<<qe[iTubeType[pixID]][lambda]<<" telData->fRelQEwWC[pixID] "<<telData->fRelQEwWC[pixID]<<" efficiency factor: "<<dEfficiencyFactor<<endl;
            if(rand->Uniform()<eff)
                  {
 	          AddPEToTrace(pixID, v_f_time->at(p)-(telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime)); //Start filling fStartSamplingBeforeAverageTime ns before the average time
@@ -347,9 +346,10 @@ void TraceGenerator::AddPEToTrace(Int_t PixelID, Float_t time, Int_t NumPE)
   //loop over neighboring pixel if crosstalk
   if(bCrosstalk)
     {
-     if(bDebug)
+     if(bDebug==1)
+      {
         cout<<"Adding Crosstalk "<<fCrosstalk<<" to neighboring pixel"<<endl;
-
+      }
         for(UInt_t n = 0;n<vNeighbors[PixelID].size(); n++)
             {
 		if(bDebug)
@@ -377,9 +377,9 @@ void TraceGenerator::GenerateNSB()
       exit(1);
     }
 
-   if(fNSBRatePerPixel<=0 && bUseNSB)
+   if(vNSBRatePerPixel[0]<=0 && bUseNSB) //this only checks correctly if there is one PMT/SiPM type in the telescope
      {
-      cout<<"FillPixelsNSB: You need to set the NSB rate in kHz per pixel with SetNSBRatePerPixel(Float_t rate)"<<endl;
+      cout<<"FillPixelsNSB: You need to set the NSB rate in kHz per pixel"<<endl;
       exit(1);
     }
 
@@ -397,9 +397,9 @@ void TraceGenerator::GenerateNSB()
    for(Int_t i=0;i<iNumPixels;i++)
     {
       if(bDebug)
-      cout<<"Pixel "<<i<<endl;
+      cout<<"Pixel "<<i<<" PMT type: "<<iTubeType[i]<<" NSB "<<vNSBRatePerPixel[iTubeType[i]]<<endl;
       //convert to counts per ns remember the rate is in units kHz 
-      Float_t fNSBRate = fNSBRatePerPixel*1e-6 * telData->fRelQE[i]; ; 
+      Float_t fNSBRate = vNSBRatePerPixel[iTubeType[i]]*1e-6 * telData->fRelQE[i]; ; 
 
       Float_t t = -1.0*fHighGainStopTime[0];
       
@@ -412,15 +412,15 @@ void TraceGenerator::GenerateNSB()
 
       int l = 1;
             
-	  if(bAfterPulsing==kTRUE)
+	  if(bAfterPulsing==kTRUE && vAPslope[iTubeType[i]]!=0)
 	  {
 	    //mix in some afterpulsing
 	    double m = rand->Uniform();
 
             //convert this into the proper afterpulsing amplitude if we 
             //are above 1.5 photoelectrons
-            if( m < exp(fAPconstant + fAPslope * 1.5) )
-              l = int( ( log(m) - fAPconstant ) / fAPslope +1 ) ;
+            if( m < exp(vAPconstant[iTubeType[i]] + vAPslope[iTubeType[i]] * 1.5) )
+              l = int( ( log(m) - vAPconstant[iTubeType[i]] ) / vAPslope[iTubeType[i]] +1 ) ;
         if(bDebug)
           cout<<"Afterpulsing added: "<<l<<endl;
 	  }
@@ -436,23 +436,25 @@ void TraceGenerator::GenerateNSB()
 
 //--------------------------------------------------------------------------------------------------
 //
-void TraceGenerator::SetAfterPulsing(Bool_t afterpulsing, Float_t constant, Float_t slope)
+void TraceGenerator::SetAfterPulsing(Bool_t afterpulsing, vector<Float_t> constant, vector<Float_t> slope)
 {
 
- if(constant > 0 && afterpulsing==1)
-    {
-      cout<<"SetAFterPulsing: fAPconstant set to a value >0, bad!"<<endl;
-      exit(1);
-    }
+ for(uint i = 0; i<constant.size();i++)
+  {
+    if(constant[i] > 0 && afterpulsing==1)
+      {
+        cout<<"SetAFterPulsing: vAPconstant "<<i<<" set to a value >0, bad!"<<endl;
+        exit(1);
+      }
 
-  if(slope > 0 && afterpulsing==1)
-    {
-      cout<<"SetAFterPulsing: fAPslope set to a value >0, bad!"<<endl;
-      exit(1);
-    }
-
-  fAPconstant=constant; 
-  fAPslope=slope;
+    if(slope[i] > 0 && afterpulsing==1)
+      {
+        cout<<"SetAFterPulsing: vAPslope "<<i<<" set to a value >0, bad!"<<endl;
+        exit(1);
+      }
+  }
+  vAPconstant=constant; 
+  vAPslope=slope;
   bAfterPulsing=afterpulsing;   
 
 }
@@ -1025,7 +1027,7 @@ void   TraceGenerator::SetParametersFromConfigFile(ReadConfig *readConfig){
 
 
   SetAfterPulsing(readConfig->GetAfterPulsingUsage(iTelType), 
-               readConfig->GetAfterPulsingConstant(iTelType), readConfig->GetAfterPulsingSlope(iTelType));
+               readConfig->GetAfterPulsingConstant(), readConfig->GetAfterPulsingSlope());
 
 
   SetSinglePESamlingWidth(readConfig->GetSampleWidthAveragePulse(iTelType));
@@ -1060,28 +1062,34 @@ void   TraceGenerator::SetParametersFromConfigFile(ReadConfig *readConfig){
 	  }
 
    //Set the Quantum efficienicy
-   vector<Float_t> wlOrig = readConfig->GetWavelengthsOfQEValues(iTelType);
-   vector<Float_t> qeOrig = readConfig->GetQEValues(iTelType);
-   UInt_t maxwl = (UInt_t)wlOrig[wlOrig.size()-1];
-   //Set the qe values in the array
-   qe.assign(maxwl,0);
+   //loop over different types of PMTs/SiPMs and fill the array
+   vector< float > f_tel;
    cout<<"Setting the QE values"<<endl;
-   for(UInt_t w = wlOrig[0]; w<maxwl; w++)
-     {
-        Int_t i= 0;
-        while(wlOrig[i]<w)  i++;
-           i--;
+   for(Int_t iPMTType = 0; iPMTType<readConfig->GetNumberOfPMTTypes(); iPMTType++)
+    {
+      qe.push_back( f_tel );
+      vector<Float_t> wlOrig = readConfig->GetWavelengthsOfQEValues(iPMTType);
+      vector<Float_t> qeOrig = readConfig->GetQEValues(iPMTType);
+      UInt_t maxwl = (UInt_t)wlOrig[wlOrig.size()-1];
+      //Set the qe values in the array
+      qe[iPMTType].assign(maxwl,0);
+      cout<<"for PMT/SiPM type "<<iPMTType<<endl;
+      for(UInt_t w = wlOrig[0]; w<maxwl; w++)
+        {
+          Int_t i= 0;
+          while(wlOrig[i]<w)  i++;
+             i--;
 
-        Float_t Qeff = qeOrig[i]+ (qeOrig[i+1]-qeOrig[i])/(wlOrig[i+1]-wlOrig[i])*(w-wlOrig[i]);
+          Float_t Qeff = qeOrig[i]+ (qeOrig[i+1]-qeOrig[i])/(wlOrig[i+1]-wlOrig[i])*(w-wlOrig[i]);
 
-        qe[w] = Qeff;
+          qe[iPMTType][w] = Qeff;
 
-        //cout<<w<<"  "<<qe[w]<<endl;
-     }
-
+          //cout<<w<<"  "<<qe[iPMTType][w]<<endl;
+        }
+    }//end looping over all different PMT types and loading the QEs 
 
   //NSB
-  fNSBRatePerPixel = readConfig->GetNSBRate(iTelType);      //the NSB rate kHz per mm squared in the focal plane;
+  vNSBRatePerPixel = readConfig->GetNSBRate(iTelType);      //the NSB rate kHz per mm squared in the focal plane;
   bUseNSB = readConfig->GetNSBUsage();
 
   iNumPixels = readConfig->GetNumberPixels(iTelType); //Has to be filled with telescope type
@@ -1105,6 +1113,8 @@ void   TraceGenerator::SetParametersFromConfigFile(ReadConfig *readConfig){
   fSizeTubeMM =readConfig->GetTubeSizeMM(iTelType);
   iTubeSides = readConfig->GetTubeSides(iTelType);
   fRotAngle =  readConfig->GetTubeRotAngle(iTelType);
+
+  iTubeType = readConfig->GetTubeType(iTelType);
 
 }
 

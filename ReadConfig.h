@@ -58,6 +58,7 @@ class ReadConfig
   const vector<double>         GetTubeSizeMM(UInt_t telType) const { return fSizeTubeMM[telType];}                   //!< get tube size in mm
   const vector<double>         GetTubeRotAngle(UInt_t telType) const { return fRotAngle[telType];}         //!< get the rotation angle of the tube
   const vector<int>           GetTubeSides(UInt_t telType) const { return iTubeSides[telType];}  //!< get the number of sides per tube
+  const vector<int>           GetTubeType(UInt_t telType) const { return iPMTType[telType];}  //!< get the type of PMT per tube
 
   Int_t   GetGroupMultiplicity(UInt_t telType){ return iGroupMultiplicity[telType]; };
   Float_t GetFWHMofSinglePEPulse(UInt_t telType){ return fFWHMofSinglePEPulse[telType]; };
@@ -65,11 +66,11 @@ class ReadConfig
   TString  GetNameofLowGainPulseFile(UInt_t telType){ return sLowGainPulseShapeFile[telType]; };
   Float_t GetSigmaofSinglePEPulseHeightDistribution(UInt_t telType){ return fSigmaSinglePEPulseHeightDistribution[telType]; };
   Float_t GetSampleWidthAveragePulse(UInt_t telType){ return fSampleWidthAveragePulse[telType]; };
-  Float_t GetNSBRate(UInt_t telType){ return fNSBRatePerPixel[telType]; };
+  const vector<Float_t> GetNSBRate(UInt_t telType){ return vNSBRatePerPixel[telType]; };
   Bool_t  GetNSBUsage(){ return bUseNSB; };
   Bool_t  GetAfterPulsingUsage(UInt_t telType){ return  bUseAfterPulsing[telType]; };
-  Float_t GetAfterPulsingConstant(UInt_t telType){ return  fAfterPulsingConstant[telType]; };
-  Float_t GetAfterPulsingSlope(UInt_t telType){ return  fAfterPulsingSlope[telType]; };
+  vector<Float_t> GetAfterPulsingConstant(){ return  fAfterPulsingConstant; };
+  vector<Float_t> GetAfterPulsingSlope(){ return  fAfterPulsingSlope; };
 
 
   vector< Float_t > GetRelQE(UInt_t telType);
@@ -113,9 +114,9 @@ class ReadConfig
   Float_t GetPileUpWindow(UInt_t telType){ return fPileUpWindow[telType]; };
 
 
-
-  vector<Float_t> GetWavelengthsOfQEValues(UInt_t telType){return wl[telType]; };
-  vector<Float_t> GetQEValues(UInt_t telType){return qe[telType]; };
+  Int_t   GetNumberOfPMTTypes(){return iNumberOfPMTTypes; };
+  vector<Float_t> GetWavelengthsOfQEValues(UInt_t PMTType){return wl[PMTType]; };
+  vector<Float_t> GetQEValues(UInt_t PMTType){return qe[PMTType]; };
 
   Bool_t            GetSiPMUsage(UInt_t telType){return bSiPM[telType]; };                              //do we use SiPM or not
   vector<Int_t>     GetNumCellsPerSiPM(UInt_t telType){return vNumCellsPerSIPM[telType]; };             //return the number of cells in one SiPM
@@ -180,7 +181,7 @@ class ReadConfig
   vector<TString> sLowGainPulseShapeFile;  //name of the file that stores the single pe pulse shape
   vector<Float_t> fSigmaSinglePEPulseHeightDistribution; //The sigma of the single PE pulse height distribution
   vector<Float_t> fSampleWidthAveragePulse;    //The sample width used in the average single pe pulse
-  vector<Float_t> fNSBRatePerPixel;            //the NSB rate per pixel in the focal plane;
+  vector<vector <Float_t> > vNSBRatePerPixel;            //the NSB rate per pixel in the focal plane per PMT/SiPM and telescope type;
   Bool_t  bUseNSB;                     //set to true if we want to use NSB in the simulation
   vector<Bool_t>  bUseAfterPulsing;            //Do we simulate Afterpulsing: true yes false else
   vector<Float_t> fAfterPulsingConstant;       //Constant of a fit to the rate vs. threshold curve of a single pe
@@ -268,6 +269,7 @@ class ReadConfig
 
   Int_t  iNumberOfTelescopes;          //The number of Telescopes in the array
   Int_t  iNumberOfTelescopeTypes;      //The number of different Telescope types in the array
+  Int_t  iNumberOfPMTTypes;            //The number of different PMT/SiPM types in the array
 
   //Camera configuration 
   vector< unsigned int > fCNChannels;               //!< number of channels
@@ -283,6 +285,7 @@ class ReadConfig
   vector< vector<double> > fSizeTubeMM;              //!< tube radius in [mm]
   vector< vector<double> > fRotAngle;                //!< tube rotation angle in rad (converted from deg when reading in)
   vector< vector<int> > iTubeSides;                 //!< the number of sides the pixel has
+  vector< vector<int> > iPMTType;                   //!< the type of PMT used for this pixel
   vector< vector< vector<int> > > fNeighbour;       //!< neighbour identifier
 
   vector< vector< vector<int> > > fPixelInGroup;    //!< The pixel that are in one group

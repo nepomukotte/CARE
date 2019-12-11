@@ -188,8 +188,8 @@ void Display::Show(int TelID = 0,int PixID = 0 )
         MakeCameraParameterPlots();
 
 	
-	int iNumAnalogSamples = allTelData[TelID]->iNumSamplesPerTrace;
-	{
+    int iNumAnalogSamples = allTelData[TelID]->iNumSamplesPerTrace;
+	
 	   if(!cTrace)
 		 cTrace = new TCanvas("cTrace","Trace",500,500);
 	   
@@ -221,7 +221,7 @@ void Display::Show(int TelID = 0,int PixID = 0 )
 	   TString input = Getline("Type <return> to go on: ");
 	   timer.TurnOff();
 
-    }
+    
 
 
 }

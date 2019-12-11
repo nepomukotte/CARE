@@ -23,6 +23,7 @@ ReadConfig::ReadConfig(TRandom3 *random)
 
   iNumberOfTelescopes = -1;          //The number of Telescopes in the array
   iNumberOfTelescopeTypes = -1; 
+  iNumberOfPMTTypes = 1;            //The number of PMT/SiPM tupes in the array
 
 
 }
@@ -34,15 +35,11 @@ void ReadConfig::resetCamVectors()
 {
     cout<<"Resetting the Camera vectors"<<endl;
     vector< double > d_tel;
-    vector< float > i_tel;
+    vector< float > f_tel;
     vector< int > i_typ;
     for( int i = 0; i < iNumberOfTelescopeTypes; i++ )
     {
-       //Quantum/PDE of the Photon detectors
-       wl.push_back( i_tel ); 
-       qe.push_back( i_tel );
-
-       i_tel.assign( fCNChannels[i], 0. );
+       f_tel.assign( fCNChannels[i], 0. );
        d_tel.assign( fCNChannels[i], 0. );
        i_typ.assign( fCNChannels[i], 0 );
        fSizeTubeMM.push_back( d_tel );
@@ -50,14 +47,27 @@ void ReadConfig::resetCamVectors()
        fXTubeMM.push_back( d_tel );
        fYTubeMM.push_back( d_tel );
        iTubeSides.push_back( i_typ );
-       fXTube.push_back( i_tel );                //!< x-position of tube in [deg] (in camera coordinates)
-       fYTube.push_back( i_tel );                //!< y-position of tube in [deg] (in camera coordiantes)
-       fSizeTube.push_back( i_tel ); 
+       iPMTType.push_back( i_typ );
+       fXTube.push_back( f_tel );                //!< x-position of tube in [deg] (in camera coordinates)
+       fYTube.push_back( f_tel );                //!< y-position of tube in [deg] (in camera coordiantes)
+       fSizeTube.push_back( f_tel ); 
 
        vNumCellsPerSIPM.push_back( i_typ );      //the number of cells in one SiPM
-       vSiPMOpticalCrosstalk.push_back( i_tel );
+       vSiPMOpticalCrosstalk.push_back( f_tel );
 
     }
+
+    //Quantum/PDE of the Photon detectors
+    for( int i = 0; i < iNumberOfPMTTypes; i++ )
+    {
+       wl.push_back( f_tel ); 
+       qe.push_back( f_tel );
+    }
+
+    fAfterPulsingConstant.assign( iNumberOfPMTTypes, 0 );       //Constant of a fit to the rate vs. threshold curve of a single pe
+                                       //Fit function exp(a+b*x), where a=constant b=slope
+    fAfterPulsingSlope.assign( iNumberOfPMTTypes, 0 );          //Slope of a fit to the rate vs. threshold curve of a single pe
+                                       //Fit function exp(a+b*x), where a=constant b=slope
     resetNeighbourGroupLists();
 }
 
@@ -86,14 +96,14 @@ void ReadConfig::resetNeighbourGroupLists()
 void ReadConfig::resetTelVectors()
 {
     vector< int > i_neighb;
-	vTelescopeNeighbors.assign( iNumberOfTelescopes, i_neighb );
+    vTelescopeNeighbors.assign( iNumberOfTelescopes, i_neighb );
     iTelIDInSuperArray.assign( iNumberOfTelescopes, 0 );
     iTelType.assign( iNumberOfTelescopes, 0 );
     bBlurPSF.assign( iNumberOfTelescopes, 0 ); 
-    fBlurSigma.assign( iNumberOfTelescopes, 0 );                 //Additional Bluring of the optical psf
+    fBlurSigma.assign( iNumberOfTelescopes, 0 );                            //Additional Bluring of the optical psf
     fSigmaElectronicNoise.assign( iNumberOfTelescopes, 0 );                 //The relative gain of each telescope
-    fRelativeTelescopeGain.assign( iNumberOfTelescopes, 0 );                 //The relative gain of each telescope
-    fWinstonConeEfficiency.assign( iNumberOfTelescopes, 0 );                 //The efficiency of the Winstoncone
+    fRelativeTelescopeGain.assign( iNumberOfTelescopes, 0 );                //The relative gain of each telescope
+    fWinstonConeEfficiency.assign( iNumberOfTelescopes, 0 );                //The efficiency of the Winstoncone
 }
 
 //Function to reset all the vectors that hold the variables defining each telescope
@@ -126,6 +136,9 @@ void ReadConfig::resetTelTypeVectors()
   bUsePatches.assign( iNumberOfTelescopeTypes, 0 );                 //Is the trigger topology divided into patches
 
 
+  vector< Float_t > f_typ;
+  f_typ.assign( iNumberOfPMTTypes , 0. ); 
+  vNSBRatePerPixel.assign( iNumberOfTelescopeTypes, f_typ );
   bUseAfterPulsing.assign( iNumberOfTelescopeTypes, 0 );             //Do we simulate Afterpulsing: true yes false else
   bFlatfieldCamera.assign( iNumberOfTelescopeTypes, 0 );             //Flatfield the camera response
   fGainSigma.assign( iNumberOfTelescopeTypes, -1 );                  //sigma of the gain distribution
@@ -141,11 +154,6 @@ void ReadConfig::resetTelTypeVectors()
   sLowGainPulseShapeFile.assign( iNumberOfTelescopeTypes, "" );  //name of the file that stores the single pe pulse shape
   fSigmaSinglePEPulseHeightDistribution.assign( iNumberOfTelescopeTypes, 0 ); //The sigma of the single PE pulse height distribution
   fSampleWidthAveragePulse.assign( iNumberOfTelescopeTypes, 0 );    //The sample width used in the average single pe pulse
-  fNSBRatePerPixel.assign( iNumberOfTelescopeTypes, 0 );            //the NSB rate per pixel in the focal plane;
-  fAfterPulsingConstant.assign( iNumberOfTelescopeTypes, 0 );       //Constant of a fit to the rate vs. threshold curve of a single pe
-                                       //Fit function exp(a+b*x), where a=constant b=slope
-  fAfterPulsingSlope.assign( iNumberOfTelescopeTypes, 0 );          //Slope of a fit to the rate vs. threshold curve of a single pe
-                                       //Fit function exp(a+b*x), where a=constant b=slope
   fTransitTimeSpread.assign( iNumberOfTelescopeTypes, 0 );       //Transit time spread
 
   fSamplingTime.assign( iNumberOfTelescopeTypes, 0 );       //The sampling rate or resolution of the simulated trace
@@ -312,6 +320,7 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
 
    string i_char;
    unsigned int i_telType = 0;
+   unsigned int i_PMTType = 0;
    unsigned int i_chan = 0;
    unsigned int i_NN = 0;
 
@@ -324,25 +333,34 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
       {
 	i_stream >> i_char; i_stream >> i_char; 
 	i_stream >> iNumberOfTelescopes;
-    cout<<" We have "<<iNumberOfTelescopes<<" telescopes in the array"<<endl;
+        cout<<" We have "<<iNumberOfTelescopes<<" telescopes in the array"<<endl;
 
-    resetTelVectors();     
+        resetTelVectors();     
+      }
+
+     //the number of PMT/SiPM types
+     if( iline.find( "NBRPMTTYPES " ) < iline.size() )
+      {
+	i_stream >> i_char; i_stream >> i_char; 
+	i_stream >> iNumberOfPMTTypes;
+        cout<<" We have "<<(Int_t)iNumberOfPMTTypes<<" types of PMTs/SiPMs in the array"<<endl;
+       
       }
 
      //the number of telescope types
      if( iline.find( "NBRTELTYPES " ) < iline.size() )
       {
-	      i_stream >> i_char; i_stream >> i_char; 
-	      i_stream >> iNumberOfTelescopeTypes;
-          cout<<" We have "<<(Int_t)iNumberOfTelescopeTypes<<" telescope TYPES in the array"<<endl;
-          resetTelTypeVectors();
+	i_stream >> i_char; i_stream >> i_char; 
+	i_stream >> iNumberOfTelescopeTypes;
+        cout<<" We have "<<(Int_t)iNumberOfTelescopeTypes<<" telescope TYPES in the array"<<endl;
+        resetTelTypeVectors();
        
       }
 
     if( iline.find( "CAMRA " ) < iline.size() )
       {     
 
-        //   -telescope type
+        //  -telescope type
         //  -the number of phototubes.
         //  -the number of groups of summed pixel
         //  * CAMRA 0 11328 2832
@@ -368,10 +386,6 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
         cout<<"Telescope type "<<i_telType<<"  Focal Lengths of telescopes in m for conversion of pixel from mm to deg: "<<fMirFocalLength[i_telType]<<endl;
        }
  
-       
-     
-
-
      //The Start of sampling the Trace before the average photon arrival time
      if( iline.find( "STARTSAMPLINGBEFOREAVERAGEPHOTONARRIVALTIME " ) < iline.size() )
       {
@@ -465,10 +479,11 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
      if( iline.find( "NSBRATEPERPIXEL " ) < iline.size() )
       {
 	i_stream >> i_char; i_stream >> i_char; 
-    i_stream >> i_telType;
-	i_stream >>  fNSBRatePerPixel[i_telType];
-        fNSBRatePerPixel[i_telType]*=1000;
-	cout<<"Telescope type "<<i_telType<<" The NSB rate in kHz per pixel in the focal plane is set to "<<fNSBRatePerPixel[i_telType]<<endl;
+        i_stream >> i_telType;
+        i_stream >> i_PMTType;
+	i_stream >>  vNSBRatePerPixel[i_telType][i_PMTType];
+        vNSBRatePerPixel[i_telType][i_PMTType]*=1000;
+	cout<<"Telescope number "<<i_telType<<" PMT/SiPM type "<<i_PMTType<<" The NSB rate in kHz per pixel is set to "<<vNSBRatePerPixel[i_telType][i_PMTType]<<endl;
       }
 
      //If we want to use Afterpulsing in the simulation
@@ -486,15 +501,15 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
      if( iline.find( "AFTERPULSINGCONSTANT " ) < iline.size() )
       {
 	i_stream >> i_char; i_stream >> i_char; 
-    i_stream >> i_telType;
-	i_stream >>  fAfterPulsingConstant[i_telType];
-	if(fAfterPulsingConstant[i_telType] > 0)
+    i_stream >> i_PMTType;
+	i_stream >>  fAfterPulsingConstant[i_PMTType];
+	if(fAfterPulsingConstant[i_PMTType] > 0)
          {
-           cout<<"Telescope type "<<i_telType<<" TraceGenerator: fAfterPulsingConstant set to a value >0, bad!"<<endl;
+           cout<<"PMT/SiPM type "<<i_PMTType<<" TraceGenerator: fAfterPulsingConstant set to a value >0, bad!"<<endl;
            exit(1);
          }	
-          cout<<"Telescope type "<<i_telType<<" Constant of a fit of the rate vs. Threshold measurement with exp(a+b*x), where a=constant= "
-             <<fAfterPulsingConstant[i_telType]<<endl;
+          cout<<"PMT/SiPM type "<<i_PMTType<<" Constant of a fit of the rate vs. Threshold measurement with exp(a+b*x), where a=constant= "
+             <<fAfterPulsingConstant[i_PMTType]<<endl;
       }
 
 
@@ -502,15 +517,15 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
      if( iline.find( "AFTERPULSINGSLOPE " ) < iline.size() )
       {
 	i_stream >> i_char; i_stream >> i_char; 
-    i_stream >> i_telType;
-	i_stream >>  fAfterPulsingSlope[i_telType];
-	if(fAfterPulsingSlope[i_telType] > 0)
+    i_stream >> i_PMTType;
+	i_stream >>  fAfterPulsingSlope[i_PMTType];
+	if(fAfterPulsingSlope[i_PMTType] > 0)
          {
-           cout<<"Telescope type "<<i_telType<<" TraceGenerator: fAfterPulsingSlope set to a value >0, bad!"<<endl;
+           cout<<"PMT/SiPM type "<<i_PMTType<<" TraceGenerator: fAfterPulsingSlope set to a value >0, bad!"<<endl;
            exit(1);
          }	
-	cout<<"Telescope type "<<i_telType<<" Slope of a fit of the rate vs. Threshold measurement with exp(a+b*x), where b=slope= "
-                <<fAfterPulsingSlope[i_telType]<<endl;
+	cout<<"PMT/SiPM type "<<i_PMTType<<" Slope of a fit of the rate vs. Threshold measurement with exp(a+b*x), where b=slope= "
+                <<fAfterPulsingSlope[i_PMTType]<<endl;
       }
 
     //If we want to use a transit time spread for the photo sensors
@@ -564,12 +579,12 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
      if( iline.find( "QUEFF " ) < iline.size() )
       {
 	i_stream >> i_char; i_stream >> i_char; 
-    i_stream >> i_telType;
+        i_stream >> i_PMTType; 
 	Int_t datapoints;
 	i_stream >>  datapoints ;
-	wl[i_telType].clear();
-	qe[i_telType].clear();
-	cout<<endl<<"Telescope type "<<i_telType<<" Reading in QE"<<endl;
+	wl[i_PMTType].clear();
+	qe[i_PMTType].clear();
+	cout<<endl<<"PMT/SiPM type "<<i_telType<<" Reading in QE"<<endl;
 	cout<<datapoints<<endl;
 	for(Int_t i=0;i<datapoints;i++)
 	  {
@@ -579,16 +594,13 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
 	    Float_t q;
 	    d_stream >> w;
 	    d_stream >> q;
-	    wl[i_telType].push_back(w);
-	    qe[i_telType].push_back(q);
+	    wl[i_PMTType].push_back(w);
+	    qe[i_PMTType].push_back(q);
 	    cout<<w<<"  "<<q<<endl;
 	      
 	  }
 	cout<<endl;
       }
-
-
-
 
      //Clipping level at X mV
      if( iline.find( "DISCCLIPPINGLEVEL " ) < iline.size() )
@@ -1080,10 +1092,13 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
      if( iline.find( "PMPIX " ) < iline.size() )
       {
         i_stream >> i_char; i_stream >> i_char;
-	    i_stream >> i_telType;
+
+        i_stream >> i_telType;
+
+        i_stream >> i_PMTType;
+ 
         int tubetype;
 	    i_stream >> tubetype;
-	    i_stream >> i_chan;
 		int sides = 0;
 		if(tubetype == 0)//hexagon
 			sides = 6;
@@ -1092,13 +1107,16 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
 		if(tubetype == 2)//circle
 			sides = 1;
 
+	i_stream >> i_chan;
+
         iTubeSides[i_telType][i_chan] = sides; 
-	    i_stream >> fXTubeMM[i_telType][i_chan]; 
-	    i_stream >> fYTubeMM[i_telType][i_chan];
-	    i_stream >> fSizeTubeMM[i_telType][i_chan];
-		i_stream >> fRotAngle[i_telType][i_chan];
-		fRotAngle[i_telType][i_chan]*=(TMath::DegToRad());
-        cout<<"Chan "<<i_chan<<" telType  "<<i_telType<<" Tubesides "<<iTubeSides[i_telType][i_chan]<<" x-Pos [mm] "<<fXTubeMM[i_telType][i_chan]<<" y-Pos [mm]  "<<fYTubeMM[i_telType][i_chan]<<" diameter [mm] "<<fSizeTubeMM[i_telType][i_chan]<<" rotAngle [deg]  "<<fRotAngle[i_telType][i_chan]<<endl;
+        iPMTType[i_telType][i_chan] = i_PMTType;
+	i_stream >> fXTubeMM[i_telType][i_chan]; 
+	i_stream >> fYTubeMM[i_telType][i_chan];
+	i_stream >> fSizeTubeMM[i_telType][i_chan];
+	i_stream >> fRotAngle[i_telType][i_chan];
+	fRotAngle[i_telType][i_chan]*=(TMath::DegToRad());
+        cout<<"Chan "<<i_chan<<" telType  "<<i_telType<<" PMT type "<<i_PMTType <<" Tubesides "<<iTubeSides[i_telType][i_chan]<<" x-Pos [mm] "<<fXTubeMM[i_telType][i_chan]<<" y-Pos [mm]  "<<fYTubeMM[i_telType][i_chan]<<" diameter [mm] "<<fSizeTubeMM[i_telType][i_chan]<<" rotAngle [deg]  "<<fRotAngle[i_telType][i_chan]<<endl;
        } 
 
 
