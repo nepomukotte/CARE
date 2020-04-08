@@ -119,6 +119,7 @@ void ReadConfig::resetTelTypeVectors()
   fCrosstalkValue.assign( iNumberOfTelescopeTypes, 0 );             
   bSiPM.assign( iNumberOfTelescopeTypes, 0 );                       //we use SiPM as photon detectors
   bUseSumTrigger.assign( iNumberOfTelescopeTypes, 0 );              //Sum pixels before discriminator
+  iTelescopeTriggerType.assign( iNumberOfTelescopeTypes, -1 );       //Sum pixels before discriminator
   fClippingLevel.assign( iNumberOfTelescopeTypes, 0 );              //The level in mV at which the signals are clipped 
   bDoClipping.assign( iNumberOfTelescopeTypes, 0 );                 //Do we clip the signals before summing
   fDiscThreshold.assign( iNumberOfTelescopeTypes, 0 );              //Discriminator threshold of pixel
@@ -364,7 +365,7 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
 
         //  -telescope type
         //  -the number of phototubes.
-        //  -the number of groups of summed pixel
+        //  -the number of groups 
         //  * CAMRA 0 11328 2832
          i_stream >> i_char; i_stream >> i_char;
 	 i_stream >> i_telType;                                   
@@ -372,7 +373,7 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
          i_stream >> iNumberGroups[i_telType];
          cout << "FPI configuration of telescope type "<<i_telType<<endl; 
 	 cout << "total number of channels: " << fCNChannels[i_telType]  << endl;
-	 cout << "the number of sum groups: " << iNumberGroups[i_telType]  << endl;
+	 cout << "the number of groups: " << iNumberGroups[i_telType]  << endl;
 
         if(i_telType == (UInt_t)(iNumberOfTelescopeTypes-1))
              resetCamVectors();
@@ -1005,6 +1006,15 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
         cout<<"Chan "<<i_chan<<" teltype  "<<i_telType<<" number of cells "<<vNumCellsPerSIPM[i_telType][i_chan]<<" optical X-talk "<<vSiPMOpticalCrosstalk[i_telType][i_chan]<<endl;
        } 
 
+    //Which Telescope Trigger will it be
+     if( iline.find( "TELESCOPETRIGGERTYPE" ) < iline.size() )
+      {
+	i_stream >> i_char; i_stream >> i_char; 
+        i_stream >> i_telType;
+        i_stream >> iTelescopeTriggerType[i_telType]; 
+        cout<<"Telescope type "<<i_telType<<" will use Telescope-Trigger type : "<<iTelescopeTriggerType[i_telType]<<endl;
+      }
+
     //Do we use a sum trigger
      if( iline.find( "USESUMTRIGGER " ) < iline.size() )
       {
@@ -1013,7 +1023,7 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
     int tmp;
     i_stream >> tmp;
     bUseSumTrigger[i_telType] = (Bool_t)tmp;
-	cout<<"Telescope type "<<i_telType<<" Will use Sum trigger : "<<bUseSumTrigger[i_telType]<<endl;
+	cout<<"Telescope type "<<i_telType<<" will use Sum trigger : "<<bUseSumTrigger[i_telType]<<endl;
       }
 
    //Do we want to use the Patches 

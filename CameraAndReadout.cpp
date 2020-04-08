@@ -9,7 +9,8 @@
 #include <string>
 #include <vector>
 
-#include "TriggerTelescopeNextNeighbor.h"
+#include "TriggerTelescopeBase.h"
+#include "TriggerTelescopeVERITAS.h"
 #include "ArrayTrigger.h"
 #include "ReadConfig.h"
 #include "TraceGenerator.h"
@@ -18,6 +19,7 @@
 #include "TelescopeData.h"
 
 enum SimulationPackageCodes   {KNOWNNOT,LEEDS,GRISU,KASCADE,CORSIKA,UCLA};
+enum TelescopeTriggerTypeCodes   {BASE,VERITAS,SPB2};
 #include "VG_writeVBF.h"
 
 
@@ -262,13 +264,26 @@ int main( int argc, char **argv )
    ///////////////////////////////////////////////////
 
 
-   TriggerTelescopeNextNeighbor *Teltrigger[uNumTelescopeTypes]; 
+   TriggerTelescopeBase *Teltrigger[uNumTelescopeTypes]; 
    for(UInt_t t = 0 ; t<uNumTelescopeTypes; t++)
      {
 	 
-       cout<<endl<<"Starting Trigger for telescopetype"<<t<<endl;
-       Teltrigger[t] = new TriggerTelescopeNextNeighbor(readConfig, t, rand, DEBUG_TELTRIGGER, display ); 
-       
+       cout<<endl<<"Starting Trigger for telescopetype "<<t<<endl;
+        TelescopeTriggerTypeCodes trigtype = (TelescopeTriggerTypeCodes) readConfig->GetTelescopeTriggerType(t);
+       switch(trigtype)
+        {
+          case BASE:
+            cout<<"BASE selected as telescope trigger ... initializing"<<endl; 
+            Teltrigger[t] = new TriggerTelescopeBase(readConfig, t, rand, DEBUG_TELTRIGGER, display ); 
+            break;
+          case VERITAS:
+            cout<<"VERITAS selected as telescope trigger ... initializing"<<endl; 
+            Teltrigger[t] = new TriggerTelescopeVERITAS(readConfig, t, rand, DEBUG_TELTRIGGER, display ); 
+            break;
+          default:
+            cout<<"No valid telescope trigger type specified:"<<trigtype<<endl;
+            exit(-1);
+       }
        cout<<"Telescope trigger is initialized"<<endl;
      }
 
@@ -757,8 +772,8 @@ int main( int argc, char **argv )
 	     //generate traces with trace generator
              Int_t telType = telData[tel]->GetTelescopeType();
 
-	     if(p%100==0 || p == readConfig->GetNumberOfPedestalEventsToStabilize())
-	            cout<<"RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
+	     //if(p%100==0 || p == readConfig->GetNumberOfPedestalEventsToStabilize())
+	     //       cout<<"RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
 
              telData[tel]->ResetTraces();
              traceGenerator[telType]->SetTelData(telData[tel]);
@@ -966,8 +981,8 @@ int main( int argc, char **argv )
            
 		     // Teltrigger->ShowTrace(0,0);
 
-	         if(DEBUG_MAIN)
-		       cout<<"done trigger, RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
+	         //if(DEBUG_MAIN)
+		 //      cout<<"done trigger, RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
 
              fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
 	         GroupTriggerBits[n] =  telData[n]->GetTriggeredGroups();
