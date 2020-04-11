@@ -44,13 +44,13 @@ class TelescopeData {
 
   //trigger stuff
                    //returns vector with the trigger bits of each group
-  vector< Bool_t>  GetTriggeredGroups(){ return bTriggeredGroups; };
-  Int_t            GetNumTriggeredGroups(){ return iNumTriggeredGroups; };
+  vector< Bool_t>  GetTriggeredTriggerPixels(){ return bTriggeredTriggerPixels; };
+  Int_t            GetNumTriggeredTriggerPixels(){ return iNumTriggeredTriggerPixels; };
                    //time when telescope has triggered
   Float_t          GetTelescopeTriggerTime(){ return fTelescopeTriggerTime; };
                    //Returns true if telescope has triggered, false otherwise
   Bool_t           GetTelescopeTrigger(){ return bTelescopeHasTriggered; };
-  Bool_t           GetGroupTrigger(Int_t iGroupID){return  bTriggeredGroups[iGroupID]; };
+  Bool_t           GetGroupTrigger(Int_t iGroupID){return  bTriggeredTriggerPixels[iGroupID]; };
                    //Returns a vector with a list of Groups that are in the Trigger cluster
   vector<int>      GetTriggerCluster(){ return vTriggerCluster; };
 
@@ -99,10 +99,10 @@ class TelescopeData {
   Float_t         fDiscriminatorThreshold;              
   Float_t         fTriggerTime;    
   vector<Float_t> fTimeOverThreshold;                   //TimerOverThreshold for each pixel that triggered;
-  vector<Bool_t>  bTriggeredGroups;                     //holds the information whether a group has triggered or not;
+  vector<Bool_t>  bTriggeredTriggerPixels;                     //holds the information whether a group has triggered or not;
   vector<Float_t> fDiscriminatorTime;                   //holds the time when the group has triggered;
   Float_t         fTelescopeTriggerTime;                //The time when the telescope triggered
-  Int_t           iNumTriggeredGroups;                  //holds the number of triggered groups
+  Int_t           iNumTriggeredTriggerPixels;                  //holds the number of triggered trigger pixels
 
   Bool_t bArrayTriggered;                               //If telescope has been triggered by the array trigger
   Bool_t bTelescopeHasTriggered;                        //If telescope has triggered

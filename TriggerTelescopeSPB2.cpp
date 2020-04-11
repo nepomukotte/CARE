@@ -1,12 +1,12 @@
-/* \file TriggerTelescopeVERITAS.cpp
-   Implementation of a next neighbor trigger for VERITAS
+/* \file TriggerTelescopeSPB2.cpp
+   Implementation of a next neighbor trigger for SPB2
    1. Signal of X pixels are summed
    2. Discrimination of summed signal
    3. next neighbor logic (multiplicity of Y) 
    4. Implementaton of the rate feedback in the discriminator path.
 */
 
-#include "TriggerTelescopeVERITAS.h"
+#include "TriggerTelescopeSPB2.h"
 #include <iostream>
 #include <math.h>
 #include <fstream>
@@ -23,247 +23,171 @@ using namespace std;
 
 //---------------------------------------------------------------------------------------
 //Constructor
-TriggerTelescopeVERITAS::TriggerTelescopeVERITAS(ReadConfig *readConfig, int telType, TRandom3 *generator,Bool_t debug,Display *display) : TriggerTelescopeBase(readConfig,telType,generator,debug,display)
+TriggerTelescopeSPB2::TriggerTelescopeSPB2(ReadConfig *readConfig, int telType, TRandom3 *generator,Bool_t debug,Display *display) : TriggerTelescopeBase(readConfig,telType,generator,debug,display)
 {
-  cout<<"Initializing the Telescope Trigger for VERITAS"<<endl;
-  fDiscRFBConstant = 0;  
-  fDiscRFBDynamic = 0;
-  bDiscRFBUsage= 0;
+  cout<<"Initializing the Telescope Trigger for SPB2"<<endl;
 
-  lZeroCrossings = 0;               //holds the number of zerocrossings for one event counted over all pixels in the camera
-  lNumEvents = 0;   
+  if(readConfig->GetUseSumTrigger(telType))
+   {
+     cout<<"Disable the sumtrigger in the configuration file!!"<<endl;
+     exit(-1);
+   }
 
-  SetParametersFromConfigFile(readConfig);	
+  iNumPixels = readConfig->GetNumberPixels(telType);
+ 
+  cout<<"Setting up the groups"<<endl;
+  iNumGroups = readConfig->GetNumberGroups(telType);
+  iGroupNeighborIDs = readConfig->GetNeighborsOfGroup(telType);
+  iGroupMembers = readConfig->GetMembersOfGroups(telType);
+  if(iNumGroups <=0)
+      {
+        cout<<"You did not seem to have defined a proper number of groups: "<<iNumGroups<<endl;
+        cout<<"do something about it!!"<<endl;
+        exit(1);
+      }
+ cout<<"The camera is divided into "<<iNumGroups<<" groups."<<endl;
+
+
+  //Creating the vectors that hold the IDs of triggered pixels and their times
+  vector< int > i_pix;
+  vTriggeredPixelInGroup = new vector< vector<int> >;
+  vTriggeredPixelInGroup->assign(iNumGroups , i_pix );
+
+  vector< float > f_pix;
+  vTriggerTimesInGroup = new vector< vector<float> >;
+  vTriggerTimesInGroup->assign(iNumGroups , f_pix );
+
+ 
 }
 
-//-----------------------------------------------------------------------------------------------------------------------
-//Loads the traces from the pixels (sums them up)
-void  TriggerTelescopeVERITAS::LoadEvent(TelescopeData *TelData)
-
+TriggerTelescopeSPB2::~TriggerTelescopeSPB2()
 {
+  delete vTriggeredPixelInGroup;
+  delete vTriggerTimesInGroup;
+}
 
- telData = TelData;
-
- telData->bTriggeredGroups.assign(iNumSumPixGroups,kFALSE);
-
- telData->fDiscriminatorTime.assign(iNumSumPixGroups,-1e6);
-
- //can be removed is only needed to check the Time over threshold of all pixels in a trigger.
- telData->fTimeOverThreshold.assign(iNumSumPixGroups,0);
-
- //The start sample for the delayed trace;
- Int_t iStartSample = (int)(fDiscDelay/fSamplingTime)+1;
-
- if(bDebug)
-     {
-        cout<<"Start sample for delayed pulse "<<iStartSample<<endl;
-     }
-
-
-//Needs to be moved to VERITAS Trigger class
- Float_t fOffsetDueToRFBinCFD = 0.0;
-   if(bDiscRFBUsage) fOffsetDueToRFBinCFD = -0.18*fDiscRFBDynamic; 
-
- for(Int_t g=0;g<iNumSumPixGroups;g++)
+//---------------------------------------------------------------------------------------------
+// Identifies the pixels in each group/MUSIC that triggered and saves their IDs and
+// trigger times
+void TriggerTelescopeSPB2::FindTriggeredGroups()
+{
+ 
+  //Loop over all groups
+  for(int g=0;g<iNumGroups;g++)
     {
-      fTracesInSumGroups[g].assign(telData->iNumSamplesPerTrace,0.0);
-      fTracesInSumGroupsConstantFraction[g].assign(telData->iNumSamplesPerTrace,fOffsetDueToRFBinCFD);
-      //loop over all group members and add their trace to the trace of the sumgroup
-      for(UInt_t n = 0; n<iSumGroupMembers[g].size();n++)
-         {      
-           Int_t memberID = iSumGroupMembers[g][n];
-           for(Int_t i = 0 ; i<telData->iNumSamplesPerTrace; i++)
-	          {
-	             Float_t fsignal = telData->fTraceInPixel[memberID][i]*fPEtomVConversion ;
-                 //cout<<fsignal<<"  "<<telData->fTraceInPixel[memberID][i]<<"  "<<fPEtomVConversion<<endl;
-                 fsignal = fsignal < fClippingLevel && bDoClipping == kTRUE   ? fClippingLevel : fsignal;	      
-	             Float_t fsigDelayed = i<iStartSample ? telData->fTraceInPixel[memberID][0]*fPEtomVConversion : telData->fTraceInPixel[memberID][i-iStartSample]*fPEtomVConversion;
-                 fsigDelayed = fsigDelayed > fClippingLevel && bDoClipping == kTRUE  ? fClippingLevel : fsigDelayed;	      
-	      
-	             Float_t CFDsignal = fsignal*fDiscConstantFractionAttenuation-fsigDelayed;
-	             fTracesInSumGroups[g][i]+=fsignal;
-	             fTracesInSumGroupsConstantFraction[g][i]+=CFDsignal;
-	         }
-            if(bDebug)
-                {
-                     cout<<"Summed group "<<g<<" added pixel "<<memberID<<endl; 
-	             //    ShowTrace(g, false);
+       vTriggeredPixelInGroup->at(g).clear();
+       vTriggerTimesInGroup->at(g).clear();
+       //cout<<"MUSIC "<<g<<endl;
+         //Loop over all pixels in a group
+         for(unsigned p=0;p<iGroupMembers[g].size();p++)
+           {
+             //cout<<"pixel "<<iGroupMembers[g][p]<<endl;
+             if(telData->bTriggeredTriggerPixels[iGroupMembers[g][p]])
+               {
+                 //save the pixel ID and trigger time if the pixel is triggered
+                // cout<<g<<"  "<<iGroupMembers[g][p]<<"  "<<telData->fDiscriminatorTime[iGroupMembers[g][p]]<<endl;
+                 vTriggeredPixelInGroup->at(g).push_back(iGroupMembers[g][p]);
+                 vTriggerTimesInGroup->at(g).push_back(telData->fDiscriminatorTime[iGroupMembers[g][p]]);
+                 //cout<<iGroupMembers[g][p]<<"  "<<telData->fDiscriminatorTime[iGroupMembers[g][p]]<<endl;
                }
-           
-	     }
+           }
     }
-  
-
-  //cout<<"Finished loading the event"<<endl;
-
 }
 
+
+//----------------------------------------------------------------------------------------------
+// Execute the Coincidence logic. Identify the trigger time if a trigger accured
+//
+bool TriggerTelescopeSPB2::RunCoincidenceLogic()
+{
+
+  telData->bTelescopeHasTriggered = false;
+ 
+  vector<float> vCoincidenceTriggerTimes;
+  
+  //Loop over all groups and identify if a pixel in a neighboring group fired in coincidence
+  for(int g=0;g<iNumGroups;g++)
+    {
+       //cout<<"Group "<<g<<" has "<<vTriggeredPixelInGroup->at(g).size()<<" triggered pixel"<<endl;
+       //loop over all pixels in this group that triggered
+       for(unsigned p=0;p<vTriggeredPixelInGroup->at(g).size();p++)
+          {
+             //get triggered time
+             float fTriggerTime = vTriggerTimesInGroup->at(g)[p];
+             //cout<<"Trigger time this pixel "<<fTriggerTime<<endl;
+             //loop over the triggered pixels in the neighboring groups 
+             for(unsigned ng=0;ng<iGroupNeighborIDs[g].size();ng++)
+               {
+                 int GroupNeighborID = iGroupNeighborIDs[g][ng];
+                 //cout<<"Checking out neighbor group "<<GroupNeighborID<<endl;
+                 if(GroupNeighborID>g) //only do this if we have not already visited the group
+                   {
+                     for(unsigned np=0;np<vTriggerTimesInGroup->at(GroupNeighborID).size();np++)
+                        {
+                          //cout<<vTriggerTimesInGroup->at(GroupNeighborID)[np]<<endl;
+                          //for each of the triggered pixel in a neighbor group find out if it is in coincidence
+                          if(fabs(fTriggerTime-vTriggerTimesInGroup->at(GroupNeighborID)[np])<fWidthDiscriminator)
+                            {
+                               // cout<<"trigger"<<endl;
+                               //we have a trigger, save the trigger time and
+                               telData->bTelescopeHasTriggered = true;
+                               vCoincidenceTriggerTimes.push_back(
+                                      fTriggerTime>vTriggerTimesInGroup->at(GroupNeighborID)[np] ? fTriggerTime : vTriggerTimesInGroup->at(GroupNeighborID)[np]
+ );
+                              //cout<<"Trigger time "<<vCoincidenceTriggerTimes[vCoincidenceTriggerTimes.size()-1]<<endl;
+                            }
+                        }
+                   }
+               }
+          }   
+    } 
+
+
+   //Find the first trigger time
+   telData->fTelescopeTriggerTime = 1e10;
+   if(telData->bTelescopeHasTriggered)
+     {
+        for(unsigned g=0;g<vCoincidenceTriggerTimes.size();g++)
+            telData->fTelescopeTriggerTime = telData->fTelescopeTriggerTime > vCoincidenceTriggerTimes[g] ? vCoincidenceTriggerTimes[g] : telData->fTelescopeTriggerTime;
+      }
+    //cout<<"Telescope trigger at "<<telData->fTelescopeTriggerTime<<" trigger bit "<<telData->bTelescopeHasTriggered<<endl;
+   return telData->bTelescopeHasTriggered;
+}
 
 //This does the actual triggering
 //It returns true if the telescope has triggered and false if not
-Bool_t  TriggerTelescopeVERITAS::RunTrigger()
+Bool_t  TriggerTelescopeSPB2::RunTrigger()
 {
-    //cout<<"TriggerTelescopeVERITAS::RunTrigger"<<endl;
-    //Get all the zerocrossings for the RFB
-    lZeroCrossings += GetNumZeroCrossings();
-    lNumEvents++;
+  // cout<<"TriggerTelescopeSPB2::RunTrigger"<<endl;
 
-    //    cout<<"Have done the zerocrossings "<<lZeroCrossings<<endl;
 
-    //Set the updated RFB feedback
-    if(bDiscRFBUsage)
-      {
-
-	   if(bDebug)
-	     cout<<lNumEvents<<" RFB dynamic value  "<<fDiscRFBConstant * lZeroCrossings /(lNumEvents* (fTraceLength-fDiscDelay)*1e-3*iNumSumPixGroups)<<endl;
-
-       SetDiscriminatorRFBDynamic(fDiscRFBConstant * lZeroCrossings /(lNumEvents* (fTraceLength-fDiscDelay)*1e-3*iNumSumPixGroups));
-      }
-
-   //Run the CFD simulation
-   telData->iNumTriggeredGroups=0;
-   for(Int_t i=0;i<iNumSumPixGroups;i++)
+   //Run the CFD simulation on all pixels 
+   telData->iNumTriggeredTriggerPixels=0;
+   for(Int_t i=0;i<iNumTriggerPixels;i++)
     {
       if(RunDiscriminator(i))
-	     telData->iNumTriggeredGroups++;
+	     telData->iNumTriggeredTriggerPixels++;
     }
 
-  //  cout<<"Done with the CFD"<<endl<<endl;
+   //cout<<"Done with the CFD"<<endl<<endl;
+   //cout<<telData->iNumTriggeredTriggerPixels<<" Trigger pixel triggered"<<endl;
 
-  telData->vTriggerCluster.clear();
-  //Below is the L2 simulation.
-   if(bUsePatches==kFALSE)
-     {
-      if(bDebug)
-       cout<<"Not using trigger patches in the simulation"<<endl;
+  //Implementation of the SPB2 Trigger logic
+  //First figure out which MUSIC chips have triggered
+  FindTriggeredGroups();
 
-      iPixelTriggeredInPatch.resize(1);
-      telData->bTelescopeHasTriggered =  RunL2Patch(0,&(telData->fTelescopeTriggerTime));//important, first argument has to be 0
-      telData->vTriggerCluster = iPixelTriggeredInPatch[0];
-     }   
-   else //If we use patches
-     {
-      if(bDebug)
-       cout<<"Using trigger patches in the simulation"<<endl;
-	   
-      iPixelTriggeredInPatch.resize(vPatch.size());
-      telData->bTelescopeHasTriggered = RunL2WithPatches();
-     }
+  RunCoincidenceLogic();
 
-   
-   if(telData->bTelescopeHasTriggered && bDebug)
+  
+
+  if(telData->bTelescopeHasTriggered && bDebug)
      {
        cout<<"Event triggered telescope"<<endl; 
        cout<<"at time "<< telData->fTelescopeTriggerTime<<endl;
      }
-  
+
   return telData->bTelescopeHasTriggered;
 }
 
 
-
-
-//---------------------------------------------------------------------------------------
-//Get the numbers of zerocrossings for the loaded event from negative to positive
-Long_t TriggerTelescopeVERITAS::GetNumZeroCrossings()
-{
-
-  Long_t lCrossings=0;
-
-  Int_t iStartSample = (int)(fDiscDelay/fSamplingTime)+1;
-
-   for(Int_t g=0;g<iNumSumPixGroups;g++)
-    {
-      
-      Bool_t bAboveZero = kFALSE;
-      for(Int_t i = iStartSample; i<telData->iNumSamplesPerTrace; i++)
-	{
-	  //cout<<g<<"  "<<i<<endl;
-	  Bool_t bCFDOut = fTracesInSumGroupsConstantFraction[g][i]>=0 ? kTRUE : kFALSE;
-
-	  if(bCFDOut && !bAboveZero )
-	    {
-	      lCrossings++;
-	      bAboveZero=kTRUE;
-	    }
-	  else if(!bCFDOut && bAboveZero)
-	    bAboveZero=kFALSE;
-	}
-
-    }
-   
-
-   return lCrossings;
-
-}
-
-
-//------------------------------------------------------------------------------------------------------
-//
-// Set the rate feedback of the discriminator
-// Putting it to 0 will turn it off 
-void TriggerTelescopeVERITAS::SetDiscriminatorRFBConstant(Float_t rfb)
-{ 
-
-  if(rfb<0)
-    {
-      cout<<"SetDiscriminatorRFBConstant: The RFB is set to  a value < 0 put it to either 0 or a lager value"<<endl;
-      cout<<"You tried to set them to "<<rfb<<endl;
-      exit(1);
-    }
-
-  fDiscRFBConstant = rfb; 
-
-}
-
-//------------------------------------------------------------------------------------------------------
-//
-// Set the dynamic value of the rate feedback of the discriminator
-// Putting it to 0 will turn it off 
-void TriggerTelescopeVERITAS::SetDiscriminatorRFBDynamic(Float_t rfb)
-{ 
-
-  if(rfb<0)
-    {
-      cout<<"SetDiscriminatorRFBDynamic: The dynamic value for the RFB is set to  a value < 0 put it to either 0 or a lager value"<<endl;
-      cout<<"You tried to set them to "<<rfb<<endl;
-      exit(1);
-    }
-
-  fDiscRFBDynamic = rfb; 
-
-}
-
-//------------------------------------------------------------------------------------------------------
-//
-// Set the dynamic value of the rate feedback of the discriminator
-// Putting it to 0 will turn it off 
-void TriggerTelescopeVERITAS::SetDiscriminatorRFBUsage(Bool_t rfbuse)
-{ 
-
-  bDiscRFBUsage = rfbuse; 
-
-}
-
-
-//Reads in  the config file and sets all variables
-void   TriggerTelescopeVERITAS::SetParametersFromConfigFile(ReadConfig *readConfig ){
-
-   cout <<endl<< "TriggerTelescopeVERITAS::SetParametersFromConfigFile " << endl;
-
-   //Do we use the RFB circuit?
-   bDiscRFBUsage = readConfig->GetRFBUsage(iTelType);
-   cout<<"Do we use the RFB circuit: "<<bDiscRFBUsage<<endl;
-
-   //The Constant Value in the RFB in the discriminator
-   fDiscRFBConstant = readConfig->GetDiscriminatorRFBConstant(iTelType);
-   cout<<"If the RFB circuit is used this is the magnitude of the rate dependend feedback  in mV/MHz "<<fDiscRFBConstant<<endl;
-       
-   //The dyamic value in the RFB in the discriminator
-   fDiscRFBDynamic = readConfig->GetDiscriminatorRFBDynamic(iTelType);
-   cout<<"The initial dynamic value in the RFB in mV (will be mulitplied with 0.18 in the sims). If RFB circuit is not used this is not used "<<fDiscRFBDynamic<<endl;
-     
-   SetDiscriminatorRFBConstant(fDiscRFBConstant);
-   SetDiscriminatorRFBDynamic(fDiscRFBDynamic);
-}
 

@@ -11,6 +11,7 @@
 
 #include "TriggerTelescopeBase.h"
 #include "TriggerTelescopeVERITAS.h"
+#include "TriggerTelescopeSPB2.h"
 #include "ArrayTrigger.h"
 #include "ReadConfig.h"
 #include "TraceGenerator.h"
@@ -280,6 +281,10 @@ int main( int argc, char **argv )
             cout<<"VERITAS selected as telescope trigger ... initializing"<<endl; 
             Teltrigger[t] = new TriggerTelescopeVERITAS(readConfig, t, rand, DEBUG_TELTRIGGER, display ); 
             break;
+          case SPB2:
+            cout<<"SPB2 selected as telescope trigger ... initializing"<<endl; 
+            Teltrigger[t] = new TriggerTelescopeSPB2(readConfig, t, rand, DEBUG_TELTRIGGER, display ); 
+            break;
           default:
             cout<<"No valid telescope trigger type specified:"<<trigtype<<endl;
             exit(-1);
@@ -425,8 +430,8 @@ int main( int argc, char **argv )
        Teltrigger[TelType]->GetBiasCurve().Write("TVecBiasCurve");
        Teltrigger[TelType]->GetBiasCurveError().Write("TVecBiasCurveError");
        Teltrigger[TelType]->GetBiasCurveScanPoints().Write("TVecBiasCurveScanPoints");
-       Teltrigger[TelType]->GetGroupRateVsThresholdError().Write("TVecGroupRateVsThresholdError");
-       Teltrigger[TelType]->GetGroupRateVsThreshold().Write("TVecGroupRateVsThreshold");
+       Teltrigger[TelType]->GetTrigPixRateVsThresholdError().Write("TVecTrigPixRateVsThresholdError");
+       Teltrigger[TelType]->GetTrigPixRateVsThreshold().Write("TVecTrigPixRateVsThreshold");
        TVectorF NumTelescopes(1);
        NumTelescopes[0]= uNumTelescopes;
        NumTelescopes.Write("TVecNumTelescopes");
@@ -985,7 +990,7 @@ int main( int argc, char **argv )
 		 //      cout<<"done trigger, RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
 
              fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
-	         GroupTriggerBits[n] =  telData[n]->GetTriggeredGroups();
+	         GroupTriggerBits[n] =  telData[n]->GetTriggeredTriggerPixels();
 	         vTelescopeTriggerBits[n]=telData[n]->GetTelescopeTrigger();
 
 	        } //end looping over telescopes doing trigger

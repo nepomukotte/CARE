@@ -44,12 +44,12 @@ void  TriggerTelescopeVERITAS::LoadEvent(TelescopeData *TelData)
 
  telData = TelData;
 
- telData->bTriggeredGroups.assign(iNumSumPixGroups,kFALSE);
+ telData->bTriggeredTriggerPixels.assign(iNumTriggerPixels,kFALSE);
 
- telData->fDiscriminatorTime.assign(iNumSumPixGroups,-1e6);
+ telData->fDiscriminatorTime.assign(iNumTriggerPixels,-1e6);
 
  //can be removed is only needed to check the Time over threshold of all pixels in a trigger.
- telData->fTimeOverThreshold.assign(iNumSumPixGroups,0);
+ telData->fTimeOverThreshold.assign(iNumTriggerPixels,0);
 
  //The start sample for the delayed trace;
  Int_t iStartSample = (int)(fDiscDelay/fSamplingTime)+1;
@@ -64,14 +64,14 @@ void  TriggerTelescopeVERITAS::LoadEvent(TelescopeData *TelData)
  Float_t fOffsetDueToRFBinCFD = 0.0;
    if(bDiscRFBUsage) fOffsetDueToRFBinCFD = -0.18*fDiscRFBDynamic; 
 
- for(Int_t g=0;g<iNumSumPixGroups;g++)
+ for(Int_t g=0;g<iNumTriggerPixels;g++)
     {
-      fTracesInSumGroups[g].assign(telData->iNumSamplesPerTrace,0.0);
-      fTracesInSumGroupsConstantFraction[g].assign(telData->iNumSamplesPerTrace,fOffsetDueToRFBinCFD);
+      fTracesInTriggerPixels[g].assign(telData->iNumSamplesPerTrace,0.0);
+      fTracesInTriggerPixelsConstantFraction[g].assign(telData->iNumSamplesPerTrace,fOffsetDueToRFBinCFD);
       //loop over all group members and add their trace to the trace of the sumgroup
-      for(UInt_t n = 0; n<iSumGroupMembers[g].size();n++)
+      for(UInt_t n = 0; n<iTrigPixMembers[g].size();n++)
          {      
-           Int_t memberID = iSumGroupMembers[g][n];
+           Int_t memberID = iTrigPixMembers[g][n];
            for(Int_t i = 0 ; i<telData->iNumSamplesPerTrace; i++)
 	          {
 	             Float_t fsignal = telData->fTraceInPixel[memberID][i]*fPEtomVConversion ;
@@ -81,8 +81,8 @@ void  TriggerTelescopeVERITAS::LoadEvent(TelescopeData *TelData)
                  fsigDelayed = fsigDelayed > fClippingLevel && bDoClipping == kTRUE  ? fClippingLevel : fsigDelayed;	      
 	      
 	             Float_t CFDsignal = fsignal*fDiscConstantFractionAttenuation-fsigDelayed;
-	             fTracesInSumGroups[g][i]+=fsignal;
-	             fTracesInSumGroupsConstantFraction[g][i]+=CFDsignal;
+	             fTracesInTriggerPixels[g][i]+=fsignal;
+	             fTracesInTriggerPixelsConstantFraction[g][i]+=CFDsignal;
 	         }
             if(bDebug)
                 {
@@ -115,17 +115,17 @@ Bool_t  TriggerTelescopeVERITAS::RunTrigger()
       {
 
 	   if(bDebug)
-	     cout<<lNumEvents<<" RFB dynamic value  "<<fDiscRFBConstant * lZeroCrossings /(lNumEvents* (fTraceLength-fDiscDelay)*1e-3*iNumSumPixGroups)<<endl;
+	     cout<<lNumEvents<<" RFB dynamic value  "<<fDiscRFBConstant * lZeroCrossings /(lNumEvents* (fTraceLength-fDiscDelay)*1e-3*iNumTriggerPixels)<<endl;
 
-       SetDiscriminatorRFBDynamic(fDiscRFBConstant * lZeroCrossings /(lNumEvents* (fTraceLength-fDiscDelay)*1e-3*iNumSumPixGroups));
+       SetDiscriminatorRFBDynamic(fDiscRFBConstant * lZeroCrossings /(lNumEvents* (fTraceLength-fDiscDelay)*1e-3*iNumTriggerPixels));
       }
 
    //Run the CFD simulation
-   telData->iNumTriggeredGroups=0;
-   for(Int_t i=0;i<iNumSumPixGroups;i++)
+   telData->iNumTriggeredTriggerPixels=0;
+   for(Int_t i=0;i<iNumTriggerPixels;i++)
     {
       if(RunDiscriminator(i))
-	     telData->iNumTriggeredGroups++;
+	     telData->iNumTriggeredTriggerPixels++;
     }
 
   //  cout<<"Done with the CFD"<<endl<<endl;
@@ -172,14 +172,14 @@ Long_t TriggerTelescopeVERITAS::GetNumZeroCrossings()
 
   Int_t iStartSample = (int)(fDiscDelay/fSamplingTime)+1;
 
-   for(Int_t g=0;g<iNumSumPixGroups;g++)
+   for(Int_t g=0;g<iNumTriggerPixels;g++)
     {
       
       Bool_t bAboveZero = kFALSE;
       for(Int_t i = iStartSample; i<telData->iNumSamplesPerTrace; i++)
 	{
 	  //cout<<g<<"  "<<i<<endl;
-	  Bool_t bCFDOut = fTracesInSumGroupsConstantFraction[g][i]>=0 ? kTRUE : kFALSE;
+	  Bool_t bCFDOut = fTracesInTriggerPixelsConstantFraction[g][i]>=0 ? kTRUE : kFALSE;
 
 	  if(bCFDOut && !bAboveZero )
 	    {

@@ -34,12 +34,12 @@ TriggerTelescopeBase::TriggerTelescopeBase(ReadConfig *readConfig, int telType, 
   bDebug = debug;
   debugDisplay = display;
   iTelType = telType;
-  fTracesInSumGroups = NULL;
-  fTracesInSumGroupsConstantFraction = NULL;	
+  fTracesInTriggerPixels = NULL;
+  fTracesInTriggerPixelsConstantFraction = NULL;	
   iClusterID = NULL;
   rand = generator;
   bUsePatches = kFALSE;
-  iNumSumPixGroups= -1;
+  iNumTriggerPixels= -1;
   fDiscThreshold = -1;
   fDiscDelay = -1; 
   fDiscConstantFractionAttenuation = -1;
@@ -64,24 +64,24 @@ void TriggerTelescopeBase::CreateTraces()
 
 
   //delete trace arrays and create new ones
-  if(fTracesInSumGroups)
+  if(fTracesInTriggerPixels)
     {
-      //for(Int_t i=0;i<iNumSumPixGroups;i++)
-	delete []  fTracesInSumGroups;
+      //for(Int_t i=0;i<iNumTriggerPixels;i++)
+	delete []  fTracesInTriggerPixels;
     }
   //create the array with all the vectors, one vector for each sumgroup
-  fTracesInSumGroups = new vector<Float_t>[iNumSumPixGroups];
+  fTracesInTriggerPixels = new vector<Float_t>[iNumTriggerPixels];
    
 
-  if(fTracesInSumGroupsConstantFraction)
+  if(fTracesInTriggerPixelsConstantFraction)
     {
-      //for(Int_t i=0;i<iNumSumPixGroups;i++)
-      delete []  fTracesInSumGroupsConstantFraction;
+      //for(Int_t i=0;i<iNumTriggerPixels;i++)
+      delete []  fTracesInTriggerPixelsConstantFraction;
     }
   //create the array with all the vectors, one vector for each sumgroup
-  fTracesInSumGroupsConstantFraction = new vector<Float_t>[iNumSumPixGroups];
+  fTracesInTriggerPixelsConstantFraction = new vector<Float_t>[iNumTriggerPixels];
   
-  cout<<"Number of groups/pixel "<<iNumSumPixGroups<<endl;
+  cout<<"Number of trigger pixels "<<iNumTriggerPixels<<endl;
 
 }
 
@@ -89,11 +89,11 @@ void TriggerTelescopeBase::CreateTraces()
 
 
 
-TH1F TriggerTelescopeBase::GetTraceHistogramThreshold(int GroupID ){
+TH1F TriggerTelescopeBase::GetTraceHistogramThreshold(int TrigPixID ){
 
  
   TString title;
-  title.Form("Trace in pixel %i",GroupID);
+  title.Form("Trace in pixel %i",TrigPixID);
   TH1F hTrace ("hTrace",title,
 	       telData->iNumSamplesPerTrace+1,telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime-fSamplingTime*0.5,
 	       telData->fAveragePhotonArrivalTime+fTraceLength-fStartSamplingBeforeAverageTime+fSamplingTime*0.5);
@@ -102,7 +102,7 @@ TH1F TriggerTelescopeBase::GetTraceHistogramThreshold(int GroupID ){
 	     
   for(Int_t i = 0; i<telData->iNumSamplesPerTrace; i++)
     {
-      Float_t signal = fTracesInSumGroups[GroupID][i];
+      Float_t signal = fTracesInTriggerPixels[TrigPixID][i];
       hTrace.SetBinContent(i+1,signal);
     }
 
@@ -111,11 +111,11 @@ TH1F TriggerTelescopeBase::GetTraceHistogramThreshold(int GroupID ){
 }
 
 
-TH1F TriggerTelescopeBase::GetTraceHistogramCFD(int GroupID){
+TH1F TriggerTelescopeBase::GetTraceHistogramCFD(int TrigPixID){
 
  
   TString title;
-  title.Form("Trace in pixel %i",GroupID);
+  title.Form("Trace in pixel %i",TrigPixID);
   TH1F hTraceCFD("hTraceCFD",title,
 		    telData->iNumSamplesPerTrace+1,telData->fAveragePhotonArrivalTime-fStartSamplingBeforeAverageTime-fSamplingTime*0.5,
 					      telData->fAveragePhotonArrivalTime+fTraceLength-fStartSamplingBeforeAverageTime+fSamplingTime*0.5);
@@ -125,7 +125,7 @@ TH1F TriggerTelescopeBase::GetTraceHistogramCFD(int GroupID){
   hTraceCFD.SetLineColor(kRed);
   for(Int_t i = 0; i<telData->iNumSamplesPerTrace; i++)
     {
-      hTraceCFD.SetBinContent(i+1,fTracesInSumGroupsConstantFraction[GroupID][i]);
+      hTraceCFD.SetBinContent(i+1,fTracesInTriggerPixelsConstantFraction[TrigPixID][i]);
     }
 
  return hTraceCFD;
@@ -133,15 +133,15 @@ TH1F TriggerTelescopeBase::GetTraceHistogramCFD(int GroupID){
 }
 
 
-void TriggerTelescopeBase::ShowTrace(int GroupID){
+void TriggerTelescopeBase::ShowTrace(int TrigPixID){
 
- 	TCanvas cTraceTriggeredGroup("cTraceTriggeredGroup","Trace in triggered group",700,500);
+ 	TCanvas cTraceTriggeredGroup("cTraceTriggeredGroup","Trace in triggered triggerpixel",700,500);
         cTraceTriggeredGroup.Divide(1,2);
 	cTraceTriggeredGroup.cd(1);
 	gPad->SetGrid();
       
-	TH1F hTrace = GetTraceHistogramThreshold(GroupID);
-	TH1F hTraceCFD = GetTraceHistogramCFD(GroupID);
+	TH1F hTrace = GetTraceHistogramThreshold(TrigPixID);
+	TH1F hTraceCFD = GetTraceHistogramCFD(TrigPixID);
 
 	
 	hTrace.SetMaximum(hTraceCFD.GetMaximum()>hTrace.GetMaximum() ? 
@@ -177,12 +177,12 @@ void  TriggerTelescopeBase::LoadEvent(TelescopeData *TelData)
 
  telData = TelData;
 
- telData->bTriggeredGroups.assign(iNumSumPixGroups,kFALSE);
+ telData->bTriggeredTriggerPixels.assign(iNumTriggerPixels,kFALSE);
 
- telData->fDiscriminatorTime.assign(iNumSumPixGroups,-1e6);
+ telData->fDiscriminatorTime.assign(iNumTriggerPixels,-1e6);
 
  //can be removed is only needed to check the Time over threshold of all pixels in a trigger.
- telData->fTimeOverThreshold.assign(iNumSumPixGroups,0);
+ telData->fTimeOverThreshold.assign(iNumTriggerPixels,0);
 
  //The start sample for the delayed trace;
  Int_t iStartSample = (int)(fDiscDelay/fSamplingTime)+1;
@@ -193,14 +193,14 @@ void  TriggerTelescopeBase::LoadEvent(TelescopeData *TelData)
      }
 
 
- for(Int_t g=0;g<iNumSumPixGroups;g++)
+ for(Int_t g=0;g<iNumTriggerPixels;g++)
     {
-      fTracesInSumGroups[g].assign(telData->iNumSamplesPerTrace,0.0);
-      fTracesInSumGroupsConstantFraction[g].assign(telData->iNumSamplesPerTrace,0.0);
+      fTracesInTriggerPixels[g].assign(telData->iNumSamplesPerTrace,0.0);
+      fTracesInTriggerPixelsConstantFraction[g].assign(telData->iNumSamplesPerTrace,0.0);
       //loop over all group members and add their trace to the trace of the sumgroup
-      for(UInt_t n = 0; n<iSumGroupMembers[g].size();n++)
+      for(UInt_t n = 0; n<iTrigPixMembers[g].size();n++)
          {      
-           Int_t memberID = iSumGroupMembers[g][n];
+           Int_t memberID = iTrigPixMembers[g][n];
            for(Int_t i = 0 ; i<telData->iNumSamplesPerTrace; i++)
 	          {
 	             Float_t fsignal = telData->fTraceInPixel[memberID][i]*fPEtomVConversion ;
@@ -210,13 +210,13 @@ void  TriggerTelescopeBase::LoadEvent(TelescopeData *TelData)
                  fsigDelayed = fsigDelayed > fClippingLevel && bDoClipping == kTRUE  ? fClippingLevel : fsigDelayed;	      
 	      
 	             Float_t CFDsignal = fsignal*fDiscConstantFractionAttenuation-fsigDelayed;
-	             fTracesInSumGroups[g][i]+=fsignal;
-	             fTracesInSumGroupsConstantFraction[g][i]+=CFDsignal;
+	             fTracesInTriggerPixels[g][i]+=fsignal;
+	             fTracesInTriggerPixelsConstantFraction[g][i]+=CFDsignal;
 	         }
             if(bDebug)
                 {
                      cout<<"Summed group "<<g<<" added pixel "<<memberID<<endl; 
-	             //    ShowTrace(g, false);
+	                // ShowTrace(g);
                }
            
 	     }
@@ -235,11 +235,11 @@ Bool_t  TriggerTelescopeBase::RunTrigger()
 {
    //cout<<"TriggerTelescopeBase::RunTrigger"<<endl;
    //Run the CFD simulation
-   telData->iNumTriggeredGroups=0;
-   for(Int_t i=0;i<iNumSumPixGroups;i++)
+   telData->iNumTriggeredTriggerPixels=0;
+   for(Int_t i=0;i<iNumTriggerPixels;i++)
     {
       if(RunDiscriminator(i))
-	     telData->iNumTriggeredGroups++;
+	     telData->iNumTriggeredTriggerPixels++;
     }
 
   //  cout<<"Done with the CFD"<<endl<<endl;
@@ -283,55 +283,58 @@ Bool_t  TriggerTelescopeBase::RunTrigger()
 //The second one gives an output if the sum of the attenuated (0.4) signal plus offset and the delayed and inverted copy of the
 //input signal cross zero 
 //The whole thing gives an output if both discriminators give logic one
-Bool_t TriggerTelescopeBase::RunDiscriminator(Int_t GroupID)
+Bool_t TriggerTelescopeBase::RunDiscriminator(Int_t TrigPixID)
 {
 
- 
+  //cout<<"TriggerTelescopeBase::RunDiscriminator"<<endl;
+
   Int_t iStartSample = (int)(fDiscDelay/fSamplingTime)+1;
 
   //1. Threshold discriminator: output as long as signal is above threshold
   //2. Output as long if  CFD trace attenuated copy plus inverted copy plus constant offset output is negativ
   //3. Trigger if 1. and 2. are high
-  telData->bTriggeredGroups[GroupID] = kFALSE;
-  telData->fDiscriminatorTime[GroupID] = -1e6;
+  telData->bTriggeredTriggerPixels[TrigPixID] = kFALSE;
+  telData->fDiscriminatorTime[TrigPixID] = -1e6;
 
   for(Int_t i = iStartSample; i<telData->iNumSamplesPerTrace; i++)
     {
-	  Float_t fsignal = fTracesInSumGroups[GroupID][i];
+	  Float_t fsignal = fTracesInTriggerPixels[TrigPixID][i];
 
 	  Bool_t bCFDOut = kTRUE; //always true if we do not use the CFD part
-      if(bDiscCFDUsage) bCFDOut=fTracesInSumGroupsConstantFraction[GroupID][i]>=0 ? kTRUE : kFALSE;
+      if(bDiscCFDUsage) bCFDOut=fTracesInTriggerPixelsConstantFraction[TrigPixID][i]>=0 ? kTRUE : kFALSE;
+          //cout<<i<<"  "<<fsignal<<" threshold "<<fDiscThreshold<<" "<<bCFDOut<< endl;
 	
 	  //In case both discriminators are firing we have a trigger
-	  if( bCFDOut && fsignal<=fDiscThreshold &&  telData->bTriggeredGroups[GroupID] == kFALSE ) 
-        {
-	      telData->fDiscriminatorTime[GroupID] = i*fSamplingTime-fStartSamplingBeforeAverageTime;
-	      telData->bTriggeredGroups[GroupID] = kTRUE;
+	  if( bCFDOut && fsignal<=fDiscThreshold &&  telData->bTriggeredTriggerPixels[TrigPixID] == kFALSE ) 
+            {
+	      telData->fDiscriminatorTime[TrigPixID] = i*fSamplingTime-fStartSamplingBeforeAverageTime;
+	      telData->bTriggeredTriggerPixels[TrigPixID] = kTRUE;
 
-		  //loop over the rest of the trace to find out how long the discriminator is above threshold
-		  //this can be deactivated because it is only used in simulation studies done for the 1m sst.
-		  Int_t iToT=0;
-		  while(fsignal<=fDiscThreshold && i<telData->iNumSamplesPerTrace-1)
-			{
-			  iToT++;
-
-			  i++;
-			  fsignal = fTracesInSumGroups[GroupID][i];
-			}
-          telData->fTimeOverThreshold[GroupID] = iToT*fSamplingTime;
-		  break; //exit loop because we triggered the trace and we are only interested in the first trigger, saves some compute time
+	      //loop over the rest of the trace to find out how long the discriminator is above threshold
+	      //this can be deactivated because it is only used in simulation studies done for the 1m sst.
+	      Int_t iToT=0;
+	      while(fsignal<=fDiscThreshold && i<telData->iNumSamplesPerTrace-1)
+		{
+		  iToT++;
+		  i++;
+		  fsignal = fTracesInTriggerPixels[TrigPixID][i];
+		}
+              telData->fTimeOverThreshold[TrigPixID] = iToT*fSamplingTime;
+       	      break; //exit loop because we triggered the trace and we are only interested in the first trigger, saves some compute time
 	    }
     }
 
-
-     if(bDebug && telData->bTriggeredGroups[GroupID] == kTRUE)
+     if(bDebug && telData->bTriggeredTriggerPixels[TrigPixID] == kTRUE)
+     if(bDebug)
       {
-        cout<<"Trace on which the discriminator was run and triggered; groupid "<<GroupID<<endl;
-        debugDisplay->AddDiscriminatorTraces(telData->GetTelescopeID(),GroupID,fDiscThreshold,GetTraceHistogramThreshold(GroupID),GetTraceHistogramCFD(GroupID));
+        ShowTrace(TrigPixID);
+        cout<<"Trace on which the discriminator was run and triggered; groupid "<<TrigPixID<<endl;
+        debugDisplay->AddDiscriminatorTraces(telData->GetTelescopeID(),TrigPixID,fDiscThreshold,GetTraceHistogramThreshold(TrigPixID),GetTraceHistogramCFD(TrigPixID));
+                       debugDisplay->ShowSelectedDiscriminatorPixels();
 
       }
 
-    return telData->bTriggeredGroups[GroupID];
+    return telData->bTriggeredTriggerPixels[TrigPixID];
 }
 
 
@@ -339,7 +342,7 @@ Bool_t TriggerTelescopeBase::RunDiscriminator(Int_t GroupID)
 //
 // returns true if group is in patch
 // if patches are not used it always returns true
-Bool_t TriggerTelescopeBase::GroupInPatch(Int_t GroupID,Int_t PatchID)
+Bool_t TriggerTelescopeBase::GroupInPatch(Int_t TrigPixID,Int_t PatchID)
 {
 
   if(!bUsePatches)
@@ -347,7 +350,7 @@ Bool_t TriggerTelescopeBase::GroupInPatch(Int_t GroupID,Int_t PatchID)
  
   for(UInt_t i=0;i<vPatch[PatchID].size();i++)
     {
-      if(GroupID==vPatch[PatchID][i])
+      if(TrigPixID==vPatch[PatchID][i])
 	 return kTRUE;
     }
 
@@ -394,10 +397,10 @@ void TriggerTelescopeBase::RunBiasCurve(UInt_t Trials,Float_t LowerBoundary,Floa
   fBiasCurveErr.Zero();
   fBiasCurveScanPoints.ResizeTo(NumScanPoints);
   fBiasCurveScanPoints.Zero();
-  fGroupRateVsThreshold.ResizeTo(NumScanPoints);
-  fGroupRateVsThreshold.Zero();
-  fGroupRateVsThresholdErr.ResizeTo(NumScanPoints);
-  fGroupRateVsThresholdErr.Zero();
+  fTrigPixRateVsThreshold.ResizeTo(NumScanPoints);
+  fTrigPixRateVsThreshold.Zero();
+  fTrigPixRateVsThresholdErr.ResizeTo(NumScanPoints);
+  fTrigPixRateVsThresholdErr.Zero();
 
   cout<<"Going in loop"<<endl;
 
@@ -419,10 +422,10 @@ void TriggerTelescopeBase::RunBiasCurve(UInt_t Trials,Float_t LowerBoundary,Floa
        cout<<"Lower boundary: "<<LowerBoundary<<" upper boundary: "<<UpperBoundary<<" Step: "<<StepWidth<<" being at "<<LowerBoundary+StepWidth*t<<endl;
 	  SetDiscriminatorThresholdAndWidth(LowerBoundary+StepWidth*t,fWidthDiscriminator);
 	  RunTrigger();
-      //cout<<"Number of groups that triggered "<<telData->GetNumTriggeredGroups()<<endl;
-  	  if( telData->GetNumTriggeredGroups()!=0 )
+      //cout<<"Number of groups that triggered "<<telData->GetNumTriggeredTriggerPixels()<<endl;
+  	  if( telData->GetNumTriggeredTriggerPixels()!=0 )
 	    {
-	      fGroupRateVsThreshold[t]+=telData->GetNumTriggeredGroups();
+	      fTrigPixRateVsThreshold[t]+=telData->GetNumTriggeredTriggerPixels();
 	      if(telData->bTelescopeHasTriggered==kTRUE)
 	          fBiasCurve[t]++;
 	    }
@@ -436,7 +439,7 @@ void TriggerTelescopeBase::RunBiasCurve(UInt_t Trials,Float_t LowerBoundary,Floa
       if(i%1000 == 0 && i > 0 )
 	{
 	  cout<<"Events :"<<i<<"  simulated time "<<i*fTraceLength*1e-9<<" s"<<endl;
-//	  cout<<"Dynamic Value of the RFB: "<<fDiscRFBDynamic<<" mV. The rate of zero crossings in MHz: "<< lZeroCrossings /(i* (fTraceLength-fDiscDelay)*1e-3*iNumSumPixGroups)<<endl;
+//	  cout<<"Dynamic Value of the RFB: "<<fDiscRFBDynamic<<" mV. The rate of zero crossings in MHz: "<< lZeroCrossings /(i* (fTraceLength-fDiscDelay)*1e-3*iNumTriggerPixels)<<endl;
 	  for(Int_t t = 0; t<NumScanPoints; t++)
 	    {
 	      cout<<"NSB Trigger rate at "<<LowerBoundary+StepWidth*t<<" mV threshold: triggers "
@@ -454,10 +457,10 @@ void TriggerTelescopeBase::RunBiasCurve(UInt_t Trials,Float_t LowerBoundary,Floa
       fBiasCurveErr[t]=sqrt(1.0*fBiasCurve[t])/(Trials*fTraceLength*1e-9);
       fBiasCurve[t]=fBiasCurve[t]/(Trials*fTraceLength*1e-9);
 
-      fGroupRateVsThresholdErr[t]=sqrt(fGroupRateVsThreshold[t])/iNumSumPixGroups/(Trials*fTraceLength*1e-9);
-      fGroupRateVsThreshold[t]=fGroupRateVsThreshold[t]/iNumSumPixGroups/(Trials*fTraceLength*1e-9);
+      fTrigPixRateVsThresholdErr[t]=sqrt(fTrigPixRateVsThreshold[t])/iNumTriggerPixels/(Trials*fTraceLength*1e-9);
+      fTrigPixRateVsThreshold[t]=fTrigPixRateVsThreshold[t]/iNumTriggerPixels/(Trials*fTraceLength*1e-9);
       cout<<"NSB Telescope Trigger rate at "<<LowerBoundary+StepWidth*t<<" mV threshold "<<fBiasCurve[t]<<"+-"<<fBiasCurveErr[t]<<" Hz"<<endl;
-      cout<<"Group rate :"<<fGroupRateVsThreshold[t]<<"+-"<<fGroupRateVsThresholdErr[t]<<" Hz"<<endl;
+      cout<<"Group rate :"<<fTrigPixRateVsThreshold[t]<<"+-"<<fTrigPixRateVsThresholdErr[t]<<" Hz"<<endl;
     }
    
 
@@ -515,38 +518,38 @@ Bool_t  TriggerTelescopeBase::RunL2Patch(Int_t PatchNumber,Float_t *fPatchTrigge
 
   if(iClusterID)
     delete [] iClusterID;
-  iClusterID = new Int_t[iNumSumPixGroups];
+  iClusterID = new Int_t[iNumTriggerPixels];
 
-  Int_t *iNumGroupsInCluster = new Int_t[iNumSumPixGroups]; //How many groups are in each cluster of this patch
+  Int_t *iNumTriggerPixelsInCluster = new Int_t[iNumTriggerPixels]; //How many groups are in each cluster of this patch
 
-  for(Int_t i=0;i<iNumSumPixGroups;i++)
+  for(Int_t i=0;i<iNumTriggerPixels;i++)
     {
       iClusterID[i] = -1;
-      iNumGroupsInCluster[i]=0; 
+      iNumTriggerPixelsInCluster[i]=0; 
     }
 
   vector< int > i_pix;
-  vGroupsInCluster = new vector< vector<int> >;
-  vGroupsInCluster->assign(iNumSumPixGroups , i_pix );
+  vTrigPixsInCluster = new vector< vector<int> >;
+  vTrigPixsInCluster->assign(iNumTriggerPixels , i_pix );
 
   vector< float > f_pix;
   vTriggerTimesInCluster = new vector< vector<float> >;
-  vTriggerTimesInCluster->assign(iNumSumPixGroups , f_pix );
+  vTriggerTimesInCluster->assign(iNumTriggerPixels , f_pix );
 
   //cout<<"allocated arrays and vectors"<<endl;
-  //cout<<"Number of summed groups "<<iNumSumPixGroups<<endl;
+  //cout<<"Number of summed groups "<<iNumTriggerPixels<<endl;
 
-  Int_t NGroups = bUsePatches==kTRUE ? vPatch[PatchNumber].size() :  iNumSumPixGroups;
+  Int_t NTrigPixs = bUsePatches==kTRUE ? vPatch[PatchNumber].size() :  iNumTriggerPixels;
   if(bDebug)
-  cout<<"Number of groups in this patch: "<<NGroups<<endl;
-  for(Int_t i=0;i<NGroups;i++)
+  cout<<"Number of trigger pixels in this patch: "<<NTrigPixs<<endl;
+  for(Int_t i=0;i<NTrigPixs;i++)
     {
-      Int_t GroupID = bUsePatches==kTRUE ? vPatch[PatchNumber][i] : i;
+      Int_t TrigPixID = bUsePatches==kTRUE ? vPatch[PatchNumber][i] : i;
     
-      if (telData->bTriggeredGroups[GroupID]==kTRUE) //(summed) pixel has triggered
+      if (telData->bTriggeredTriggerPixels[TrigPixID]==kTRUE) //(summed) pixel has triggered
 	{
-	  iNumGroupsInCluster[GroupID] = CalcCluster(GroupID,GroupID,PatchNumber);
-	  // cout<<iNumGroupsInCluster[i]<<endl;       
+	  iNumTriggerPixelsInCluster[TrigPixID] = CalcCluster(TrigPixID,TrigPixID,PatchNumber);
+	  // cout<<iNumTriggerPixelsInCluster[i]<<endl;       
 	}
 	  
     }
@@ -554,11 +557,11 @@ Bool_t  TriggerTelescopeBase::RunL2Patch(Int_t PatchNumber,Float_t *fPatchTrigge
   //cout<<"Finished finding all clusters"<<endl<<endl;
    
   //Sort all cluster descending
-  Int_t* index = new Int_t[iNumSumPixGroups];
-  TMath::Sort(iNumSumPixGroups,iNumGroupsInCluster,index);
+  Int_t* index = new Int_t[iNumTriggerPixels];
+  TMath::Sort(iNumTriggerPixels,iNumTriggerPixelsInCluster,index);
  
-/*  for(int n=0;n<iNumSumPixGroups;n++)
-	 cout<<iNumGroupsInCluster[index[n]]<<"  ";
+/*  for(int n=0;n<iNumTriggerPixels;n++)
+	 cout<<iNumTriggerPixelsInCluster[index[n]]<<"  ";
 	 
 	 cout<<endl;
   */
@@ -566,9 +569,9 @@ Bool_t  TriggerTelescopeBase::RunL2Patch(Int_t PatchNumber,Float_t *fPatchTrigge
   Float_t fPatchTriggerTime = 1e6;
   Int_t t = 0;
   Int_t tmin = 0;
-  while(iNumGroupsInCluster[index[t]]>=iMultiplicity )
+  while(iNumTriggerPixelsInCluster[index[t]]>=iMultiplicity )
     {
-      Int_t igroups = iNumGroupsInCluster[index[t]];
+      Int_t igroups = iNumTriggerPixelsInCluster[index[t]];
 
       if(bDebug)
       cout<<"cluster "<<index[t]<<" has "<<igroups<<" groups"<<endl;
@@ -579,7 +582,7 @@ Bool_t  TriggerTelescopeBase::RunL2Patch(Int_t PatchNumber,Float_t *fPatchTrigge
 	  {
            times[i] = (vTriggerTimesInCluster->at(index[t]))[i];
            if(bDebug)
-           cout<<"triggered group in cluster "<<vGroupsInCluster->at(index[t])[i]<<" t: "<<times[i]<<endl;
+           cout<<"triggered group in cluster "<<vTrigPixsInCluster->at(index[t])[i]<<" t: "<<times[i]<<endl;
 	  }
       // cout<<endl;
       //sort the times in increasing order
@@ -597,7 +600,7 @@ Bool_t  TriggerTelescopeBase::RunL2Patch(Int_t PatchNumber,Float_t *fPatchTrigge
        delete [] times;
        delete [] indext;
 
-       if(t==iNumSumPixGroups)
+       if(t==iNumTriggerPixels)
           break;
 
     }
@@ -609,21 +612,21 @@ Bool_t  TriggerTelescopeBase::RunL2Patch(Int_t PatchNumber,Float_t *fPatchTrigge
   //which can be retrieved with GetTriggerCluster()
   //cout<< vGroupsInCluster->at(index[tmin]).size()<<endl;
   //cout<<(telData->vTriggerCluster).size()<<endl;
-  iPixelTriggeredInPatch[PatchNumber]=vGroupsInCluster->at(index[tmin]);
+  iPixelTriggeredInPatch[PatchNumber]=vTrigPixsInCluster->at(index[tmin]);
   //cout<<"Have transferred the TriggerCluster"<<telData->vTriggerCluster.size()<<endl;
   //Now trigger if we have enough groups in the largest cluster
  
 
   Bool_t bPatchTrigger = kFALSE;
 
-  if(iNumGroupsInCluster[index[0]]>=iMultiplicity)
+  if(iNumTriggerPixelsInCluster[index[0]]>=iMultiplicity)
     {
-      //cout<<iNumGroupsInCluster[index[0]]<<endl;
+      //cout<<iNumTriggerPixelsInCluster[index[0]]<<endl;
       bPatchTrigger= kTRUE;
     }
 
-  delete [] iNumGroupsInCluster;
-  delete vGroupsInCluster;
+  delete [] iNumTriggerPixelsInCluster;
+  delete vTrigPixsInCluster;
   delete vTriggerTimesInCluster;
   delete [] index;
 
@@ -677,43 +680,43 @@ Bool_t  TriggerTelescopeBase::RunL2WithPatches()
 //Helper function to loop over all neighbours to find triggered pixels belonging to the cluster
 //returns the number of pixel in that cluster
 
-Int_t TriggerTelescopeBase::CalcCluster(Int_t GroupID, Int_t ClusterID, Int_t PatchID)
+Int_t TriggerTelescopeBase::CalcCluster(Int_t TrigPixID, Int_t ClusterID, Int_t PatchID)
 {
 
   if(bDebug)
-	  cout<<"visiting group "<<GroupID<<endl;
+	  cout<<"visiting group "<<TrigPixID<<endl;
 
   // If we have visited this group in this round ... do nothing.
-  if (iClusterID[GroupID]==ClusterID)
+  if (iClusterID[TrigPixID]==ClusterID)
     return 0;
   // Assign the new cluster ID this Group
-  iClusterID[GroupID]=ClusterID;
+  iClusterID[TrigPixID]=ClusterID;
   //Put the group in the list of groups that belong to this cluster centered around the group with ID ClusterID
-  vGroupsInCluster->at(ClusterID).push_back(GroupID);
+  vTrigPixsInCluster->at(ClusterID).push_back(TrigPixID);
   
   
   //Add the trigger time of the group to the vector of this cluster
-  vTriggerTimesInCluster->at(ClusterID).push_back(telData->fDiscriminatorTime[GroupID]);
+  vTriggerTimesInCluster->at(ClusterID).push_back(telData->fDiscriminatorTime[TrigPixID]);
   if(bDebug)
   {
 	 cout<<"Pixel number: "<<vTriggerTimesInCluster->at(ClusterID).size()<<endl;
-	 cout<<"added group "<<GroupID<<", which triggered at time "<<telData->fDiscriminatorTime[GroupID]<<endl;
+	 cout<<"added group "<<TrigPixID<<", which triggered at time "<<telData->fDiscriminatorTime[TrigPixID]<<endl;
   }
 
   // Need this to store the number of groups in the cluster
-  Int_t NumGroupsInCluster = 1;
+  Int_t NumTrigPixsInCluster = 1;
 
   // Now do the same with all its neighbors
-  for(UInt_t n = 0; n<iSumGroupNeighbors[GroupID].size();n++)
+  for(UInt_t n = 0; n<iTrigPixNeighbors[TrigPixID].size();n++)
     {
-      Int_t GroupIDNeighbor = iSumGroupNeighbors[GroupID][n];
-      if (telData->bTriggeredGroups[GroupIDNeighbor] 
-           && fabs(telData->fDiscriminatorTime[ClusterID]-telData->fDiscriminatorTime[GroupIDNeighbor])<fWidthDiscriminator 
-           && GroupInPatch(GroupIDNeighbor,PatchID))
-	    NumGroupsInCluster += CalcCluster(GroupIDNeighbor,ClusterID,PatchID);
+      Int_t TrigPixIDNeighbor = iTrigPixNeighbors[TrigPixID][n];
+      if (telData->bTriggeredTriggerPixels[TrigPixIDNeighbor] 
+           && fabs(telData->fDiscriminatorTime[ClusterID]-telData->fDiscriminatorTime[TrigPixIDNeighbor])<fWidthDiscriminator 
+           && GroupInPatch(TrigPixIDNeighbor,PatchID))
+	    NumTrigPixsInCluster += CalcCluster(TrigPixIDNeighbor,ClusterID,PatchID);
     }
  // return the number of groups in this cluster
-  return NumGroupsInCluster;
+  return NumTrigPixsInCluster;
 
 }
 
@@ -780,27 +783,27 @@ void   TriggerTelescopeBase::SetParametersFromConfigFile(ReadConfig *readConfig 
 
    if(readConfig->GetUseSumTrigger(iTelType))
      {
-         cout<<"Will simulate a sumtrigger"<<endl;
-        iNumSumPixGroups = readConfig->GetNumberGroups(iTelType);
-        iSumGroupNeighbors = readConfig->GetNeighborsOfGroup(iTelType);
-        iSumGroupMembers = readConfig->GetMembersOfGroups(iTelType);
-        if(iNumSumPixGroups <=0)
+         cout<<"Will confine pixels to groups"<<endl;
+        iNumTriggerPixels = readConfig->GetNumberGroups(iTelType);
+        iTrigPixNeighbors = readConfig->GetNeighborsOfGroup(iTelType);
+        iTrigPixMembers = readConfig->GetMembersOfGroups(iTelType);
+        if(iNumTriggerPixels <=0)
           {
-             cout<<"The sumtrigger simulation was turned on but the number of summed groups has been put to "<<iNumSumPixGroups<<endl;
+             cout<<"The sumtrigger simulation was turned on but the number of summed groups has been put to "<<iNumTriggerPixels<<endl;
              cout<<"do something about it!!"<<endl;
              exit(1);
           }
      }
-   else //If no sumtrigger is used
+   else //If no sumtrigger or groups are used
      {
         cout<<"This simulation does not use a sumtrigger"<<endl;
-		iNumSumPixGroups= readConfig->GetNumberPixels(iTelType);
-		iSumGroupNeighbors = readConfig->GetNeighbors(iTelType);
+		iNumTriggerPixels= readConfig->GetNumberPixels(iTelType);
+		iTrigPixNeighbors = readConfig->GetNeighbors(iTelType);
 		vector<int> vmembers;
-        for(int i = 0; i<iNumSumPixGroups; i++)
+        for(int i = 0; i<iNumTriggerPixels; i++)
          {
-			iSumGroupMembers.push_back(vmembers);
-            iSumGroupMembers[i].assign(1,i);
+			iTrigPixMembers.push_back(vmembers);
+            iTrigPixMembers[i].assign(1,i);
          }
       }
       

@@ -29,7 +29,7 @@ class TriggerTelescopeVERITAS : public TriggerTelescopeBase
   void     SetDiscriminatorRFBDynamic(Float_t rfb);
   void     SetDiscriminatorRFBUsage(Bool_t rfbuse);
   Float_t  GetDiscRFBDynamicValue(){ return fDiscRFBDynamic; };
-  Float_t  GetDiscZeroCrossingRate(){ return lZeroCrossings /(lNumEvents* fTraceLength*1e-3*iNumSumPixGroups); };
+  Float_t  GetDiscZeroCrossingRate(){ return lZeroCrossings /(lNumEvents* fTraceLength*1e-3*iNumTriggerPixels); };
 
            //Defines how many next neighbors are required to trigger the telescope
   void     SetMultiplicity(Int_t multiplicity){ iMultiplicity = multiplicity; };

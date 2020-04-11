@@ -14,41 +14,26 @@
 
 using namespace std;
 
-class TriggerTelescopeVERITAS : public TriggerTelescopeBase
+class TriggerTelescopeSPB2 : public TriggerTelescopeBase
 {
 
  public:
 
-  TriggerTelescopeVERITAS(ReadConfig *readConfig, int telType, TRandom3 *generator, Bool_t debug = kFALSE, Display *display = NULL);
-
-  void     LoadEvent(TelescopeData *TelData);
+  TriggerTelescopeSPB2(ReadConfig *readConfig, int telType, TRandom3 *generator, Bool_t debug = kFALSE, Display *display = NULL);
+  ~TriggerTelescopeSPB2();
 
   Bool_t   RunTrigger();
 
-  void     SetDiscriminatorRFBConstant(Float_t rfb);
-  void     SetDiscriminatorRFBDynamic(Float_t rfb);
-  void     SetDiscriminatorRFBUsage(Bool_t rfbuse);
-  Float_t  GetDiscRFBDynamicValue(){ return fDiscRFBDynamic; };
-  Float_t  GetDiscZeroCrossingRate(){ return lZeroCrossings /(lNumEvents* fTraceLength*1e-3*iNumSumPixGroups); };
-
-           //Defines how many next neighbors are required to trigger the telescope
-  void     SetMultiplicity(Int_t multiplicity){ iMultiplicity = multiplicity; };
-
- protected:
-
-  //is also in base class need to adapt functions in both classes. Which version
-  //is used when?
-  void  SetParametersFromConfigFile(ReadConfig *readConfig );
-
-  Long_t GetNumZeroCrossings();
-  
-  Float_t fDiscRFBConstant;            //RFB of the discriminator in pe/MHz
-  Float_t fDiscRFBDynamic;             //The dynamic value of the RFB feedback in pe
-  Bool_t  bDiscRFBUsage;
-
-  Long_t lNumEvents;                   //holds the number of events filled into traces
-  Long_t lZeroCrossings;               //holds the number of zerocrossings for one event counted over all pixels in the camera
-
-  Int_t iMultiplicity;                 //How many groups need to be in a cluster for a trigger  
+ private:
+   
+  void FindTriggeredGroups(); 
+  bool RunCoincidenceLogic(); 
  
+  Int_t iNumGroups;                  //all the MUSIC chips in the camera group = one music
+  vector< vector<int> > iGroupNeighborIDs;          //holds the neighbors of each group;
+  vector< vector<int> > iGroupMembers;            //holds the members of each group;
+  Int_t iNumPixels;                  //all the pixels in the camera
+
+  vector<vector<int> > *vTriggeredPixelInGroup;        //pixel in each group that triggered 
+  vector<vector<float> > *vTriggerTimesInGroup;        //times when discriminator fired for each pixel in a group
 };

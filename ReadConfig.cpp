@@ -373,7 +373,7 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
          i_stream >> iNumberGroups[i_telType];
          cout << "FPI configuration of telescope type "<<i_telType<<endl; 
 	 cout << "total number of channels: " << fCNChannels[i_telType]  << endl;
-	 cout << "the number of groups: " << iNumberGroups[i_telType]  << endl;
+	 cout << "the number of groups for the telescope trigger: " << iNumberGroups[i_telType]  << endl;
 
         if(i_telType == (UInt_t)(iNumberOfTelescopeTypes-1))
              resetCamVectors();

@@ -36,24 +36,24 @@ class TriggerTelescopeBase {
   TVectorD GetBiasCurveError(){ return fBiasCurveErr; };
   TVectorD GetBiasCurveScanPoints(){ return fBiasCurveScanPoints; };
 
-  TVectorD GetGroupRateVsThreshold(){ return fGroupRateVsThreshold; };
-  TVectorD GetGroupRateVsThresholdError(){ return fGroupRateVsThresholdErr; };
+  TVectorD GetTrigPixRateVsThreshold(){ return fTrigPixRateVsThreshold; };
+  TVectorD GetTrigPixRateVsThresholdError(){ return fTrigPixRateVsThresholdErr; };
 
-  void ShowTrace(int GroupID);
-  TH1F GetTraceHistogramCFD(int GroupID);
-  TH1F GetTraceHistogramThreshold(int GroupID);
+  void ShowTrace(int TrigPixID);
+  TH1F GetTraceHistogramCFD(int TrigPixID);
+  TH1F GetTraceHistogramThreshold(int TrigPixID);
 
  protected:
 
   void  SetParametersFromConfigFile(ReadConfig *readConfig );
   
-  Bool_t GroupInPatch(Int_t GroupID,Int_t PatchID);
+  Bool_t GroupInPatch(Int_t TrigPixID,Int_t PatchID);
 
   void CreateTraces();
 
-  Int_t CalcCluster(Int_t GroupID, Int_t ClusterID, Int_t PatchID = -1);
+  Int_t CalcCluster(Int_t TrigPixID, Int_t ClusterID, Int_t PatchID = -1);
 
-  Bool_t RunDiscriminator(Int_t GroupID);
+  Bool_t RunDiscriminator(Int_t TrigPixID);
 
   Bool_t RunL2WithPatches();
 
@@ -70,9 +70,10 @@ class TriggerTelescopeBase {
 
   Int_t iTelType;
 
-  Int_t iNumSumPixGroups;              //Holds the number of SumPixGroups
-  vector< vector<int> > iSumGroupNeighbors;          //will hold the neighbors of each sumgroup;
-  vector< vector<int> > iSumGroupMembers;            //will hold the members of each sumgroup;
+
+  Int_t iNumTriggerPixels;              //Holds the number of trigger pixels
+  vector< vector<int> > iTrigPixNeighbors;          //will hold the neighbors of each trigger pixel;
+  vector< vector<int> > iTrigPixMembers;            //will hold the members of each trigger pixel;
   vector< vector<int> > iPixelTriggeredInPatch;
   //Conversion factors
   Float_t fFADCSamplingWidth;          //the sampling time of the FADC in ns
@@ -104,18 +105,18 @@ class TriggerTelescopeBase {
   TVectorD fBiasCurve;                 //holds the output of the bias curve 
   TVectorD fBiasCurveErr;              //holds the error of the bias curve 
   TVectorD fBiasCurveScanPoints;
-  TVectorD fGroupRateVsThreshold;      //holds the rate vs. Threshold for one group
-  TVectorD fGroupRateVsThresholdErr;   //holds the Error of the rate vs. Threshold for one group
+  TVectorD fTrigPixRateVsThreshold;      //holds the rate vs. Threshold for one triggerpixel
+  TVectorD fTrigPixRateVsThresholdErr;   //holds the Error of the rate vs. Threshold for one group
 
-  vector<Float_t> *fTracesInSumGroups;         //Stores the signal traces for each sumgroup
-  vector<Float_t> *fTracesInSumGroupsConstantFraction;         //Stores the signal traces for each sumgroup
-  vector<Float_t> *fTracesInSumGroupsNSBOnly;  //holds the NSB traces for each sumgroup
+  vector<Float_t> *fTracesInTriggerPixels;         //Stores the signal traces for each sumgroup
+  vector<Float_t> *fTracesInTriggerPixelsConstantFraction;         //Stores the signal traces for each sumgroup
+  vector<Float_t> *fTracesInTriggerPixelsNSBOnly;  //holds the NSB traces for each sumgroup
   Float_t fTraceLength;                   //the length of the simulated trace per group
   Float_t fStartSamplingBeforeAverageTime; //the offset from the average photon arrival time when the trace starts to be sampled
   Float_t fSamplingTime;                //The sampling rate or resolution of the simulated trace
   Float_t fSamplingTimeAveragePulse;    //The sampling time of the average PE pulse shape
 
-  vector<vector<int> > *vGroupsInCluster;                //pixel that are in one cluster of triggered pixel 
+  vector<vector<int> > *vTrigPixsInCluster;                //pixel that are in one cluster of triggered pixel 
   vector<vector<float> > *vTriggerTimesInCluster;        //the trigger times of all pixels in the cluster
 
 
