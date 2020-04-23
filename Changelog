@@ -16,6 +16,26 @@ _
 _
 
                                                      -*-*- END OF LINE -*-*-
+  2020/04/23 Nepomuk Otte
+  SPB2 Branch
+  * TriggerTelescopeBase.[cpp,h], TriggerTelescopeVERITAS.[cpp,h],
+  TriggerTelescopeSPB2.[cpp,h], CameraAndReadout.cpp
+    -Restructured the TriggerTelescope class to allow for easier integration of
+    other trigger schemes. Now there is a trigger telescope base class. All
+    other telescope trigger classes derive from that. The
+    TriggerTelescopeVERITAS class includes all the functionality of the previous
+    CARE version. 
+    -I created a class for the SPB2 mission. To configure it, the pixels
+    belonging to one MUSIC chips are members of the same group in the
+    configuration file. The bifocal trigger logic looks for coincidences with
+    all neighboring groups listed in GRPNGHBR.
+  * FADC.cpp
+    -Added error message in case the sum of the FADC trace is smaller than the
+    simulated analog trace and have to program quit
+  * ArrayTrigger.cpp
+    -Code doesn't quit anymore in case the coincidence time is set less than 0
+    if at the same time the telescope multiplicity is 1 (i.e. no array trigger is used)
+
   2019/12/11 Nepomuk Otte
   This Version is tagged 1.7.1
   * ReadConfig.[cpp,h]

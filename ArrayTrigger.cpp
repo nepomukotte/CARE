@@ -102,7 +102,7 @@ bool ArrayTrigger::RunTrigger()
       exit(1);
     }
 
-  if(fCoincidence<0)
+  if(fCoincidence<0 && iMultiplicity>1)
     {
       cout<<"array coincidence window is <0, BAD!!"<<endl;
       exit(1);

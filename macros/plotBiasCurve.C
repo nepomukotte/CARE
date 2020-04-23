@@ -1,4 +1,4 @@
-#include <TVectorD>
+//#include <TVectorD>
 //////////////////////////////////////
 
 
@@ -25,7 +25,7 @@ void readDir(string dirname,vector<string> *names) {
 
 /////////////////////////////////////////
 
-void plotBiasCurve(string DataDir,const Int_t iMaxTelescopeMultiplicity = 2, Float_t fCoincidence = 50, Int_t iNumTelNextNeighborGroup =8)
+void plotBiasCurve(string DataDir,const Int_t iMaxTelescopeMultiplicity = 1, Float_t fCoincidence = 50, Int_t iNumTelNextNeighborGroup =1)
 {
 
   //const Int_t iMaxTelescopeMultiplicity = 4;

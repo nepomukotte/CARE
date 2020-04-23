@@ -288,6 +288,11 @@ void  FADC::SetParametersFromConfigFile( ReadConfig *readConfig ){
 	cout<<"The gain ratio of the low gain channel to the high gain channel is: "<<fLowHiGainRatio<<endl;
 	cout<<"The FADC high gain pedestal is [dc]: "<<fHighGainPedestal<<endl;      
 	cout<<"The FADC low gain pedestal is [dc] : "<<fLowGainPedestal<<endl<<endl;      
+        if(fTraceLength<fFADCSamplingWidth*iFADCSamples+fOffset)
+           {
+             cout<<"The simulated trace is shorter than the sum of the FADC trace and the offset from the trigger"<<endl;
+             exit(-1);
+           }
 }
 
 void FADC::SetDebugInfo(Float_t energy, Int_t telid, Float_t zenith, Float_t azimuth){

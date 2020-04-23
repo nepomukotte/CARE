@@ -887,10 +887,10 @@ int main( int argc, char **argv )
 	       t[n]->SetBranchAddress("time", &v_f_time, &b_v_f_time );
 	       t[n]->SetBranchAddress("eventNumber", &fEventNumber );
 	       t[n]->SetBranchAddress("primaryEnergy", &fPrimaryEnergy ); 
-           t[n]->SetBranchAddress("AzTel", &fAzTel );
-           t[n]->SetBranchAddress("ZnTel", &fZnTel );
-           t[n]->SetBranchAddress("AzPrim", &fAzPrim );
-           t[n]->SetBranchAddress("ZnPrim", &fZnPrim );
+               t[n]->SetBranchAddress("AzTel", &fAzTel );
+               t[n]->SetBranchAddress("ZnTel", &fZnTel );
+               t[n]->SetBranchAddress("AzPrim", &fAzPrim );
+               t[n]->SetBranchAddress("ZnPrim", &fZnPrim );
 	       t[n]->SetBranchAddress("Xcore", &fXcore );
 	       t[n]->SetBranchAddress("Ycore", &fYcore );
 	       t[n]->SetBranchAddress("Xcos", &fXcos );
@@ -900,25 +900,25 @@ int main( int argc, char **argv )
 	       t[n]->SetBranchAddress("ShowerID", &iShowerID );
 	       t[n]->SetBranchAddress("FirstIntDpt", &fFirstIntDpt );
 	       t[n]->SetBranchAddress("FirstIntHgt", &fFirstIntHgt );
-           t[n]->GetEntry( i );
+               t[n]->GetEntry( i );
                //        cout<<i<<": a "<<sqrt((fAzTel-fAzPrim)*(fAzTel-fAzPrim)+(fZnTel-fZnPrim)*(fZnTel-fZnPrim))<<endl;
 
 	       //General things we want to have in the root output file characterizing the event
 	       //why not pipe this directly into the root file and not use these variables
-           energy = fPrimaryEnergy;
+               energy = fPrimaryEnergy;
 	       eventNumber = fEventNumber;
 	       xcore = fXcore;
 	       ycore = fYcore;
-           vZnTel[n] = fZnTel;
-           vAzTel[n] = fAzTel;
-           azPrim = fAzPrim;
-           znPrim = fZnPrim;
+               vZnTel[n] = fZnTel;
+               vAzTel[n] = fAzTel;
+               azPrim = fAzPrim;
+               znPrim = fZnPrim;
 
-           Int_t telType = telData[n]->GetTelescopeType();
+               Int_t telType = telData[n]->GetTelescopeType();
 
-           telData[n]->ResetTraces();
+               telData[n]->ResetTraces();
                
-           telData[n]->iNumPhotonsInFocalPlane=v_f_time->size();
+               telData[n]->iNumPhotonsInFocalPlane=v_f_time->size();
 
 	       if(v_f_time->size()>=readConfig->GetRequestedMinNumberOfPhotonsInCamera(telType))
 		     bSkipEvent = kFALSE;
@@ -986,16 +986,12 @@ int main( int argc, char **argv )
            
 		     // Teltrigger->ShowTrace(0,0);
 
-	         //if(DEBUG_MAIN)
-		 //      cout<<"done trigger, RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
-
-             fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
+                 fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
 	         GroupTriggerBits[n] =  telData[n]->GetTriggeredTriggerPixels();
 	         vTelescopeTriggerBits[n]=telData[n]->GetTelescopeTrigger();
 
 	        } //end looping over telescopes doing trigger
        
-     
 	        //Go into the array trigger                       
 	        if(DEBUG_MAIN)
 		      {
