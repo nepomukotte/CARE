@@ -130,7 +130,7 @@ void VG_writeVBF::initialize() {
   fnum_vevent = 0;
 
   // initializations for VERITAS, have to change for different cameras
-  fmaxNumChannels = 500;  // for veritas
+  fmaxNumChannels = 20000;  // for veritas
 
   // create vector containing all pixel locations
   fTelPixV = new std::vector<  std::vector<VPixelLocation> >(fnbr_tel);

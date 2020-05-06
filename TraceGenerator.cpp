@@ -54,9 +54,9 @@ TraceGenerator::TraceGenerator( ReadConfig *readConfig , int telType, TRandom3 *
   SetParametersFromConfigFile( readConfig );
   
   rand = generator;
-string s = "";                                                                             
+  string s = "";                                                                             
 
-gridsearch = new GOrderedGridSearch(fXTubeMM,fYTubeMM,fSizeTubeMM,iTubeSides,fRotAngle,19,19,1,s);
+  gridsearch = new GOrderedGridSearch(fXTubeMM,fYTubeMM,fSizeTubeMM,iTubeSides,fRotAngle,19,19,1,s);
   if(bDebug) cout<<"Done initializing the TraceGenerator"<<endl;
 
   if(bDebug)

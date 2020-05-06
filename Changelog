@@ -18,6 +18,16 @@ _
                                                      -*-*- END OF LINE -*-*-
   2020/04/23 Nepomuk Otte
   SPB2 Branch
+  * VG_writeVBF.cpp 
+  Increased fmaxNumChannels from 500 to 20000
+  * CameraAndReadOut.cpp
+  Set the maximum number of pixels in VG_writeVBF to the camera with the highest
+  number of pixel. The above two changes allow the simulation of cameras with more than 500 pixels.
+  * PlotSPB2Events.cpp
+  Added basic macro to display events of the SPB2 experiment.
+
+  2020/04/23 Nepomuk Otte
+  SPB2 Branch
   * TriggerTelescopeBase.[cpp,h], TriggerTelescopeVERITAS.[cpp,h],
   TriggerTelescopeSPB2.[cpp,h], CameraAndReadout.cpp
     -Restructured the TriggerTelescope class to allow for easier integration of

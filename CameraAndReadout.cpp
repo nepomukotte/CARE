@@ -44,7 +44,7 @@ static const Bool_t DEBUG_TRACE = kFALSE;
 static const Bool_t DEBUG_FADC = kFALSE;
 static const Bool_t DEBUG_TELTRIGGER = kFALSE;
 static const Bool_t DEBUG_ARRAYTRIGGER = kFALSE;
-static const Bool_t DEBUG_MAIN = kFALSE;
+static const Bool_t DEBUG_MAIN = kTRUE;
 static const Bool_t DEBUG_TELESCOPEDATA = kFALSE;
 
 
@@ -460,18 +460,23 @@ int main( int argc, char **argv )
 	 {
 	   //this is probably only needed to get something into the constructor. 
 	   //the number of pixel are set again when the traces are being filled.
-       vector<unsigned> numPixTel(uNumTelescopes,readConfig->GetNumberPixels(0)); //this will be problematic when simulating hybrid arrays.
-       
+       vector<unsigned> numPixTel;
+       unsigned iMaxPixPerTel = 0;
+       for(unsigned i=0;i<uNumTelescopes;i++)
+         {
+             numPixTel.push_back(readConfig->GetNumberPixels(i));
+             iMaxPixPerTel = iMaxPixPerTel > readConfig->GetNumberPixels(i) ? iMaxPixPerTel : readConfig->GetNumberPixels(i);
+         }
        //Initiate the vbf output file
        string outname =  sOutputFileName.c_str();
        outname+=".vbf";
-
+        
 	   VBFwrite = new VG_writeVBF(uNumTelescopes,
 				      numPixTel,outname,
 				      lVBFRunNum,
 				      iDebugLevel);
            VBFwrite->setNumFadcSamples( telData[0]->iNumFADCSamples);  // set numFadcSamples for this telescope
-
+           VBFwrite->setMaxNumberChannels(iMaxPixPerTel);
 	 }
    
        //initiate the root output file
@@ -501,9 +506,9 @@ int main( int argc, char **argv )
        tSimulatedEvents.Branch("AzPrim",&azPrim,"AzPrim/F");
        tSimulatedEvents.Branch("xcore",&xcore,"xcore/F");
        tSimulatedEvents.Branch("ycore",&ycore,"ycore/F");
-       tSimulatedEvents.Branch("arrayTriggerBit",&arrayTriggerBit,"arrayTriggerBit/B");
-       tSimulatedEvents.Branch("uNumTelescopes",&uNumTelescopes,"uNumTelescopes/l");
-       tSimulatedEvents.Branch("eventNumber",&eventNumber,"eventNumber/l");
+       tSimulatedEvents.Branch("arrayTriggerBit",&arrayTriggerBit,"arrayTriggerBit/O");
+       tSimulatedEvents.Branch("uNumTelescopes",&uNumTelescopes,"uNumTelescopes/i");
+       tSimulatedEvents.Branch("eventNumber",&eventNumber,"eventNumber/i");
        tSimulatedEvents.Branch("vTelescopeTriggerBits",&vTelescopeTriggerBits);
        tSimulatedEvents.Branch("DeltaTL3",&DeltaTL3,"DeltaTL3/F");
 
@@ -996,8 +1001,8 @@ int main( int argc, char **argv )
 	        if(DEBUG_MAIN)
 		      {
 		        cout<<endl<<"Event trigger status"<<endl;
-		        cout<<"Telescope trigger bits: "<<vTelescopeTriggerBits[0]<<vTelescopeTriggerBits[1]<<vTelescopeTriggerBits[2]<<vTelescopeTriggerBits[3]<<endl;
-		        cout<<"Telescope trigger times: "<<fTelTriggerTimes[0]<<"  "<<fTelTriggerTimes[1]<<"  "<<fTelTriggerTimes[2]<<"  "<<fTelTriggerTimes[3]<<"  "<<endl;
+		        cout<<"Telescope trigger bits: "<<vTelescopeTriggerBits[0]<<endl;
+		        cout<<"Telescope trigger times: "<<fTelTriggerTimes[0]<<endl;
 		      }
 	   
 	        arraytrigger->SetTelescopeTriggerBitsAndTimes(vTelescopeTriggerBits,fTelTriggerTimes);

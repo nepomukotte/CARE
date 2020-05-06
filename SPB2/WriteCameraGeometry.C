@@ -3,8 +3,8 @@
 //Macro that writes a camera configuration for CARE
 //Writes a configuration for rectangular pixel
 
-int iYrows = 2; //module rows in the camera
-int iModulesInRow[] = {8,8};  //number of modules in each row
+int iYrows = 4; //module rows in the camera
+int iModulesInRow[] = {8,8,8,8};  //number of modules in each row
 float fModulePitch = 2.50; //cm //pitch of modules
 float fPixelPitch = 0.62;   //pitch of pixels within module
 int iNPixelsInRow = 4;   //number of pixels in one row in a module (number of pixel is this number squared
@@ -67,7 +67,6 @@ void WriteCameraGeometry()
      for(int y = 0; y<iNPixelsInRow; y++)
 	 {
       float yPixelCoord = (y-iNPixelsInRow/2)*fPixelPitch + fPixelPitch/2;
-      cout<<"x: "<<xPixelCoord<<" y: "<<yPixelCoord<<endl;
 TGeoTranslation *tr = new TGeoTranslation(xPixelCoord,yPixelCoord, 0.);
 	  PMTModule->AddNode(PMTPixel,y*10+x,tr);
       vXCoordPixelInModule.push_back(xPixelCoord*10);
@@ -92,6 +91,7 @@ TGeoTranslation *tr = new TGeoTranslation(xPixelCoord,yPixelCoord, 0.);
 	  float yModuleCoord = (y-iYrows/2+0.5)*fModulePitch;
 	  for(int x = 0; x<iModulesInRow[y];x++)
 	  {
+                cout<<x<<"  "<<y<<"  "<<iModulesInRow[y]<<endl;
 		 float xModuleCoord = (x-iModulesInRow[y]/2+0.5)*fModulePitch; 
          cout<<"y: "<<yModuleCoord<<" x: "<<xModuleCoord<<endl;
          vXCoordModule.push_back(xModuleCoord*10);
