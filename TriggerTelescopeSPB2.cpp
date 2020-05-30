@@ -103,8 +103,16 @@ bool TriggerTelescopeSPB2::RunCoincidenceLogic()
 
   telData->bTelescopeHasTriggered = false;
  
-  vector<float> vCoincidenceTriggerTimes;
-  
+  Float_t *vCoincidenceTriggerTimes = new Float_t[iNumGroups]; //How many groups are in each cluster of this patch
+  for(int i=0;i<iNumGroups;i++)
+   vCoincidenceTriggerTimes[i]=0;
+
+  iPixelTriggeredInPatch.resize(1);
+ 
+  vector< int > i_pix;
+  vTrigPixsInCluster = new vector< vector<int> >;
+  vTrigPixsInCluster->assign(iNumGroups , i_pix );
+
   //Loop over all groups and identify if a pixel in a neighboring group fired in coincidence
   for(int g=0;g<iNumGroups;g++)
     {
@@ -126,15 +134,19 @@ bool TriggerTelescopeSPB2::RunCoincidenceLogic()
                         {
                           //cout<<vTriggerTimesInGroup->at(GroupNeighborID)[np]<<endl;
                           //for each of the triggered pixel in a neighbor group find out if it is in coincidence
-                          if(fabs(fTriggerTime-vTriggerTimesInGroup->at(GroupNeighborID)[np])<fWidthDiscriminator)
+                          //we only do this if we dont already have a trigger,
+                          //this is not entirely correct we would have to check
+                          //which pixels triggered first to catch the case where
+                          //several pixels trigger at different times
+                          if(fabs(fTriggerTime-vTriggerTimesInGroup->at(GroupNeighborID)[np])<fWidthDiscriminator && vTrigPixsInCluster->at(g).size()==0)
                             {
                                // cout<<"trigger"<<endl;
                                //we have a trigger, save the trigger time and
                                telData->bTelescopeHasTriggered = true;
-                               vCoincidenceTriggerTimes.push_back(
-                                      fTriggerTime>vTriggerTimesInGroup->at(GroupNeighborID)[np] ? fTriggerTime : vTriggerTimesInGroup->at(GroupNeighborID)[np]
- );
-                              //cout<<"Trigger time "<<vCoincidenceTriggerTimes[vCoincidenceTriggerTimes.size()-1]<<endl;
+                               vCoincidenceTriggerTimes[g] = fTriggerTime>vTriggerTimesInGroup->at(GroupNeighborID)[np] ? fTriggerTime : vTriggerTimesInGroup->at(GroupNeighborID)[np];
+                               vTrigPixsInCluster->at(g).push_back(g);
+                               vTrigPixsInCluster->at(g).push_back(GroupNeighborID);
+                               //cout<<"Trigger time "<<vCoincidenceTriggerTimes[g]<<"  "<<g<<"  "<<GroupNeighborID<<endl;
                             }
                         }
                    }
@@ -147,10 +159,22 @@ bool TriggerTelescopeSPB2::RunCoincidenceLogic()
    telData->fTelescopeTriggerTime = 1e10;
    if(telData->bTelescopeHasTriggered)
      {
-        for(unsigned g=0;g<vCoincidenceTriggerTimes.size();g++)
-            telData->fTelescopeTriggerTime = telData->fTelescopeTriggerTime > vCoincidenceTriggerTimes[g] ? vCoincidenceTriggerTimes[g] : telData->fTelescopeTriggerTime;
+       //for(int i=0;i<iNumGroups;i++)
+       //  cout<<i<<"  "<<vCoincidenceTriggerTimes[i]<<"  "<<vTrigPixsInCluster->at(i).size()<<endl;
+       //Sort all trigger times descending
+       Int_t* index = new Int_t[iNumGroups];
+       TMath::Sort(iNumGroups,vCoincidenceTriggerTimes,index,false);
+       int t=0;
+       while(vTrigPixsInCluster->at(index[t]).size()==0)
+         t++;
+        //cout<<vCoincidenceTriggerTimes[index[t]]<<"  "<<vTrigPixsInCluster->at(index[t])[0]<<"  "<<vTrigPixsInCluster->at(index[t])[1]<<endl;
+        telData->fTelescopeTriggerTime = vCoincidenceTriggerTimes[index[t]];
+        telData->vTriggerCluster = vTrigPixsInCluster->at(index[t]);
+        //cout<<"Telescope trigger at "<<telData->fTelescopeTriggerTime<<" trigger bit "<<telData->bTelescopeHasTriggered<<endl;
       }
-    //cout<<"Telescope trigger at "<<telData->fTelescopeTriggerTime<<" trigger bit "<<telData->bTelescopeHasTriggered<<endl;
+   delete vTrigPixsInCluster;
+   delete [] vCoincidenceTriggerTimes;
+
    return telData->bTelescopeHasTriggered;
 }
 
