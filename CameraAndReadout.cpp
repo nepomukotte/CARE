@@ -7,9 +7,14 @@
 
 #include <iostream>
 #include <string>
+#include <algorithm>
+#include <numeric>
 #include <vector>
 
-#include "TriggerTelescopeNextNeighbor.h"
+#include "TriggerTelescopeBase.h"
+#include "TriggerTelescopeVERITAS.h"
+#include "TriggerTelescopeSPB2.h"
+#include "TriggerTelescopeTriDem.h"
 #include "ArrayTrigger.h"
 #include "ReadConfig.h"
 #include "TraceGenerator.h"
@@ -18,6 +23,7 @@
 #include "TelescopeData.h"
 
 enum SimulationPackageCodes   {KNOWNNOT,LEEDS,GRISU,KASCADE,CORSIKA,UCLA};
+enum TelescopeTriggerTypeCodes   {BASE,VERITAS,SPB2,TRIDEM};
 #include "VG_writeVBF.h"
 
 
@@ -200,7 +206,8 @@ int main( int argc, char **argv )
    readConfig->ReadConfigFile(sConfigFileName);
    //2. overwrite with command line options
    readConfig->ReadCommandLine(argc,argv);
-
+//   std::vector<Float_t> nsbRate = readConfig->GetNSBRate(0);
+//   cout<<"New NSB Rate from CLine: "<<nsbRate[0]<<endl;
    ///////////////////////////////////////////////////////
    //
    // Debug Display
@@ -247,7 +254,7 @@ int main( int argc, char **argv )
        cout<<endl<<"Starting TraceGenerator for telescope"<<t<<endl;
        traceGenerator[t] = new TraceGenerator(readConfig,t,rand,DEBUG_TRACE,display);
   
-       //traceGenerator->ShowAverageSinglePEPulse();
+//       traceGenerator[t]->ShowAverageSinglePEPulse();
 
        cout<<"Telescope tracegenerator is initialized"<<endl;
 
@@ -262,13 +269,34 @@ int main( int argc, char **argv )
    ///////////////////////////////////////////////////
 
 
-   TriggerTelescopeNextNeighbor *Teltrigger[uNumTelescopeTypes]; 
+   TriggerTelescopeBase *Teltrigger[uNumTelescopeTypes]; 
    for(UInt_t t = 0 ; t<uNumTelescopeTypes; t++)
      {
 	 
-       cout<<endl<<"Starting Trigger for telescopetype"<<t<<endl;
-       Teltrigger[t] = new TriggerTelescopeNextNeighbor(readConfig, t, rand, DEBUG_TELTRIGGER, display ); 
-       
+       cout<<endl<<"Starting Trigger for telescopetype "<<t<<endl;
+        TelescopeTriggerTypeCodes trigtype = (TelescopeTriggerTypeCodes) readConfig->GetTelescopeTriggerType(t);
+       switch(trigtype)
+        {
+          case BASE:
+            cout<<"BASE selected as telescope trigger ... initializing"<<endl; 
+            Teltrigger[t] = new TriggerTelescopeBase(readConfig, t, rand, DEBUG_TELTRIGGER, display ); 
+            break;
+          case VERITAS:
+            cout<<"VERITAS selected as telescope trigger ... initializing"<<endl; 
+            Teltrigger[t] = new TriggerTelescopeVERITAS(readConfig, t, rand, DEBUG_TELTRIGGER, display ); 
+            break;
+          case SPB2:
+            cout<<"SPB2 selected as telescope trigger ... initializing"<<endl; 
+            Teltrigger[t] = new TriggerTelescopeSPB2(readConfig, t, rand, DEBUG_TELTRIGGER, display ); 
+            break;
+          case TRIDEM:
+            cout<<"Trinity Demonstrator selected as telescope trigger ... initializing"<<endl; 
+            Teltrigger[t] = new TriggerTelescopeTriDem(readConfig, t, rand, DEBUG_TELTRIGGER, display ); 
+            break;
+          default:
+            cout<<"No valid telescope trigger type specified:"<<trigtype<<endl;
+            exit(-1);
+       }
        cout<<"Telescope trigger is initialized"<<endl;
      }
 
@@ -410,8 +438,8 @@ int main( int argc, char **argv )
        Teltrigger[TelType]->GetBiasCurve().Write("TVecBiasCurve");
        Teltrigger[TelType]->GetBiasCurveError().Write("TVecBiasCurveError");
        Teltrigger[TelType]->GetBiasCurveScanPoints().Write("TVecBiasCurveScanPoints");
-       Teltrigger[TelType]->GetGroupRateVsThresholdError().Write("TVecGroupRateVsThresholdError");
-       Teltrigger[TelType]->GetGroupRateVsThreshold().Write("TVecGroupRateVsThreshold");
+       Teltrigger[TelType]->GetTrigPixRateVsThresholdError().Write("TVecTrigPixRateVsThresholdError");
+       Teltrigger[TelType]->GetTrigPixRateVsThreshold().Write("TVecTrigPixRateVsThreshold");
        TVectorF NumTelescopes(1);
        NumTelescopes[0]= uNumTelescopes;
        NumTelescopes.Write("TVecNumTelescopes");
@@ -440,18 +468,23 @@ int main( int argc, char **argv )
 	 {
 	   //this is probably only needed to get something into the constructor. 
 	   //the number of pixel are set again when the traces are being filled.
-       vector<unsigned> numPixTel(uNumTelescopes,readConfig->GetNumberPixels(0)); //this will be problematic when simulating hybrid arrays.
-       
+       vector<unsigned> numPixTel;
+       unsigned iMaxPixPerTel = 0;
+       for(unsigned i=0;i<uNumTelescopes;i++)
+         {
+             numPixTel.push_back(readConfig->GetNumberPixels(i));
+             iMaxPixPerTel = iMaxPixPerTel > readConfig->GetNumberPixels(i) ? iMaxPixPerTel : readConfig->GetNumberPixels(i);
+         }
        //Initiate the vbf output file
        string outname =  sOutputFileName.c_str();
        outname+=".vbf";
-
+        
 	   VBFwrite = new VG_writeVBF(uNumTelescopes,
 				      numPixTel,outname,
 				      lVBFRunNum,
 				      iDebugLevel);
            VBFwrite->setNumFadcSamples( telData[0]->iNumFADCSamples);  // set numFadcSamples for this telescope
-
+           VBFwrite->setMaxNumberChannels(iMaxPixPerTel);
 	 }
    
        //initiate the root output file
@@ -481,9 +514,9 @@ int main( int argc, char **argv )
        tSimulatedEvents.Branch("AzPrim",&azPrim,"AzPrim/F");
        tSimulatedEvents.Branch("xcore",&xcore,"xcore/F");
        tSimulatedEvents.Branch("ycore",&ycore,"ycore/F");
-       tSimulatedEvents.Branch("arrayTriggerBit",&arrayTriggerBit,"arrayTriggerBit/B");
-       tSimulatedEvents.Branch("uNumTelescopes",&uNumTelescopes,"uNumTelescopes/l");
-       tSimulatedEvents.Branch("eventNumber",&eventNumber,"eventNumber/l");
+       tSimulatedEvents.Branch("arrayTriggerBit",&arrayTriggerBit,"arrayTriggerBit/O");
+       tSimulatedEvents.Branch("uNumTelescopes",&uNumTelescopes,"uNumTelescopes/i");
+       tSimulatedEvents.Branch("eventNumber",&eventNumber,"eventNumber/i");
        tSimulatedEvents.Branch("vTelescopeTriggerBits",&vTelescopeTriggerBits);
        tSimulatedEvents.Branch("DeltaTL3",&DeltaTL3,"DeltaTL3/F");
 
@@ -741,7 +774,21 @@ int main( int argc, char **argv )
        //Running the pedestal events
 	   Int_t NumPedestalsToSimulate = readConfig->GetNumberOfPedestalEvents() 
 	                                   + readConfig->GetNumberOfPedestalEventsToStabilize();
-       
+
+	// The VBF Writer can only store samples of 8 bits, giving a maimum value of 255 unsigned
+	// The NSB is so high, that setting as lower pedestal can clip the fluctuations on the baseline
+	
+	fOut->cd();
+	fOut->mkdir("Pedestals");
+	fOut->cd("Pedestals");
+
+	
+	TTree tSimulatedPedestals ("tSimulatedPedestals","Tree containing the simulated pedestals");
+	vector<vector<int>> vFADCPedestals = vector<vector<int>>(telData[0]->iNumPixels,vector<int>(telData[0]->iNumFADCSamples,0));
+	
+	for(int vfPedInd = 0; vfPedInd < telData[0]->iNumPixels; vfPedInd++){
+		tSimulatedPedestals.Branch(TString::Format("vFADCPedestals%d",vfPedInd),&vFADCPedestals[vfPedInd]);
+	}
       for(Int_t p = 0 ;p<  NumPedestalsToSimulate;p++)
 	 {
 
@@ -757,8 +804,8 @@ int main( int argc, char **argv )
 	     //generate traces with trace generator
              Int_t telType = telData[tel]->GetTelescopeType();
 
-	     if(p%100==0 || p == readConfig->GetNumberOfPedestalEventsToStabilize())
-	            cout<<"RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
+	     //if(p%100==0 || p == readConfig->GetNumberOfPedestalEventsToStabilize())
+	     //       cout<<"RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
 
              telData[tel]->ResetTraces();
              traceGenerator[telType]->SetTelData(telData[tel]);
@@ -820,11 +867,13 @@ int main( int argc, char **argv )
           
 		   /*Write the FADC trace out*/
 		   vector<Int_t> trace = telData[tel]->GetFADCTrace(pix);
+		   vFADCPedestals.push_back(trace);
 		   for(Int_t i=0;i<(Int_t)trace.size();i++){
 		     VBFwrite->storeSample(i,trace[i]);  // store the sample
 		   }
+			
 		 } // end pixel loop
-		 
+		 tSimulatedPedestals.Fill();
 		 VBFwrite->storeEvent();
         
 	       }   // end telescope loop
@@ -836,10 +885,11 @@ int main( int argc, char **argv )
 		       
 	       VBFwrite->storePacket();          // store the packet
 	     }//end writing the pedestal event into the vbf file
+		vFADCPedestals.clear();
 	 }//end of loop generating all pedestal events
-
+	tSimulatedPedestals.Write();
        cout<<"Done generating all the pedestal events"<<endl;
-       
+	gROOT->cd();
        ///////////////////////////////////////////////////////////////////////////////////////////
 
        //Going into the events
@@ -867,10 +917,10 @@ int main( int argc, char **argv )
 	       t[n]->SetBranchAddress("time", &v_f_time, &b_v_f_time );
 	       t[n]->SetBranchAddress("eventNumber", &fEventNumber );
 	       t[n]->SetBranchAddress("primaryEnergy", &fPrimaryEnergy ); 
-           t[n]->SetBranchAddress("AzTel", &fAzTel );
-           t[n]->SetBranchAddress("ZnTel", &fZnTel );
-           t[n]->SetBranchAddress("AzPrim", &fAzPrim );
-           t[n]->SetBranchAddress("ZnPrim", &fZnPrim );
+               t[n]->SetBranchAddress("AzTel", &fAzTel );
+               t[n]->SetBranchAddress("ZnTel", &fZnTel );
+               t[n]->SetBranchAddress("AzPrim", &fAzPrim );
+               t[n]->SetBranchAddress("ZnPrim", &fZnPrim );
 	       t[n]->SetBranchAddress("Xcore", &fXcore );
 	       t[n]->SetBranchAddress("Ycore", &fYcore );
 	       t[n]->SetBranchAddress("Xcos", &fXcos );
@@ -880,25 +930,25 @@ int main( int argc, char **argv )
 	       t[n]->SetBranchAddress("ShowerID", &iShowerID );
 	       t[n]->SetBranchAddress("FirstIntDpt", &fFirstIntDpt );
 	       t[n]->SetBranchAddress("FirstIntHgt", &fFirstIntHgt );
-           t[n]->GetEntry( i );
+               t[n]->GetEntry( i );
                //        cout<<i<<": a "<<sqrt((fAzTel-fAzPrim)*(fAzTel-fAzPrim)+(fZnTel-fZnPrim)*(fZnTel-fZnPrim))<<endl;
 
 	       //General things we want to have in the root output file characterizing the event
 	       //why not pipe this directly into the root file and not use these variables
-           energy = fPrimaryEnergy;
+               energy = fPrimaryEnergy;
 	       eventNumber = fEventNumber;
 	       xcore = fXcore;
 	       ycore = fYcore;
-           vZnTel[n] = fZnTel;
-           vAzTel[n] = fAzTel;
-           azPrim = fAzPrim;
-           znPrim = fZnPrim;
+               vZnTel[n] = fZnTel;
+               vAzTel[n] = fAzTel;
+               azPrim = fAzPrim;
+               znPrim = fZnPrim;
 
-           Int_t telType = telData[n]->GetTelescopeType();
+               Int_t telType = telData[n]->GetTelescopeType();
 
-           telData[n]->ResetTraces();
+               telData[n]->ResetTraces();
                
-           telData[n]->iNumPhotonsInFocalPlane=v_f_time->size();
+               telData[n]->iNumPhotonsInFocalPlane=v_f_time->size();
 
 	       if(v_f_time->size()>=readConfig->GetRequestedMinNumberOfPhotonsInCamera(telType))
 		     bSkipEvent = kFALSE;
@@ -946,11 +996,43 @@ int main( int argc, char **argv )
 		      {
 		       cout<<"Vectors do not have the same size, should never happen, isn't it?"<<endl;
 		      }
+			
+			// Needed to normalize time vector to the median
+			
+			// Truncate traces
+			// CARE was designed for short traces (100ns long) the longer traces used in SPB2,
+			// introduce some issues when finding the trigger time. The trigger, fires before
+			// the average time of the photon arrival time. We truncate the traces around the median
+			std::vector<float> &v_f_time_dr = *v_f_time;
+			std::vector<float> v_f_time_trunc,v_f_x_trunc ,  v_f_y_trunc, v_f_lambda_trunc;
+			
+			std::sort(v_f_time_dr.begin(),v_f_time_dr.end());
+		
+			float medianTime;
+			
+			if((v_f_time_dr.size())%2 == 0){
+				medianTime = (v_f_time_dr[(int) v_f_time_dr.size()/2]+v_f_time_dr[(int)v_f_time_dr.size()/2 -1])/2;
+			}else{
+				medianTime = v_f_time_dr[(int) v_f_time_dr.size()/2];
+			}
 
+			float minTime = v_f_time_dr[0];
+			
+			Int_t telType = telData[n]->GetTelescopeType();
+			traceGenerator[telType]->SetTelData(telData[n]);
+			float sampleOffset = readConfig->GetStartSamplingTimeOffsetFromAveragePhotonTime(telType);
+			for(long unsigned int tCtr = 0; tCtr<v_f_time_dr.size();tCtr++){
+				if(std::abs(v_f_time->at(tCtr)-medianTime)<sampleOffset){
+					v_f_time_trunc.push_back(v_f_time->at(tCtr)-minTime);
+					v_f_x_trunc.push_back(v_f_x->at(tCtr));
+					v_f_y_trunc.push_back(v_f_y->at(tCtr));
+					v_f_lambda_trunc.push_back(v_f_lambda->at(tCtr));
+				}
+			}
              //generate traces with trace generator
-             Int_t telType = telData[n]->GetTelescopeType();
-             traceGenerator[telType]->SetTelData(telData[n]);
-	         traceGenerator[telType]->LoadCherenkovPhotons( v_f_x ,  v_f_y, v_f_time, v_f_lambda, fDelay,dGlobalPhotonEffic);	
+            
+             
+	         traceGenerator[telType]->LoadCherenkovPhotons( &v_f_x_trunc ,  &v_f_y_trunc, &v_f_time_trunc, &v_f_lambda_trunc, fDelay,dGlobalPhotonEffic);	
 	         traceGenerator[telType]->BuildAllHighGainTraces();	 
 		   
 		     //   TelData->ShowTrace(0,kTRUE); 
@@ -963,25 +1045,21 @@ int main( int argc, char **argv )
 	         if(DEBUG_MAIN)
 		     cout<<"run trigger"<<endl;
                    Teltrigger[telType]->RunTrigger();
-           
+           //telData[n]->fAveragePhotonArrivalTime = medianTime;
 		     // Teltrigger->ShowTrace(0,0);
 
-	         if(DEBUG_MAIN)
-		       cout<<"done trigger, RFB:"<<Teltrigger[telType]->GetDiscRFBDynamicValue()<<endl;
-
-             fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
-	         GroupTriggerBits[n] =  telData[n]->GetTriggeredGroups();
+                 fTelTriggerTimes[n] = telData[n]->GetTelescopeTriggerTime(); 
+	         GroupTriggerBits[n] =  telData[n]->GetTriggeredTriggerPixels();
 	         vTelescopeTriggerBits[n]=telData[n]->GetTelescopeTrigger();
 
 	        } //end looping over telescopes doing trigger
        
-     
 	        //Go into the array trigger                       
 	        if(DEBUG_MAIN)
 		      {
 		        cout<<endl<<"Event trigger status"<<endl;
-		        cout<<"Telescope trigger bits: "<<vTelescopeTriggerBits[0]<<vTelescopeTriggerBits[1]<<vTelescopeTriggerBits[2]<<vTelescopeTriggerBits[3]<<endl;
-		        cout<<"Telescope trigger times: "<<fTelTriggerTimes[0]<<"  "<<fTelTriggerTimes[1]<<"  "<<fTelTriggerTimes[2]<<"  "<<fTelTriggerTimes[3]<<"  "<<endl;
+		        cout<<"Telescope trigger bits: "<<vTelescopeTriggerBits[0]<<endl;
+		        cout<<"Telescope trigger times: "<<fTelTriggerTimes[0]<<endl;
 		      }
 	   
 	        arraytrigger->SetTelescopeTriggerBitsAndTimes(vTelescopeTriggerBits,fTelTriggerTimes);

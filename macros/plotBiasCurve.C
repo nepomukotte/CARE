@@ -1,4 +1,4 @@
-#include <TVectorD>
+//#include <TVectorD>
 //////////////////////////////////////
 
 
@@ -25,7 +25,7 @@ void readDir(string dirname,vector<string> *names) {
 
 /////////////////////////////////////////
 
-void plotBiasCurve(string DataDir,const Int_t iMaxTelescopeMultiplicity = 2, Float_t fCoincidence = 50, Int_t iNumTelNextNeighborGroup =8)
+void plotBiasCurve(string DataDir,const Int_t iMaxTelescopeMultiplicity = 1, Float_t fCoincidence = 50, Int_t iNumTelNextNeighborGroup =1)
 {
 
   //const Int_t iMaxTelescopeMultiplicity = 4;
@@ -77,10 +77,10 @@ void plotBiasCurve(string DataDir,const Int_t iMaxTelescopeMultiplicity = 2, Flo
   TVectorD BiasCurveError(NumPoints);
   BiasCurveError.Zero();
  
-  TVectorD GroupRateVsThreshold(NumPoints);
-  GroupRateVsThreshold.Zero();
-  TVectorD GroupRateVsThresholdError(NumPoints);
-  GroupRateVsThresholdError.Zero();
+  TVectorD TriggerPixelRateVsThreshold(NumPoints);
+  TriggerPixelRateVsThreshold.Zero();
+  TVectorD TriggerPixelRateVsThresholdError(NumPoints);
+  TriggerPixelRateVsThresholdError.Zero();
 
 
   TVectorD  FakeXErrors(NumPoints);
@@ -105,20 +105,20 @@ void plotBiasCurve(string DataDir,const Int_t iMaxTelescopeMultiplicity = 2, Flo
       TVectorD *BiasCurveValuesThis = (TVectorD*)f->Get("BiasCurve/TVecBiasCurve");
       TVectorD *BiasCurveErrorThis  = (TVectorD*)f->Get("BiasCurve/TVecBiasCurveError");
    
-      TVectorD *GroupRateVsThresholdThis = (TVectorD*)f->Get("BiasCurve/TVecGroupRateVsThreshold");
-      TVectorD *GroupRateVsThresholdErrorThis  = (TVectorD*)f->Get("BiasCurve/TVecGroupRateVsThresholdError");
+      TVectorD *TriggerPixelRateVsThresholdThis = (TVectorD*)f->Get("BiasCurve/TVecTrigPixRateVsThreshold");
+      TVectorD *TriggerPixelRateVsThresholdErrorThis  = (TVectorD*)f->Get("BiasCurve/TVecTrigPixRateVsThresholdError");
      
 
       if(BiasCurveValuesThis!=0 && BiasCurveErrorThis!=0 && BiasCurveScanPointsThis!=0 
-         && GroupRateVsThresholdThis!=0 && GroupRateVsThresholdErrorThis!=0 )
+         && TriggerPixelRateVsThresholdThis!=0 && TriggerPixelRateVsThresholdErrorThis!=0 )
 	{
 	  for(Int_t p = 0; p<NumPoints; p++)
 	    {
 	      BiasCurveValues[p]+= (*BiasCurveValuesThis)[p];
 	      BiasCurveError[p]+= (*BiasCurveErrorThis)[p] * (*BiasCurveErrorThis)[p];
 
-	      GroupRateVsThreshold[p]+= (*GroupRateVsThresholdThis)[p];
-	      GroupRateVsThresholdError[p]+= (*GroupRateVsThresholdErrorThis)[p] * (*GroupRateVsThresholdErrorThis)[p];
+	      TriggerPixelRateVsThreshold[p]+= (*TriggerPixelRateVsThresholdThis)[p];
+	      TriggerPixelRateVsThresholdError[p]+= (*TriggerPixelRateVsThresholdErrorThis)[p] * (*TriggerPixelRateVsThresholdErrorThis)[p];
 
 	    } 
 	  NumFiles++;
@@ -134,14 +134,14 @@ void plotBiasCurve(string DataDir,const Int_t iMaxTelescopeMultiplicity = 2, Flo
       if( BiasCurveError[p]>0 )
 	BiasCurveError[p] =  sqrt(BiasCurveError[p])/NumFiles;
 
-      GroupRateVsThreshold[p] = GroupRateVsThreshold[p]/NumFiles;
-      if( GroupRateVsThresholdError[p]>0 )
-	GroupRateVsThresholdError[p] =  sqrt(GroupRateVsThresholdError[p])/NumFiles;
+      TriggerPixelRateVsThreshold[p] = TriggerPixelRateVsThreshold[p]/NumFiles;
+      if( TriggerPixelRateVsThresholdError[p]>0 )
+	TriggerPixelRateVsThresholdError[p] =  sqrt(TriggerPixelRateVsThresholdError[p])/NumFiles;
 
        BiasCurveScanPoints[p]=-1*BiasCurveScanPoints[p];
 
       cout<<p<<" rate:  "<<BiasCurveValues[p]<<"+-"<<BiasCurveError[p]<<"  "<<BiasCurveScanPoints[p]<<endl;
-      cout<<"Group rate "<<GroupRateVsThreshold[p]<<"+-"<<GroupRateVsThresholdError[p]<<"  "<<endl;
+      cout<<"Group rate "<<TriggerPixelRateVsThreshold[p]<<"+-"<<TriggerPixelRateVsThresholdError[p]<<"  "<<endl;
   } 
 
   Int_t lowestBin=0;
@@ -175,7 +175,7 @@ void plotBiasCurve(string DataDir,const Int_t iMaxTelescopeMultiplicity = 2, Flo
   gr->SetLineWidth(2);
 
   TLegend *legend = new TLegend(0.55,0.55,0.88,0.88);
-  legend->AddEntry(gr,"Single Telescope Rate 3 fold multiplicity","pl");
+  legend->AddEntry(gr,"Telescope Trigger Rate","pl");
 
   TGraphErrors *grNoNextNeighbor[iMaxTelescopeMultiplicity-1];
 
@@ -276,7 +276,7 @@ void plotBiasCurve(string DataDir,const Int_t iMaxTelescopeMultiplicity = 2, Flo
   //Single Group Rate s. Threshold
 
   lowestBin=0;
-  while(GroupRateVsThresholdError[lowestBin]>0 && lowestBin<NumPoints-1)
+  while(TriggerPixelRateVsThresholdError[lowestBin]>0 && lowestBin<NumPoints-1)
     lowestBin++;
   
   lowestBin--;
@@ -288,8 +288,8 @@ void plotBiasCurve(string DataDir,const Int_t iMaxTelescopeMultiplicity = 2, Flo
   cg->Draw();
   
 
-  TH1D *hg = new TH1D("hg","Bias Curve of a single group",1000,BiasCurveScanPoints.Min()*0.95,BiasCurveScanPoints[lowestBin]*1.1);
-  hg->SetMaximum(GroupRateVsThreshold.Max()*5);
+  TH1D *hg = new TH1D("hg","Bias Curve of a single Pixel",1000,BiasCurveScanPoints.Min()*0.95,BiasCurveScanPoints[lowestBin]*1.1);
+  hg->SetMaximum(TriggerPixelRateVsThreshold.Max()*5);
   hg->SetMinimum(1);
   hg->GetXaxis()->SetTitle("Discriminator Threshold [mV]");
   hg->GetYaxis()->SetTitle("Trigger Rate [Hz]");
@@ -297,14 +297,14 @@ void plotBiasCurve(string DataDir,const Int_t iMaxTelescopeMultiplicity = 2, Flo
   hg->Draw();
 
 
-  TGraphErrors *grg = new TGraphErrors(BiasCurveScanPoints,GroupRateVsThreshold,FakeXErrors,GroupRateVsThresholdError);
+  TGraphErrors *grg = new TGraphErrors(BiasCurveScanPoints,TriggerPixelRateVsThreshold,FakeXErrors,TriggerPixelRateVsThresholdError);
   grg->SetMarkerStyle(29);
   grg->SetMarkerSize(1.6);
   grg->SetLineWidth(2);
   grg->Draw("PL");
 
   TLegend *legendg = new TLegend(0.55,0.55,0.88,0.88);
-  legendg->AddEntry(grg,"Single Group Rate","pl");
+  legendg->AddEntry(grg,"Pixel Trigger Rate","pl");
   legendg->Draw();
 
       //compact next neighbor

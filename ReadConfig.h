@@ -30,6 +30,7 @@ class ReadConfig
   Float_t GetSamplingTime(UInt_t telType){ return fSamplingTime[telType]; };
 
   Bool_t  GetUseSumTrigger(UInt_t telType){ return bUseSumTrigger[telType]; };
+  Int_t  GetTelescopeTriggerType(UInt_t telType){ return iTelescopeTriggerType[telType]; };
   Float_t GetDiscriminatorThreshold(UInt_t telType){ return fDiscThreshold[telType]; };
   Float_t GetDiscriminatorOutputWidth(UInt_t telType){ return fDiscWidth[telType]; };
   Float_t GetDiscriminatorDelay(UInt_t telType){ return fDiscDelay[telType]; };
@@ -156,6 +157,7 @@ class ReadConfig
 
   //Telescope trigger configuration
   vector<Bool_t>  bUseSumTrigger;              //Sum pixels before discriminator
+  vector<Int_t>   iTelescopeTriggerType;       //The type of telescope trigger used 
   vector<Float_t> fClippingLevel;              //The level in mV at which the signals are clipped 
   vector<Bool_t>  bDoClipping;                 //Do we clip the signals before summing
   vector<Float_t> fDiscThreshold;              //Discriminator threshold of pixel

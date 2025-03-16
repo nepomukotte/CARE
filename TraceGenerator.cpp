@@ -54,15 +54,16 @@ TraceGenerator::TraceGenerator( ReadConfig *readConfig , int telType, TRandom3 *
   SetParametersFromConfigFile( readConfig );
   
   rand = generator;
-string s = "";                                                                             
+  string s = "";                                                                             
 
-gridsearch = new GOrderedGridSearch(fXTubeMM,fYTubeMM,fSizeTubeMM,iTubeSides,fRotAngle,19,19,1,s);
+  gridsearch = new GOrderedGridSearch(fXTubeMM,fYTubeMM,fSizeTubeMM,iTubeSides,fRotAngle,19,19,1,s);
   if(bDebug) cout<<"Done initializing the TraceGenerator"<<endl;
 
   if(bDebug)
    { 
-     for(UInt_t i=0;i<max(fLowGainPulse.size(),fHighGainPulse.size());i++)
+     for(UInt_t i=0;i<max(fLowGainPulse.size(),fHighGainPulse.size());i++){
       ShowPulseShape(i);
+     }
    }
 }
 
@@ -83,7 +84,7 @@ telData = TelData;
 //Loads the PEs into the pixels. If UseNSB is set true NSB is added to the trace
 void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vector< float > *v_f_Y,std::vector< float > *v_f_time,std::vector< float > *v_f_lambda, Float_t delay, Double_t dEfficiencyFactor)
 {
-   
+  
 
   if(iNumPixels == 0)
     {
@@ -110,8 +111,8 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
 
   //Find the average time of all PEs
   telData->fAveragePhotonArrivalTime = 0;
-  Float_t fMinPhotonArrivalTime = 1e6;
-  Float_t fMaxPhotonArrivalTime = -1e6;
+  Float_t fMinPhotonArrivalTime = 1e8;
+  Float_t fMaxPhotonArrivalTime = -1e8;
   for(UInt_t p=0; p<v_f_time->size(); p++)
     {
 	  //add transit time spread
@@ -144,7 +145,6 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
       cout<<"We have "<<telData->iNumSamplesPerTrace*fSamplingTime<<" ns, but we need "<<fMaxPhotonArrivalTime-fMinPhotonArrivalTime<<endl; 
     }
 */
-
   //Load Cherenkov photons into the traces of each summed group
   for(UInt_t p=0; p<v_f_time->size(); p++)
     {
@@ -168,7 +168,6 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
 
       Int_t pixID = gridsearch->getElemNumber(fx,fy);
 
-
       if(pixID<0)   //Photon does not hit a pixel
 	   {
 		  if(bDebug) cout<<"no pixel hit "<<fx<<"  "<<fy<<endl;
@@ -182,7 +181,6 @@ void  TraceGenerator::LoadCherenkovPhotons(std::vector< float > *v_f_X,std::vect
       if(pixID>=0)
 	    {                                     
            UInt_t lambda = (UInt_t)(v_f_lambda->at(p));
-
            //Lets see if the Photon will be detected after the Winston cone and the PMT
            //QE includes the winston cone and the cherenkov scaling factor, see function that
            //writes qe[]
@@ -396,11 +394,13 @@ void TraceGenerator::GenerateNSB()
   {
    for(Int_t i=0;i<iNumPixels;i++)
     {
-      if(bDebug)
-      cout<<"Pixel "<<i<<" PMT type: "<<iTubeType[i]<<" NSB "<<vNSBRatePerPixel[iTubeType[i]]<<endl;
+      //if(bDebug)
+	//   cout<<"Pixel "<<i<<" NSB "<<vNSBRatePerPixel[i]<<endl;
       //convert to counts per ns remember the rate is in units kHz 
-      Float_t fNSBRate = vNSBRatePerPixel[iTubeType[i]]*1e-6 * telData->fRelQE[i]; ; 
-
+      
+      Float_t fNSBRate = vNSBRatePerPixel[i]*1e-6 * telData->fRelQE[i];
+      if(bDebug)
+           cout<<"Pixel "<<i<<" PMT type: "<<iTubeType[i]<<" NSB Rate "<< vNSBRatePerPixel[i]*1e-6 * telData->fRelQE[i] <<endl;
       Float_t t = -1.0*fHighGainStopTime[0];
       
       while(1)
@@ -1089,7 +1089,7 @@ void   TraceGenerator::SetParametersFromConfigFile(ReadConfig *readConfig){
     }//end looping over all different PMT types and loading the QEs 
 
   //NSB
-  vNSBRatePerPixel = readConfig->GetNSBRate(iTelType);      //the NSB rate kHz per mm squared in the focal plane;
+  vNSBRatePerPixel = readConfig->GetNSBRate(iTelType);      //the NSB rate in kHz per camera pixel;
   bUseNSB = readConfig->GetNSBUsage();
 
   iNumPixels = readConfig->GetNumberPixels(iTelType); //Has to be filled with telescope type

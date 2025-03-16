@@ -156,7 +156,7 @@ class TraceGenerator {
 
 
   //NSB
-  vector<Float_t> vNSBRatePerPixel;                        //the NSB rate in kHz for each PMT/SiPM type;
+  vector<Float_t> vNSBRatePerPixel;                        //the NSB rate in kHz for each channel;
   Bool_t  bUseNSB;
 
   //Shower photons

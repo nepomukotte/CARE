@@ -220,7 +220,8 @@ bool GOrderedGridSearch::polyInside(const int &sides, const double &alpha,
   static double delta[50],beta[50],gamma[50];
   static int ifirst=0;
   int iside;
-  double x1,y1;
+  //double x1,y1;
+  double y1;
   
   /* initialize constant parameters */
   if (ifirst==0) {
@@ -254,7 +255,7 @@ bool GOrderedGridSearch::polyInside(const int &sides, const double &alpha,
     if (dist > radius) return 0;
 
     /* rotate x and y through alpha, dist doesn't change */
-    x1 = (cos(alpha)*x)- (sin(alpha)*y);
+    //x1 = (cos(alpha)*x)- (sin(alpha)*y);
     y1 = (sin(alpha)*x)+ (cos(alpha)*y);
 
     /* if you use atan to get theta, phi will be incorrect */

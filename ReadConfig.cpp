@@ -57,6 +57,8 @@ void ReadConfig::resetCamVectors()
        vNumCellsPerSIPM.push_back( i_typ );      //the number of cells in one SiPM
        vSiPMOpticalCrosstalk.push_back( f_tel );
 
+       vNSBRatePerPixel.push_back( f_tel );
+
     }
 
     //Quantum/PDE of the Photon detectors
@@ -119,6 +121,7 @@ void ReadConfig::resetTelTypeVectors()
   fCrosstalkValue.assign( iNumberOfTelescopeTypes, 0 );             
   bSiPM.assign( iNumberOfTelescopeTypes, 0 );                       //we use SiPM as photon detectors
   bUseSumTrigger.assign( iNumberOfTelescopeTypes, 0 );              //Sum pixels before discriminator
+  iTelescopeTriggerType.assign( iNumberOfTelescopeTypes, -1 );      //The type of telescope trigger
   fClippingLevel.assign( iNumberOfTelescopeTypes, 0 );              //The level in mV at which the signals are clipped 
   bDoClipping.assign( iNumberOfTelescopeTypes, 0 );                 //Do we clip the signals before summing
   fDiscThreshold.assign( iNumberOfTelescopeTypes, 0 );              //Discriminator threshold of pixel
@@ -138,9 +141,6 @@ void ReadConfig::resetTelTypeVectors()
   bUsePatches.assign( iNumberOfTelescopeTypes, 0 );                 //Is the trigger topology divided into patches
 
 
-  vector< Float_t > f_typ;
-  f_typ.assign( iNumberOfPMTTypes , 0. ); 
-  vNSBRatePerPixel.assign( iNumberOfTelescopeTypes, f_typ );
   bUseAfterPulsing.assign( iNumberOfTelescopeTypes, 0 );             //Do we simulate Afterpulsing: true yes false else
   bFlatfieldCamera.assign( iNumberOfTelescopeTypes, 0 );             //Flatfield the camera response
   fGainSigma.assign( iNumberOfTelescopeTypes, -1 );                  //sigma of the gain distribution
@@ -364,7 +364,7 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
 
         //  -telescope type
         //  -the number of phototubes.
-        //  -the number of groups of summed pixel
+        //  -the number of groups 
         //  * CAMRA 0 11328 2832
          i_stream >> i_char; i_stream >> i_char;
 	 i_stream >> i_telType;                                   
@@ -372,7 +372,7 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
          i_stream >> iNumberGroups[i_telType];
          cout << "FPI configuration of telescope type "<<i_telType<<endl; 
 	 cout << "total number of channels: " << fCNChannels[i_telType]  << endl;
-	 cout << "the number of sum groups: " << iNumberGroups[i_telType]  << endl;
+	 cout << "the number of groups for the telescope trigger: " << iNumberGroups[i_telType]  << endl;
 
         if(i_telType == (UInt_t)(iNumberOfTelescopeTypes-1))
              resetCamVectors();
@@ -482,10 +482,11 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
       {
 	i_stream >> i_char; i_stream >> i_char; 
         i_stream >> i_telType;
-        i_stream >> i_PMTType;
-	i_stream >>  vNSBRatePerPixel[i_telType][i_PMTType];
-        vNSBRatePerPixel[i_telType][i_PMTType]*=1000;
-	cout<<"Telescope number "<<i_telType<<" PMT/SiPM type "<<i_PMTType<<" The NSB rate in kHz per pixel is set to "<<vNSBRatePerPixel[i_telType][i_PMTType]<<endl;
+        Float_t fNSBRate=0.0;
+	i_stream >> fNSBRate;
+        fNSBRate*=1000;
+        vNSBRatePerPixel[i_telType].assign(fCNChannels[i_telType], fNSBRate );
+	cout<<"Telescope type "<<i_telType<<" The NSB rate in kHz for all pixels is set to "<<vNSBRatePerPixel[i_telType][0]<<endl;
       }
 
      //If we want to use Afterpulsing in the simulation
@@ -1001,9 +1002,18 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
 	    i_stream >> i_telType;
         i_stream >> i_chan;
         i_stream >> vNumCellsPerSIPM[i_telType][i_chan]; 
-	    i_stream >> vSiPMOpticalCrosstalk[i_telType][i_chan]; 
+	i_stream >> vSiPMOpticalCrosstalk[i_telType][i_chan]; 
         cout<<"Chan "<<i_chan<<" teltype  "<<i_telType<<" number of cells "<<vNumCellsPerSIPM[i_telType][i_chan]<<" optical X-talk "<<vSiPMOpticalCrosstalk[i_telType][i_chan]<<endl;
        } 
+
+    //Which Telescope Trigger will it be
+     if( iline.find( "TELESCOPETRIGGERTYPE" ) < iline.size() )
+      {
+	i_stream >> i_char; i_stream >> i_char; 
+        i_stream >> i_telType;
+        i_stream >> iTelescopeTriggerType[i_telType]; 
+        cout<<"Telescope type "<<i_telType<<" will use Telescope-Trigger type : "<<iTelescopeTriggerType[i_telType]<<endl;
+      }
 
     //Do we use a sum trigger
      if( iline.find( "USESUMTRIGGER " ) < iline.size() )
@@ -1013,7 +1023,7 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
     int tmp;
     i_stream >> tmp;
     bUseSumTrigger[i_telType] = (Bool_t)tmp;
-	cout<<"Telescope type "<<i_telType<<" Will use Sum trigger : "<<bUseSumTrigger[i_telType]<<endl;
+	cout<<"Telescope type "<<i_telType<<" will use Sum trigger : "<<bUseSumTrigger[i_telType]<<endl;
       }
 
    //Do we want to use the Patches 
@@ -1113,12 +1123,14 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
 
         iTubeSides[i_telType][i_chan] = sides; 
         iPMTType[i_telType][i_chan] = i_PMTType;
+	i_stream >> vNSBRatePerPixel[i_telType][i_chan]; 
+        vNSBRatePerPixel[i_telType][i_chan]*=1000;
 	i_stream >> fXTubeMM[i_telType][i_chan]; 
 	i_stream >> fYTubeMM[i_telType][i_chan];
 	i_stream >> fSizeTubeMM[i_telType][i_chan];
 	i_stream >> fRotAngle[i_telType][i_chan];
 	fRotAngle[i_telType][i_chan]*=(TMath::DegToRad());
-        cout<<"Chan "<<i_chan<<" telType  "<<i_telType<<" PMT type "<<i_PMTType <<" Tubesides "<<iTubeSides[i_telType][i_chan]<<" x-Pos [mm] "<<fXTubeMM[i_telType][i_chan]<<" y-Pos [mm]  "<<fYTubeMM[i_telType][i_chan]<<" diameter [mm] "<<fSizeTubeMM[i_telType][i_chan]<<" rotAngle [deg]  "<<fRotAngle[i_telType][i_chan]<<endl;
+        cout<<"Chan "<<i_chan<<" telType  "<<i_telType<<" PMT type "<<i_PMTType <<"NSB rate "<<vNSBRatePerPixel[i_telType][i_chan]<<" Tubesides "<<iTubeSides[i_telType][i_chan]<<" x-Pos [mm] "<<fXTubeMM[i_telType][i_chan]<<" y-Pos [mm]  "<<fYTubeMM[i_telType][i_chan]<<" diameter [mm] "<<fSizeTubeMM[i_telType][i_chan]<<" rotAngle [deg]  "<<fRotAngle[i_telType][i_chan]<<endl;
        } 
 
 

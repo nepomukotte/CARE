@@ -62,8 +62,8 @@ ALLFLAGS = $(CXXFLAGS) $(CPPFLAGS) -Wall
 	@g++ $(ALLFLAGS) -c $<
 	@echo "Done"
 
-CameraAndReadout: GOrderedGrid.o  GOrderedGridSearch.o VG_writeVBF.o VATime.o CameraAndReadout.o TelescopeData.o TraceGenerator.o TriggerTelescopeNextNeighbor.o ArrayTrigger.o ReadConfig.o FADC.o Display.o
-	        $(LD)  $(CLLFLAGS) $(LIBS)  $(LDFLAGS) $^ $(OutPutOpt) $@ -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
+CameraAndReadout: GOrderedGrid.o  GOrderedGridSearch.o VG_writeVBF.o VATime.o CameraAndReadout.o TelescopeData.o TraceGenerator.o TriggerTelescopeBase.o TriggerTelescopeVERITAS.o TriggerTelescopeSPB2.o TriggerTelescopeTriDem.o ArrayTrigger.o ReadConfig.o FADC.o Display.o
+	        $(LD)  $(CLLFLAGS) $^ $(LIBS)  $(LDFLAGS) $(OutPutOpt) $@ -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
 	        @echo "$@ done"
 
 VATime.o: VATime.cpp

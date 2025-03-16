@@ -14,8 +14,54 @@ _____-_description
 _
 _
 _
-
                                                      -*-*- END OF LINE -*-*-
+  2025/03/15 Nepomuk Otte
+  * TriggerTelescopeTriDem.[cpp,h]
+  - Added new class to simulate the Trinity Demonstrator Trigger
+  * ReadConfig.cpp
+    - In the definition of the NSBRatePerPixel we get rid of the PMT/SIPM type.
+    The NSB is applied to all pixels of that telescope type
+    like this for telescope type 0 
+    * NSBRATEPERPIXEL 0 200
+    make sure you comment this line in the config file if you want to use per
+    pixel NSBs. NSBRATEPERPIXEL is a good option for the command line if you
+    want to test the response for different NSB rates
+    -The NSB rate is now defined for each pixel in the definition of PMPIX
+    # teltype| PMT/SiPM type | what kind of pixel 1=square, 0=hexagonal| pixel id| NSB Rate [MHz] | x[mm]| y[mm] | pixel radius [mm] (distance from center to farthest corner) | roation angle
+    * PMPIX 0 0 1  0  200  -96.8   -46.8 4.3841 0.0
+  *VG_writeVBF.cpp changed ubyte to uint8_t
+
+
+  2020/04/23 Nepomuk Otte
+  SPB2 Branch
+  * VG_writeVBF.cpp 
+  Increased fmaxNumChannels from 500 to 20000
+  * CameraAndReadOut.cpp
+  Set the maximum number of pixels in VG_writeVBF to the camera with the highest
+  number of pixel. The above two changes allow the simulation of cameras with more than 500 pixels.
+  * PlotSPB2Events.cpp
+  Added basic macro to display events of the SPB2 experiment.
+
+  2020/04/23 Oscar Romero Matamala
+  SPB2 Branch
+  * TriggerTelescopeBase.[cpp,h], TriggerTelescopeVERITAS.[cpp,h],
+  TriggerTelescopeSPB2.[cpp,h], CameraAndReadout.cpp
+    -Restructured the TriggerTelescope class to allow for easier integration of
+    other trigger schemes. Now there is a trigger telescope base class. All
+    other telescope trigger classes derive from that. The
+    TriggerTelescopeVERITAS class includes all the functionality of the previous
+    CARE version. 
+    -I created a class for the SPB2 mission. To configure it, the pixels
+    belonging to one MUSIC chips are members of the same group in the
+    configuration file. The bifocal trigger logic looks for coincidences with
+    all neighboring groups listed in GRPNGHBR.
+  * FADC.cpp
+    -Added error message in case the sum of the FADC trace is smaller than the
+    simulated analog trace and have to program quit
+  * ArrayTrigger.cpp
+    -Code doesn't quit anymore in case the coincidence time is set less than 0
+    if at the same time the telescope multiplicity is 1 (i.e. no array trigger is used)
+
   2019/12/11 Nepomuk Otte
   This Version is tagged 1.7.1
   * ReadConfig.[cpp,h]

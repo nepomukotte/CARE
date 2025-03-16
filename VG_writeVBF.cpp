@@ -130,7 +130,7 @@ void VG_writeVBF::initialize() {
   fnum_vevent = 0;
 
   // initializations for VERITAS, have to change for different cameras
-  fmaxNumChannels = 500;  // for veritas
+  fmaxNumChannels = 20000;  // for veritas
 
   // create vector containing all pixel locations
   fTelPixV = new std::vector<  std::vector<VPixelLocation> >(fnbr_tel);
@@ -766,12 +766,12 @@ bool VG_writeVBF::makeArrayTrigger(const std::vector<int> &localTriggerV) {
   // make event types, for non-forced and forced
   VEventType evtype_trig(VEventType::L2_TRIGGER,false,false,
                           VEventType::NOT_CALIBRATION,false);
-  ubyte rawcode_trig = evtype_trig.getBestNewStyleCode();
+  uint8_t rawcode_trig = evtype_trig.getBestNewStyleCode();
 
   VEventType evtype_force(VEventType::L2_TRIGGER,true,false,
                           VEventType::NOT_CALIBRATION,false);
   
-  ubyte rawcode_force = evtype_force.getBestNewStyleCode();
+  uint8_t rawcode_force = evtype_force.getBestNewStyleCode();
     
   // set up trig_tel and data_tel vectors
   std::vector<unsigned> trig_tel; 
@@ -959,7 +959,7 @@ bool VG_writeVBF::makeArrayTrigger() {
     VEventType evtype_ped(VEventType::PED_TRIGGER,true,false,
                           VEventType::NOT_CALIBRATION,false);
 
-    ubyte ped_evtype = evtype_ped.getBestNewStyleCode();
+    uint8_t ped_evtype = evtype_ped.getBestNewStyleCode();
     if (fDebugLevel > 0) {
       std::cerr << "      ped_eventtype (10): " << (unsigned int)ped_evtype 
                 << std::endl;
