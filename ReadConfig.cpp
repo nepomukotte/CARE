@@ -587,7 +587,7 @@ void ReadConfig::ReadLine(string iline, ifstream *inFileStream)
 	i_stream >>  datapoints ;
 	wl[i_PMTType].clear();
 	qe[i_PMTType].clear();
-	cout<<endl<<"PMT/SiPM type "<<i_telType<<" Reading in QE"<<endl;
+	cout<<endl<<"PMT/SiPM type "<<i_PMTType<<" Reading in QE"<<endl;
 	cout<<datapoints<<endl;
 	for(Int_t i=0;i<datapoints;i++)
 	  {
