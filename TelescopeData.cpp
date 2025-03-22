@@ -55,6 +55,9 @@ TelescopeData::TelescopeData( ReadConfig *readConfig, Int_t telID, TRandom3 *gen
 
   SetupArrays();
 
+  fMean.assign(iNumPixels,0.0);
+  fEventsForMean.assign(iNumPixels,0.0);
+
 }
 
 
@@ -118,7 +121,6 @@ void TelescopeData::ResetTraces()
 {
 
   fAveragePhotonArrivalTime = 0.0;
-  mean = 0.0;
   bCherenkovPhotonsInCamera = kFALSE;
   iNumPhotonsInFocalPlane = 0;
   iQDCInPixel.assign(iNumPixels,0);

@@ -254,8 +254,6 @@ int main( int argc, char **argv )
        cout<<endl<<"Starting TraceGenerator for telescope"<<t<<endl;
        traceGenerator[t] = new TraceGenerator(readConfig,t,rand,DEBUG_TRACE,display);
   
-//       traceGenerator[t]->ShowAverageSinglePEPulse();
-
        cout<<"Telescope tracegenerator is initialized"<<endl;
 
 
@@ -586,10 +584,10 @@ int main( int argc, char **argv )
 
         tGeneralInfo->SetBranchAddress("telIDVector",&telIDVector,&b_telIDVector);
         tGeneralInfo->SetBranchAddress("telLocXVector",&telLocXGCVector,&b_telLocXGCVector);
-	    tGeneralInfo->SetBranchAddress("telLocYVector",&telLocYGCVector,&b_telLocYGCVector);
-	    tGeneralInfo->SetBranchAddress("telLocZVector",&telLocZGCVector,&b_telLocZGCVector);
-	    tGeneralInfo->SetBranchAddress("transitTimeVector",&transitTimeVector,&b_transitTimeVector);
-	    tGeneralInfo->SetBranchAddress("obsHgt", &dObsHeight );
+	tGeneralInfo->SetBranchAddress("telLocYVector",&telLocYGCVector,&b_telLocYGCVector);
+	tGeneralInfo->SetBranchAddress("telLocZVector",&telLocZGCVector,&b_telLocZGCVector);
+	tGeneralInfo->SetBranchAddress("transitTimeVector",&transitTimeVector,&b_transitTimeVector);
+	tGeneralInfo->SetBranchAddress("obsHgt", &dObsHeight );
         tGeneralInfo->SetBranchAddress("globalEffic", &dGlobalPhotonEffic );
         tGeneralInfo->SetBranchAddress("fileHeader", &fileheader,&b_fileheader );
         tGeneralInfo->GetEntry( 0 );
@@ -789,8 +787,9 @@ int main( int argc, char **argv )
 	for(int vfPedInd = 0; vfPedInd < telData[0]->iNumPixels; vfPedInd++){
 		tSimulatedPedestals.Branch(TString::Format("vFADCPedestals%d",vfPedInd),&vFADCPedestals[vfPedInd]);
 	}
-      for(Int_t p = 0 ;p<  NumPedestalsToSimulate;p++)
-	 {
+
+        for(Int_t p = 0 ;p<  NumPedestalsToSimulate;p++)
+ 	 {
 
 	   if( p>readConfig->GetNumberOfPedestalEventsToStabilize() && iPedestalWriteFlag==0)
               break;

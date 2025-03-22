@@ -6,7 +6,8 @@
 int iYrows = 4; //siab rows in the camera
 int iSIABID[] = {17, 16, 1, 0, 25, 24, 9, 8, 19, 18, 3, 2, 27, 26, 11, 10, 21, 20, 5, 4, 29, 28, 13, 12, 23, 22, 7, 6, 31, 30, 15, 14};  //number of siabs in each row
 //from bottom to top of camera the NSB in each row
-int iNSBPerRow[] = {350, 330, 310, 290, 270, 250, 230, 210, 190, 170, 150, 130, 110, 90, 70, 50};
+//float fNSBPerRow[] = {70, 52, 38, 28, 21, 16, 12, 8.6, 6.4, 4.7, 3.5, 2.6, 1.9, 1.4, 1.0, 0.8};
+float fNSBPerRow[] = {21, 21, 19, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8};
 int iModulesInRow[] = {4, 4, 4, 4};  //number of siabs in each row
 float fModulePitch = 2.5; //cm //pitch of siabs
 float fPixelPitch = 0.625;   //[cm] pitch of pixels within module
@@ -141,8 +142,8 @@ TGeoTranslation *tr = new TGeoTranslation(xPixelCoord,yPixelCoord, 0.);
 		float xc = vXCoordModule[m] + vXCoordPixelInModule[p];
 		float yc = vYCoordModule[m] + vYCoordPixelInModule[p];
                 int row = 7+int((yc+5*fPixelPitch)/(10*fPixelPitch));
-                cout<<"row "<<row<<" NSB "<<iNSBPerRow[row]<<endl;
-                *fConfigFile <<"* PMPIX "<<"0 "<<iTelID<<" 1  "<<uPixID<<" "<<iNSBPerRow[row]<<" "<<setw(10)<< setprecision(5)<<xc<<"   "<<yc<<" "<<fPixelPitch/sqrt(2.0)/2*10<<" 0.0"<<endl;
+                cout<<"row "<<row<<" NSB "<<fNSBPerRow[row]<<endl;
+                *fConfigFile <<"* PMPIX "<<"0 "<<iTelID<<" 1  "<<uPixID<<" "<<setw(5)<< setprecision(5)<<fNSBPerRow[row]<<" "<<setw(10)<< setprecision(5)<<xc<<"   "<<yc<<" "<<fPixelPitch/sqrt(2.0)/2*10<<" 0.0"<<endl;
 		vXCoordPixel.push_back(xc);
 		vYCoordPixel.push_back(yc);
 

@@ -171,6 +171,7 @@ bool TriggerTelescopeSPB2::RunCoincidenceLogic()
         telData->fTelescopeTriggerTime = vCoincidenceTriggerTimes[index[t]];
         telData->vTriggerCluster = vTrigPixsInCluster->at(index[t]);
         //cout<<"Telescope trigger at "<<telData->fTelescopeTriggerTime<<" trigger bit "<<telData->bTelescopeHasTriggered<<endl;
+        delete [] index;
       }
    delete vTrigPixsInCluster;
    delete [] vCoincidenceTriggerTimes;

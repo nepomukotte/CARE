@@ -15,6 +15,11 @@ _
 _
 _
                                                      -*-*- END OF LINE -*-*-
+  2025/03/20 Nepomuk Otte
+  * TelescopeDate.[cpp,h], TraceGenerator.cpp
+  - Changed to Pedestal calculation per pixel instead of one calculation per the
+   entire camera to allow proper simulation of different NSB levels per pixels
+                                                 
   2025/03/15 Nepomuk Otte
   * TriggerTelescopeTriDem.[cpp,h]
   - Added new class to simulate the Trinity Demonstrator Trigger

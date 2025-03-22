@@ -400,17 +400,17 @@ void TraceGenerator::GenerateNSB()
       
       Float_t fNSBRate = vNSBRatePerPixel[i]*1e-6 * telData->fRelQE[i];
       if(bDebug)
-           cout<<"Pixel "<<i<<" PMT type: "<<iTubeType[i]<<" NSB Rate "<< vNSBRatePerPixel[i]*1e-6 * telData->fRelQE[i] <<endl;
+           cout<<"Pixel "<<i<<" PMT type: "<<iTubeType[i]<<" NSB Rate [counts per ns]"<< fNSBRate <<endl;
+
       Float_t t = -1.0*fHighGainStopTime[0];
-      
       while(1)
 	{
 	  t+= -1*log(rand->Uniform())/fNSBRate;
-	  
+
 	 if(t>fTraceLength+fHighGainStartTime[0])
 	   break;
 
-      int l = 1;
+         int l = 1;
             
 	  if(bAfterPulsing==kTRUE && vAPslope[iTubeType[i]]!=0)
 	  {
@@ -917,44 +917,35 @@ void TraceGenerator::BuildAllHighGainTraces(){
     }
     
  //shift mean to zero, only needed if NSB is simulated
- telData->mean = 0.0;
  if(bUseNSB)
    {
-     Float_t pix = 0;
      for(Int_t i=0;i<iNumPixels;i++)
        {
-         //use trace if it has 1 or less Cherenkov photons in it. 
+         //Update mean 
          if(telData->iPEInPixel[i]<2)
             {
-               pix++;
                Double_t SumTrace = 0.0;
                for(Int_t t=0;t<telData->iNumSamplesPerTrace;t++)
 	         {
 	            SumTrace += telData->fTraceInPixel[i][t];
 	         }
-               telData->mean+= SumTrace/ (1.0*telData->iNumSamplesPerTrace);
+
+               telData->fMean[i] = telData->fMean[i] * telData->fEventsForMean[i] +  SumTrace/ (1.0*telData->iNumSamplesPerTrace);
+               
+               telData->fEventsForMean[i]++;
+
+               telData->fMean[i]/=telData->fEventsForMean[i];
+
+               if(bDebug)
+	          cout<<"Pedestal "<<telData->fMean[i]<<endl;
             }
-        }
 
-    if(pix!=0)
-       telData->mean=telData->mean/pix;
-    else
-      {
-        cout<<"TraceGenerator: Warning, Could not find a pixel with less then 1 Cherenkov Photon to calculate the mean of the traces"<<endl; 
-        telData->mean = 0.0;
-      }
-
-    if(bDebug)
-	cout<<"Pedestal "<<telData->mean<<endl;
-
-    //shift trace up such that the mean is zero (AC coupling) 
-    for(Int_t i=0;i<iNumPixels;i++)
-      {
-	for(Int_t t=0;t<telData->iNumSamplesPerTrace;t++)
-	  {
-	    telData->fTraceInPixel[i][t]=telData->fTraceInPixel[i][t]-telData->mean;
-	  }
-      }
+         //shift trace up such that the mean is zero (AC coupling) 
+	 for(Int_t t=0;t<telData->iNumSamplesPerTrace;t++)
+	     {
+	        telData->fTraceInPixel[i][t]=telData->fTraceInPixel[i][t]-telData->fMean[i];
+	     }
+       }
    }//end shifting the mean to zero if we simulate NSB
 
 }

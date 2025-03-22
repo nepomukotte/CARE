@@ -71,7 +71,8 @@ class TelescopeData {
   vector<Float_t> *fAmplitudesInPixel;
   vector<Float_t> *fPileUpAmplitudeForPhoton;
   Float_t         fAveragePhotonArrivalTime;               //Holds the average photon arrival time of all photons in one event
-  Double_t        mean;                                     //trace mean
+  vector<Float_t> fMean;
+  vector<Float_t> fEventsForMean;
   Bool_t          bCherenkovPhotonsInCamera;
   Int_t           iNumPhotonsInFocalPlane;                 //The number of photons that made it to the focal plane
 

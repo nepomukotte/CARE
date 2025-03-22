@@ -138,8 +138,9 @@ bool TriggerTelescopeTriDem::FindTrigger()
         telData->vTriggerCluster.clear();
         telData->vTriggerCluster.push_back(index[0]);
         //cout<<"Telescope trigger at "<<telData->fTelescopeTriggerTime<<" trigger bit "<<telData->bTelescopeHasTriggered<<endl;
+        delete [] index;
       }
-   delete vTrigPixsInCluster;
+
    delete [] vTriggerTimes;
 
    return telData->bTelescopeHasTriggered;
